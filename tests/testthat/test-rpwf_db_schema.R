@@ -14,6 +14,7 @@ test_that("Can create a connection and create SQL tables", {
   expect_true(dbIsValid(con))
   # All tables are created
   expect_true(all(created_tables == required_tables))
+  DBI::dbDisconnect(con)
 })
 
 test_that("Duplicated values of model_type_tbl and cost_tbl are ignored", {
@@ -27,13 +28,14 @@ test_that("Duplicated values of model_type_tbl and cost_tbl are ignored", {
 
   before = sapply(c("cost_tbl", "model_type_tbl"),
                   \(x){nrow(DBI::dbGetQuery(con, glue("SELECT * FROM {x}")))})
-
+  print(before)
   # Try to add repeated values
   rpwf_db_ini_val(con = con)
 
   after = sapply(c("cost_tbl", "model_type_tbl"),
                  \(x){nrow(DBI::dbGetQuery(con, glue("SELECT * FROM {x}")))})
-
+  print(after)
   expect_true(all(before == after))
+  DBI::dbDisconnect(con)
 })
 

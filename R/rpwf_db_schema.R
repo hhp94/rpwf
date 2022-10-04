@@ -1,4 +1,18 @@
-## Create a new database connection
+#' A wrapper for [DBI::dbConnect()] using [RSQLite::SQLite()]
+#'
+#' Creates, if needed, the `rpwfDb` folder in the project root path that's
+#' needed for python codes and a connection to the database in that folder.
+#'
+#' @param db_name a string name of the database
+#' @param proj_root_path a string that indicate the root of the project.
+#' The use of `here::here()` within an Rstudio project is recommended.
+#'
+#' @return A [DBI::dbConnect()] object
+#' @export
+#'
+#' @examples
+#' con = rpwf_db_con("db.SQLite", here::here())
+#' con
 rpwf_db_con = function(db_name, proj_root_path){
   withr::local_dir(proj_root_path)
   if(!dir.exists("rpwfDb")){dir.create("rpwfDb")}
@@ -7,24 +21,75 @@ rpwf_db_con = function(db_name, proj_root_path){
   return(DBI::dbConnect(RSQLite::SQLite(), dbname = db_path))
 }
 
-## Object that run queries
+#' @title Internal R6 object that set and run a SQL query
+#'
+#' @description
+#' A R6 object that provides a shortcut to setting and executing a SQL query
+#' to create new tables in the database. Not meant to be called manually
 rpwfDbCreate = R6::R6Class("rpwfDbCreate",
   public = list(
-    con = NULL, # Connection
-    query = NULL, # Query
+    #' @field con a [DBI::dbConnect()] object. Created by [rpwf::rpwf_db_con()]
+    con = NULL,
+
+    #' @field query a SQL query to create a table
+    query = NULL,
+
+    #' @description
+    #' Create an [rpwf::rpwfDbCreate] object. Should be a singleton
+    #' @param con [DBI::dbConnect()] connection
+    #' @param query a SQL query string
+    #' @return A new `rpwfDbCreate` object.
     initialize = function(con, query){
       self$con = con
       self$query = query},
+
+    #' @description
+    #' Change the query
+    #' @param query a new SQL query string
+    #' @examples
+    #' con = rpwf_db_con("db.SQLite", here::here())
+    #' db = rpwfDbCreate(con, "SELECT * FROM wflow_tbl")
+    #' db$query
     set_query = function(query) {self$query = query; invisible(self)},
+
+    #' @description
+    #' Run the SQL query
     execute = function() {DBI::dbExecute(self$con, self$query); invisible(self)},
-    run = function(val) {self$set_query(query = val)$execute(); invisible(self)}
+
+    #' @description
+    #' Wrapper around `self$set_query()` and `self$execute()` that set query and
+    #' run the query.
+    #' @param query a new SQL query string
+    #' @examples
+    #' ?rpwf::rpwf_db_init()
+    run = function(query) {self$set_query(query = query)$execute(); invisible(self)}
   )
 )
 
-## Contains schema information stored as list with each element a table definition
+#' Function contains the db schema
+#'
+#' @description
+#' Wrapper around the SQL queries that holds the table definitions
+#'
+#' Here are the tables available in the database. Print out the raw SQL code
+#' with `rpwf_schema()$<table name>` to see constraints and variable names.
+#'
+#' * __cost_tbl__: contains the cost functions
+#' * __model_type_tbl__: defines comparable models in R and python
+#' * __df_tbl__: holds the transformed data (train and test) to pass to python
+#' * __r_grid_tbl__: holds hyper param grids created in R
+#' * __wflow_tbl__: defines all the params needed to run a ML model in SKlearn
+#' * __wflow_result_tbl__: holds results of the workflow ran by python
+#'
+#' @return a named list with containing SQL query strings defining a table
+#' @export
+#'
+#' @examples
+#' definitions = rpwf_schema()
+#' names(definitions)
 rpwf_schema = function() {
   tbl = list()
-  tbl$cost_tbl_create =
+  tbl$cost_tbl =
     "CREATE TABLE IF NOT EXISTS cost_tbl(
     cost_id INTEGER PRIMARY KEY,
     cost_name VARCHAR(50) NOT NULL, /* neg_log_lost or roc_auc and etc. */
@@ -32,7 +97,7 @@ rpwf_schema = function() {
     UNIQUE(cost_name, model_mode)
   );"
 
-  tbl$model_type_tbl_create =
+  tbl$model_type_tbl =
     "CREATE TABLE IF NOT EXISTS model_type_tbl(
     model_type_id INTEGER PRIMARY KEY,
     py_module VARCHAR(50) NOT NULL, /* xgboost sklearn.ensemble etc */
@@ -44,14 +109,14 @@ rpwf_schema = function() {
     UNIQUE(py_module, py_base_learner, r_engine, model_mode)
   );"
 
-  tbl$r_grid_tbl_create =
+  tbl$r_grid_tbl =
     "CREATE TABLE IF NOT EXISTS r_grid_tbl(
     grid_id INTEGER PRIMARY KEY,
     grid_path VARCHAR UNIQUE NOT NULL, /* Path to grid parquet*/
     grid_hash VARCHAR UNIQUE NOT NULL /* Hash of the grid for caching */
   );"
 
-  tbl$df_tbl_create =
+  tbl$df_tbl =
     "CREATE TABLE IF NOT EXISTS df_tbl(
     df_id INTEGER PRIMARY KEY,
     idx_col VARCHAR NOT NULL, /* id column for pandas index */
@@ -61,7 +126,7 @@ rpwf_schema = function() {
     df_hash VARCHAR UNIQUE NOT NULL /* Hash of the *recipe* to juice the file */
   );"
 
-  tbl$wflow_tbl_create =
+  tbl$wflow_tbl =
     "CREATE TABLE IF NOT EXISTS wflow_tbl(
     wflow_id INTEGER PRIMARY KEY,
     wflow_desc VARCHAR NOT NULL, /* description of the wflow */
@@ -87,7 +152,7 @@ rpwf_schema = function() {
     UNIQUE(df_id, grid_id, cost_id, model_type_id, random_state, py_base_learner_args)
   );"
 
-  tbl$wflow_result_tbl_create =
+  tbl$wflow_result_tbl =
     "CREATE TABLE IF NOT EXISTS wflow_result_tbl(
     result_id INTEGER PRIMARY KEY,
     wflow_id INTEGER UNIQUE NOT NULL,
@@ -104,39 +169,68 @@ rpwf_schema = function() {
   return(tbl)
 }
 
-## Add initial values to the database
-rpwf_db_ini_val = function(con) {
-  ## Add stuff into cost table
-  try({
-    DBI::dbExecute(
-      conn = con,
+#' Add initial values to the `cost_tbl` and `model_type_tbl`
+#'
+#' Add some initial values such as the cost functions and the XGBoost model as
+#' defined in R and Python. Won't update duplicated rows. Expand compatibility
+#' by adding values to this function.
+#'
+#' @param con a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
+#' @param cost_tbl_query a query to add values to the `cost_tbl`
+#' @param model_type_tbl_query a query to add values to the `model_type_tbl`
+#'
+#' @return NULL
+#' @export
+#'
+#' @examples
+#' ?rpwf_db_init()
+rpwf_db_ini_val = function(con,
+                           cost_tbl_query = NULL,
+                           model_type_tbl_query = NULL) {
+  if (is.null(cost_tbl_query)) {
+    cost_tbl_query =
       'INSERT INTO cost_tbl (cost_name, model_mode)
-    VALUES
-    ("roc_auc", "classification"),
-    ("neg_log_loss", "classification");'
-    )
-  }, silent = TRUE)
-  ## Add stuff into the model_type_tbl
-  try({
-    DBI::dbExecute(
-      conn = con,
+      VALUES
+      ("roc_auc", "classification"),
+      ("neg_log_loss", "classification");'
+  }
+  if (is.null(model_type_tbl_query)) {
+    model_type_tbl_query =
       'INSERT INTO model_type_tbl (py_module, py_base_learner, r_engine, model_mode)
-    VALUES
-    ("xgboost", "XGBClassifier", "xgboost", "classification"),
-    ("lightgbm", "LGBMClassifier", "lightgbm", "classification");'
-    )
-  }, silent = TRUE)
+      VALUES
+      ("xgboost", "XGBClassifier", "xgboost", "classification"),
+      ("lightgbm", "LGBMClassifier", "lightgbm", "classification");'
+  }
+  ## Add stuff into cost table
+  try(DBI::dbExecute(conn = con, cost_tbl_query), silent = TRUE)
+  ## Add stuff into the model_type_tbl
+  try(DBI::dbExecute(conn = con, model_type_tbl_query), silent = TRUE)
 }
 
-## Execute the query, add tables and the initial values
+#' Create the database and add initial values
+#'
+#' A wrapper around [rpwf::rpwfDbCreate$execute()] and [rpwf::rpwf_db_ini_val()].
+#' This function iteratively runs through the table creation queries in the schema
+#' object and create the tables after creating a new `rpwfDb` folder and
+#' database specified by the `rpwf_db_con()` function.
+#'
+#' @param con a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
+#' @param schema a [rpwf::rpwf_schema()] object
+#' @return NULL
+#' @export
+#'
+#' @examples
+#' con = rpwf_db_con("db.SQLite", here::here())
+#' rpwf_db_init(con) # Create the database
+#' DBI::dbDisconnect(con)
 rpwf_db_init = function(con, schema) {
   invisible( ### Create the data base
     rpwfDbCreate$new(con = con, query = NULL)$
-      run(schema$cost_tbl_create)$
-      run(schema$model_type_tbl_create)$
-      run(schema$r_grid_tbl_create)$
-      run(schema$df_tbl_create)$
-      run(schema$wflow_tbl_create)$
-      run(schema$wflow_result_tbl_create))
+      run(schema$cost_tbl)$
+      run(schema$model_type_tbl)$
+      run(schema$r_grid_tbl)$
+      run(schema$df_tbl)$
+      run(schema$wflow_tbl)$
+      run(schema$wflow_result_tbl))
   rpwf_db_ini_val(con = con) ### Add some initial values
 }
