@@ -1,4 +1,4 @@
-# Generate the data needed for testing
+# Generate the data needed for testing -----------------------------------------
 rpwf_sim = function(n_train = 100, n_test = 10, seed = 1234) {
   set.seed(seed)
   n = n_train + n_test

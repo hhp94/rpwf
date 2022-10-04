@@ -84,7 +84,7 @@ Base = R6::R6Class(
     create_folder = function() {
       ## Create folder if not exists
       withr::local_dir(self$proj_root_path)
-      folder = paste("pexpDb", self$db_folder, sep = "/")
+      folder = paste("rpwfDb", self$db_folder, sep = "/")
       if (!dir.exists(folder)) {
         message(glue::glue("Creating {folder} folder..."))
         dir.create(folder)
@@ -101,7 +101,7 @@ RGrid = R6::R6Class(
   inherit = Base,
   public = list(
     initialize = function(grid_obj, con, proj_root_path) {
-      stopifnot("Run pexp_grid_gen() first" = "pexp_grid" %in% class(grid_obj))
+      stopifnot("Run rpwf_grid_gen() first" = "rpwf_grid" %in% class(grid_obj))
 
       super$initialize(grid_obj, con, proj_root_path) # Init from the super class
       self$set_hash(rlang::hash(self$grid_obj)) # hash the grid
@@ -111,11 +111,11 @@ RGrid = R6::R6Class(
           .con = self$con
         )
       ))
-      self$set_db_folder("pexp_grids") # Set the root folder to "pexp_grids"
+      self$set_db_folder("rpwf_grids") # Set the root folder to "rpwf_grids"
       self$create_folder() # Create the folder if needed
       self$query_path(
         path_query = glue::glue(
-          'pexpDb', '{self$db_folder}', '{self$hash}.grid.parquet', .sep = "/"
+          'rpwfDb', '{self$db_folder}', '{self$hash}.grid.parquet', .sep = "/"
         ),
         new_export_query = glue::glue_sql(
           'INSERT INTO r_grid_tbl (grid_path, grid_hash) VALUES ({vals*})',
@@ -157,7 +157,7 @@ TrainDf = R6::R6Class(
       self$create_folder() # Create the folder if needed
       self$query_path(
         path_query = glue::glue(
-          'pexpDb', '{self$db_folder}', '{self$hash}.df.parquet', .sep = "/"
+          'rpwfDb', '{self$db_folder}', '{self$hash}.df.parquet', .sep = "/"
         ),
         new_export_query = glue::glue_sql(
           'INSERT INTO df_tbl (idx_col, target, predictors, df_path, df_hash)
@@ -212,8 +212,8 @@ TrainDf = R6::R6Class(
   )
 )
 
-# pexp_grid --------------------------------------------------------------------
-pexp_grid_rename_fns = function(x) {
+# rpwf_grid --------------------------------------------------------------------
+rpwf_grid_rename_fns = function(x) {
   # This function renames the param to SKL API
   dplyr::case_when(
     x == "mtry" ~ "colsample_bytree",
@@ -229,7 +229,7 @@ pexp_grid_rename_fns = function(x) {
 
 ## If we specify fixed parameters, this function handles that. not meant to be
 ## manually called
-pexp_add_fixed_params = function(model, fixed_params, r_grid) {
+rpwf_add_fixed_params = function(model, fixed_params, r_grid) {
   grid = r_grid # generate temporary object to bypass the scoping complications
   if (!model$engine %in% names(fixed_params)) {
     # `fixed_params` list doesn't have model
@@ -250,7 +250,7 @@ pexp_add_fixed_params = function(model, fixed_params, r_grid) {
   return(grid)
 }
 
-pexp_finalize_params = function(model, preproc) {
+rpwf_finalize_params = function(model, preproc) {
   # some parameters (mtry) requires the data to be finalized
   stopifnot("model_spec" %in% class(model) &
               "recipe" %in% class(preproc))
@@ -281,12 +281,12 @@ pexp_finalize_params = function(model, preproc) {
   return(list(pars = finalized_params, n_predictors = length(preds)))
 }
 
-pexp_grid_gen = function(model,
+rpwf_grid_gen = function(model,
                          preproc,
                          .grid_fun,
                          fixed_params = NULL,
                          ...) {
-  params = pexp_finalize_params(model = model, preproc = preproc)
+  params = rpwf_finalize_params(model = model, preproc = preproc)
   r_grid = .grid_fun(x = params$pars, ...)
 
   if ("mtry" %in% params$pars$name) {
@@ -297,12 +297,12 @@ pexp_grid_gen = function(model,
 
   if (!is.null(fixed_params)) {
     ## Add fixed params if provided
-    r_grid = pexp_add_fixed_params(model = model,
+    r_grid = rpwf_add_fixed_params(model = model,
                                    fixed_params = fixed_params,
                                    r_grid = r_grid)
   }
 
-  python_grid = dplyr::rename_with(r_grid, pexp_grid_rename_fns)
-  class(python_grid) = c("pexp_grid", class(tibble::tibble()))
+  python_grid = dplyr::rename_with(r_grid, rpwf_grid_rename_fns)
+  class(python_grid) = c("rpwf_grid", class(tibble::tibble()))
   return(python_grid)
 }
