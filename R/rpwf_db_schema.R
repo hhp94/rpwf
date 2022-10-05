@@ -1,3 +1,4 @@
+# Create a folder and connection -----------------------------------------------
 #' A wrapper for [DBI::dbConnect()] using [RSQLite::SQLite()]
 #'
 #' Creates, if needed, the `rpwfDb` folder in the project root path that's
@@ -21,24 +22,23 @@ rpwf_db_con = function(db_name, proj_root_path){
   return(DBI::dbConnect(RSQLite::SQLite(), dbname = db_path))
 }
 
+# R6 obj to create schema -----------------------------------------------
 #' @title Internal R6 object that set and run a SQL query
 #'
 #' @description
 #' A R6 object that provides a shortcut to setting and executing a SQL query
 #' to create new tables in the database. Not meant to be called manually
-rpwfDbCreate = R6::R6Class("rpwfDbCreate",
+DbCreate = R6::R6Class("DbCreate",
   public = list(
-    #' @field con a [DBI::dbConnect()] object. Created by [rpwf::rpwf_db_con()]
+    #' @field con a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
     con = NULL,
-
-    #' @field query a SQL query to create a table
+    #' @field query pre-defined SQL query to create a table
     query = NULL,
-
     #' @description
-    #' Create an [rpwf::rpwfDbCreate] object. Should be a singleton
+    #' Create an [rpwf::DbCreate] object. Should be a singleton
     #' @param con [DBI::dbConnect()] connection
     #' @param query a SQL query string
-    #' @return A new `rpwfDbCreate` object.
+    #' @return A new `DbCreate` object.
     initialize = function(con, query){
       self$con = con
       self$query = query},
@@ -48,7 +48,7 @@ rpwfDbCreate = R6::R6Class("rpwfDbCreate",
     #' @param query a new SQL query string
     #' @examples
     #' con = rpwf_db_con("db.SQLite", here::here())
-    #' db = rpwfDbCreate(con, "SELECT * FROM wflow_tbl")
+    #' db = DbCreate(con, "SELECT * FROM wflow_tbl")
     #' db$query
     set_query = function(query) {self$query = query; invisible(self)},
 
@@ -66,6 +66,7 @@ rpwfDbCreate = R6::R6Class("rpwfDbCreate",
   )
 )
 
+# Schema description -----------------------------------------------------------
 #' Function contains the db schema
 #'
 #' @description
@@ -169,13 +170,14 @@ rpwf_schema = function() {
   return(tbl)
 }
 
+# Add initial values to new db -------------------------------------------------
 #' Add initial values to the `cost_tbl` and `model_type_tbl`
 #'
 #' Add some initial values such as the cost functions and the XGBoost model as
 #' defined in R and Python. Won't update duplicated rows. Expand compatibility
 #' by adding values to this function.
 #'
-#' @param con a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
+#' @inheritParams rpwf_dm_obj
 #' @param cost_tbl_query a query to add values to the `cost_tbl`
 #' @param model_type_tbl_query a query to add values to the `model_type_tbl`
 #'
@@ -207,14 +209,15 @@ rpwf_db_ini_val = function(con,
   try(DBI::dbExecute(conn = con, model_type_tbl_query), silent = TRUE)
 }
 
+# Wrapper for db creation -------------------------------------------------
 #' Create the database and add initial values
 #'
-#' A wrapper around [rpwf::rpwfDbCreate$execute()] and [rpwf::rpwf_db_ini_val()].
+#' A wrapper around [rpwf::DbCreate$execute()] and [rpwf::rpwf_db_ini_val()].
 #' This function iteratively runs through the table creation queries in the schema
 #' object and create the tables after creating a new `rpwfDb` folder and
 #' database specified by the `rpwf_db_con()` function.
 #'
-#' @param con a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
+#' @inheritParams rpwf_dm_obj
 #' @param schema a [rpwf::rpwf_schema()] object
 #' @return NULL
 #' @export
@@ -225,7 +228,7 @@ rpwf_db_ini_val = function(con,
 #' DBI::dbDisconnect(con)
 rpwf_db_init = function(con, schema) {
   invisible( ### Create the data base
-    rpwfDbCreate$new(con = con, query = NULL)$
+    DbCreate$new(con = con, query = NULL)$
       run(schema$cost_tbl)$
       run(schema$model_type_tbl)$
       run(schema$r_grid_tbl)$

@@ -10,6 +10,8 @@ rpwf_db_del_entry(tbls, id, con)
 \item{tbls}{vector of character of table names, i.e., "cost_tbl", "df_tbl",
 "model_type_tbl", "r_grid_tbl", "r_grid_tbl", "wflow_result_tbl"}
 
+\item{id}{vector of ids to be deleted from a particular table}
+
 \item{con}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object. Created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
 }
 \description{

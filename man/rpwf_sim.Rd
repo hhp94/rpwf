@@ -14,11 +14,11 @@ rpwf_sim(n_train = 100, n_test = 10, seed = 1234)
 \item{seed}{random seed}
 }
 \value{
-a list of train and test dataframes and the id and target column names
+a list of train and test df and the id and target column names
 }
 \description{
 Generate dummy data for testing of the rpwf package
 }
 \examples{
-dim_dat() = rpwf_sim()
+dim_dat = rpwf_sim()
 }

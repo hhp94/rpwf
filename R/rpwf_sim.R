@@ -6,11 +6,11 @@
 #' @param n_test number of test rows
 #' @param seed random seed
 #'
-#' @return a list of train and test dataframes and the id and target column names
+#' @return a list of train and test df and the id and target column names
 #' @export
 #'
 #' @examples
-#' dim_dat() = rpwf_sim()
+#' dim_dat = rpwf_sim()
 rpwf_sim = function(n_train = 100, n_test = 10, seed = 1234) {
   set.seed(seed)
   n = n_train + n_test
@@ -29,9 +29,9 @@ rpwf_sim = function(n_train = 100, n_test = 10, seed = 1234) {
   ))
 }
 
-#' dummy xgb model spec
+#' Create a dummy xgb model spec
 #'
-#' add set_py_engine() to this object
+#' For testing, not meant to be called, add set_py_engine() to this object
 #'
 #' @return a model spec objection
 #' @export
@@ -48,12 +48,14 @@ xgb_model_spec_ = function() {
     parsnip::set_mode("classification")
 }
 
-#' Title
+#' Create a dummy recipe object for testing
+#'
+#' For testing, not meant to be called
 #'
 #' @param sim_dat a [rpwf_sim()] object
 #' @param type either `"train"` or `"test"`
 #'
-#' @return a recipe object
+#' @return a [recipes::recipe()] object
 #' @export
 #'
 #' @examples
@@ -78,3 +80,22 @@ dummy_recipe_ = function(sim_dat, type = "train") {
   }
 }
 
+#' Generate temporary database and connection
+#'
+#' Meant to be called in a `withr::local_tempdir()` environment of a test
+#'
+#' @param db_name Name of the temp database
+#' @param tmp_dir tmp_dir path
+#'
+#' @return a [DBI::dbConnect()] object
+#' @export
+#'
+#' @examples
+#' withr::local_package("DBI")
+#' tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+#' con = dummy_con_(tmp_dir = tmp_dir)
+dummy_con_ = function(db_name = "db.SQLite", tmp_dir){
+  con = rpwf_db_con(db_name, tmp_dir)
+  rpwf_db_init(con, rpwf_schema())
+  return(con)
+}

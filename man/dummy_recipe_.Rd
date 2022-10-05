@@ -2,7 +2,7 @@
 % Please edit documentation in R/rpwf_sim.R
 \name{dummy_recipe_}
 \alias{dummy_recipe_}
-\title{Title}
+\title{Create a dummy recipe object for testing}
 \usage{
 dummy_recipe_(sim_dat, type = "train")
 }
@@ -12,10 +12,10 @@ dummy_recipe_(sim_dat, type = "train")
 \item{type}{either \code{"train"} or \code{"test"}}
 }
 \value{
-a recipe object
+a \code{\link[recipes:recipe]{recipes::recipe()}} object
 }
 \description{
-Title
+For testing, not meant to be called
 }
 \examples{
 test_recipe_train = dummy_recipe_(rpwf_sim)

@@ -7,12 +7,13 @@
 rpwf_db_init(con, schema)
 }
 \arguments{
-\item{con}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+\item{con}{(\code{DBI::dbConnect()})\cr
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
 
 \item{schema}{a \code{\link[=rpwf_schema]{rpwf_schema()}} object}
 }
 \description{
-A wrapper around \code{\link[=rpwfDbCreate$execute]{rpwfDbCreate$execute()}} and \code{\link[=rpwf_db_ini_val]{rpwf_db_ini_val()}}.
+A wrapper around \code{\link[=DbCreate$execute]{DbCreate$execute()}} and \code{\link[=rpwf_db_ini_val]{rpwf_db_ini_val()}}.
 This function iteratively runs through the table creation queries in the schema
 object and create the tables after creating a new \code{rpwfDb} folder and
 database specified by the \code{rpwf_db_con()} function.

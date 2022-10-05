@@ -13,7 +13,11 @@ RoxygenNote: 7.2.1
 Imports: 
     DBI,
     dplyr,
+    glue,
     hardhat,
     parsnip,
+    R6,
     recipes,
     rlang
+Suggests: 
+    dm

@@ -7,7 +7,8 @@
 rpwf_db_ini_val(con, cost_tbl_query = NULL, model_type_tbl_query = NULL)
 }
 \arguments{
-\item{con}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+\item{con}{(\code{DBI::dbConnect()})\cr
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
 
 \item{cost_tbl_query}{a query to add values to the \code{cost_tbl}}
 

@@ -9,7 +9,7 @@ rpwf_db_del_wflow(id, con)
 \arguments{
 \item{id}{numeric vector of workflow ids to be removed.}
 
-\item{con}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+\item{con}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object. Created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
 }
 \description{
 This function specifically just deletes the workflows from the \code{wflow_tbl}
