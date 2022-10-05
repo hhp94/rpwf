@@ -9,3 +9,10 @@ test_that("dummy test data generation works", {
   print(dummy_test_rec)
   expect_true("recipe" %in% class(dummy_test_rec))
 })
+
+test_that("xgb_model_spec_ works", {
+  mod_spec = xgb_model_spec_()
+  print(mod_spec)
+  print(names(mod_spec))
+  expect_true("model_spec" %in% class(mod_spec))
+})

@@ -26,6 +26,7 @@
 #'                    verbosity = 0, silent = TRUE))
 set_py_engine = function(obj, py_base_learner, con = NULL, args = NULL) {
   if(!is.null(con)){
+    message("Connection provided, checking if base learner is in the db")
     avail = DBI::dbGetQuery(
       con, 'SELECT py_base_learner FROM model_type_tbl')$py_base_learner
     if (!py_base_learner %in% avail) {
@@ -43,3 +44,31 @@ set_py_engine = function(obj, py_base_learner, con = NULL, args = NULL) {
   }
   return(obj)
 }
+
+#' Copy sklearn codes into the project root folder
+#'
+#' these python codes are needed to work with the database. After copying the
+#' codes with [rpwf::copy_python_code()], navigate to the "rpwf" folder and run
+#' `python -m pip install -e .` to install the codes as a local python package.
+#'
+#' @param proj_root_path
+#'
+#' @return a newly copied folder "rpwf" under the provided project path
+#' @export
+#'
+#' @examples
+#' copy_python_code(here::here())
+copy_python_code = function(proj_root_path = NULL) {
+  to_folder = paste(proj_root_path, sep = "/")
+  if (!dir.exists(to_folder)) {
+    message("creating folder 'rpwf' under provided root path")
+    dir.create(to_folder)
+  }
+  message("folder 'rpwf' found, copying package python codes into this folder")
+  from_folder = system.file("python", "rpwf", package = "rpwf", mustWork = TRUE)
+  file.copy(from_folder, to_folder, recursive = TRUE)
+  message("here are the files in the 'rpwf' folder")
+  print(list.files(paste(to_folder, "rpwf", sep = "/")))
+  # print(from_folder)
+}
+

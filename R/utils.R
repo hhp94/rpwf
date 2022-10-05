@@ -3,7 +3,7 @@
 # ?devtools::install_deps()
 
 # dep_imp = c("DBI", "parsnip", "hardhat", "recipes", "dplyr", "rlang", "R6",
-#             "glue")
+#             "glue", "jsonlite")
 # for(i in dep_imp){
 #  use_package(i, type = "Imports", min_version = NULL)
 # }

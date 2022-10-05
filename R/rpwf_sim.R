@@ -17,13 +17,13 @@ rpwf_sim = function(n_train = 100, n_test = 10, seed = 1234) {
   df = data.frame(
     X1 = rnorm(n),
     X2 = rnorm(n),
-    X3 = factor(c(rep(1:4, times = n %/% 4), 1:(n %% 4))),
+    X3 = factor(rep(1:4, length.out = n)),
     target = rbinom(n, size = 1, prob = 0.5),
     id = seq_len(n)
   )
   return(list(
-    train = df[1:n_train,],
-    test = df[(n_train + 1):n,],
+    train = df[1:n_train, ],
+    test = df[(n_train + 1):n, ],
     id = "id",
     target = "target"
   ))
