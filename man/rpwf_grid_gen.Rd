@@ -4,7 +4,7 @@
 \alias{rpwf_grid_gen}
 \title{A wrapper around \verb{dials::grid_<functions>} to create a sklearn suitable grid}
 \usage{
-rpwf_grid_gen(model, preproc, .grid_fun, fixed_params = NULL, ...)
+rpwf_grid_gen(model, preproc, .grid_fun, ...)
 }
 \arguments{
 \item{model}{a model spec object defined by \code{{parsnip}}}
@@ -13,11 +13,6 @@ rpwf_grid_gen(model, preproc, .grid_fun, fixed_params = NULL, ...)
 
 \item{.grid_fun}{\code{{dials}} functions e.g., \code{grid_latin_hypercube},
 \code{grid_max_entropy}, etc.,}
-
-\item{fixed_params}{fixed parameters for the respective model spec object.
-NOTE: can also be added in the \code{\link[=set_py_engine]{set_py_engine()}} function where the
-fixed param, is passed to sklearn through the "args" argument.
-e.g, \code{n_trees} for xgboost}
 
 \item{...}{additional arguments for the \code{.grid_fun} functions}
 }

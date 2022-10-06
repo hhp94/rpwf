@@ -27,6 +27,7 @@ hyper param grid generated in R
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_parquet"><a href='../../rpwf/html/Base.html#method-Base-export_parquet'><code>rpwf::Base$export_parquet()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="query_path"><a href='../../rpwf/html/Base.html#method-Base-query_path'><code>rpwf::Base$query_path()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_db_folder"><a href='../../rpwf/html/Base.html#method-Base-set_db_folder'><code>rpwf::Base$set_db_folder()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_df"><a href='../../rpwf/html/Base.html#method-Base-set_df'><code>rpwf::Base$set_df()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_export_query"><a href='../../rpwf/html/Base.html#method-Base-set_export_query'><code>rpwf::Base$set_export_query()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_hash"><a href='../../rpwf/html/Base.html#method-Base-set_hash'><code>rpwf::Base$set_hash()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_path"><a href='../../rpwf/html/Base.html#method-Base-set_path'><code>rpwf::Base$set_path()</code></a></span></li>

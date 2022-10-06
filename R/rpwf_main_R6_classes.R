@@ -37,15 +37,13 @@ Base = R6::R6Class(
     #' @description
     #' This class is the parent of RGrid and TrainDf R6 object, not meant to be
     #' called
-    #' @param df (`data.frame()`)\cr
-    #' the df that holds the hyper param grid of the transformed df itself.
     #' @param con (`DBI::dbConnect()`)\cr
     #' a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
     #' @param proj_root_path (`character()`)\cr
     #' input the project root path.
-    initialize = function(df, con, proj_root_path) {
+    initialize = function(con, proj_root_path) {
       stopifnot("Invalid connection" = DBI::dbIsValid(con)) # Connection is valid
-      self$df = df
+      self$df = NULL
       self$con = con
       self$hash = NULL
       self$export_query = NULL
@@ -94,6 +92,31 @@ Base = R6::R6Class(
     #' @param val (`glue::glue_sql()`)\cr
     #' New SQL query to export metadata
     set_export_query = function(val) {self$export_query = val},
+
+    #' @description
+    #' If the hash of the new object is not found
+    #' in the database, then new data is prepared. If the data
+    #' is found in the metadata but not in the indicated path then new data
+    #' is also prepared. Otherwise, `self$df` is
+    #' NULL and will be skipped by the `Base::self$export_parquet()` method.
+    #' @param val (`data.frame()`)\cr
+    #' Either a recipes::juice() object or a data.frame of the hyper param grid
+    set_df = function(val) {
+      withr::local_dir(new = self$proj_root_path)
+      # set_query_results must be run first
+      if (nrow(self$query_results) == 0L) {
+        # If query yields 0 rows, then create df
+        message("Preparing new data...")
+        self$df = val
+      } else if (!file.exists(self$query_results$path)) {
+        # If parquet file not found but is in found in database
+        message("Metadata is in db, but new data needed...")
+        self$df = val
+      } # Otherwise no transformation needed, leave `self$df` as NULL
+      else {
+        message("File found in the project")
+      }
+    },
 
     #' @description
     #' If the `self$export_query` is generated because metadata is not found in
@@ -211,7 +234,7 @@ TrainDf = R6::R6Class(
     initialize = function(recipe, con, proj_root_path) {
       stopifnot("a recipe object required" = "recipe" %in% class(recipe))
 
-      super$initialize(NULL, con, proj_root_path) # Init from the super class
+      super$initialize(con, proj_root_path) # Init from the super class
       self$prepped = recipes::prep(recipe) # Init the prepped object
       self$term_info = self$prepped$term_info # post-transform train metadata
       self$set_hash(rlang::hash(self$prepped)) # Set the hash of the prepped obj
@@ -223,9 +246,9 @@ TrainDf = R6::R6Class(
       self$set_idx_col() # set index column for pandas
       self$set_target_col() # set target column for pandas
       self$set_predictors() # get the predictors
-      self$set_df() # From the query results, generate df if needed
       self$set_db_folder("TrainDf") # Set the root folder to "TrainDf"
       self$create_folder() # Create the folder if needed
+      self$set_df(recipes::juice(self$prepped)) # Generate df if needed
       self$query_path(
         path_query = glue::glue(
           'rpwfDb', '{self$db_folder}', '{self$hash}.df.parquet', .sep = "/"
@@ -271,28 +294,6 @@ TrainDf = R6::R6Class(
       self$predictors = as.character(
         jsonlite::toJSON(self$term_info[pred, "variable", drop = TRUE])
       )
-    },
-
-    #' @description
-    #' If there are no transformed data that has the hash of the prepped object
-    #' in the database, then new data is juiced from the prep obj. If the data
-    #' is found in the metadata but not in the indicated path then new data
-    #' is also prepped. Otherwise, no transformation is needed and `self$df` is
-    #' NULL and will be skipped by the `Base::self$export_parquet()` method.
-    set_df = function() {
-      withr::local_dir(new = self$proj_root_path)
-      if (nrow(self$query_results) == 0L) {
-        # If query yields 0 rows, then create df
-        message("Transforming data...")
-        self$df = recipes::juice(self$prepped)
-      } else if (!file.exists(self$query_results$path)) {
-        # If parquet file not found but is in found in database
-        message("Transforming data...") # Then transform the data
-        self$df = recipes::juice(self$prepped)
-      } # Otherwise no transformation needed, leave `self$df` as NULL
-      else {
-        message("File found, no transformation needed")
-      }
     }
   )
 )
@@ -322,8 +323,8 @@ RGrid = R6::R6Class(
     initialize = function(grid_obj, con, proj_root_path) {
       stopifnot("Run rpwf_grid_gen() first" = "rpwf_grid" %in% class(grid_obj))
 
-      super$initialize(grid_obj, con, proj_root_path) # Init from the super class
-      self$set_hash(rlang::hash(self$grid_obj)) # hash the grid
+      super$initialize(con, proj_root_path) # Init from the super class
+      self$set_hash(rlang::hash(grid_obj)) # hash the grid
       self$set_query_results(self$exec_query(
         glue::glue_sql( # hash is passed into ?
           'SELECT grid_path AS path FROM r_grid_tbl WHERE grid_hash = ?',
@@ -332,6 +333,7 @@ RGrid = R6::R6Class(
       ))
       self$set_db_folder("rpwf_grids") # Set the root folder to "rpwf_grids"
       self$create_folder() # Create the folder if needed
+      self$set_df(grid_obj) # Generate df if needed
       self$query_path(
         path_query = glue::glue(
           'rpwfDb', '{self$db_folder}', '{self$hash}.grid.parquet', .sep = "/"
@@ -379,45 +381,6 @@ rpwf_grid_rename = function(x) {
   "character") |>
     as.character()
   return(conv_vector)
-}
-
-
-#' Internal function to add fixed parameters to the `{dials}` grid
-#'
-#' Add fixed parameters, e.g., `trees = 150` to overcome default fixed
-#' parameters in sklearn. Names should be provided as {parsnip} hyper param names
-#' because this will be called before renaming. Arguments are provided internally
-#' in `rpwf_grid_gen()`. Not meant to be called manually
-#'
-#' @param model a model spec object defined by `{parsnip}`
-#' @param fixed_params nested named list of fixed params available for this
-#' `{parsnip}` model
-#' @param r_grid the grid generated by `{dials}`
-#'
-#' @return a r_grid with a column of specified fixed parameter
-#' @export
-#' @examples
-#' #Input should be of the form of
-#' list(xgboost = list(trees = 100))
-rpwf_add_fixed_params = function(model, fixed_params, r_grid) {
-  grid = r_grid # generate temporary object to bypass the scoping complications
-  if (!model$engine %in% names(fixed_params)) {
-    # `fixed_params` list doesn't have model
-    message("No fixed params requested for this model")
-    return(grid)
-  }
-  params = fixed_params[[model$engine]] # Get the fixed_param for this model
-  param_names = intersect(names(params), names(model$args))
-  if (length(param_names) == 0) {
-    message("Valid fixed params not found")
-    return(grid)
-  }
-  for (i in param_names) {
-    stopifnot("Fixed param length not 1" = length(params[[i]]) == 1)
-    message("Assigning fixed params")
-    grid[[i]] = params[[i]]
-  }
-  return(grid)
 }
 
 
@@ -475,10 +438,6 @@ rpwf_finalize_params = function(model, preproc) {
 #' @param preproc a recipe object defined by `{recipes}`
 #' @param .grid_fun `{dials}` functions e.g., `grid_latin_hypercube`,
 #' `grid_max_entropy`, etc.,
-#' @param fixed_params fixed parameters for the respective model spec object.
-#' NOTE: can also be added in the [rpwf::set_py_engine()] function where the
-#' fixed param, is passed to sklearn through the "args" argument.
-#' e.g, `n_estimators` for xgboost
 #' @param ... additional arguments for the `.grid_fun` functions
 #'
 #' @return a `rpwf_grid` object, which is just a modified `{dials}` grid but
@@ -487,7 +446,6 @@ rpwf_finalize_params = function(model, preproc) {
 rpwf_grid_gen = function(model,
                          preproc,
                          .grid_fun,
-                         fixed_params = NULL,
                          ...) {
   params = rpwf_finalize_params(model = model, preproc = preproc)
   r_grid = .grid_fun(x = params$pars, ...)
@@ -496,13 +454,6 @@ rpwf_grid_gen = function(model,
     # `colby_sample` is mtry converted into proportion so we need a denominator.
     #  Denominator is number is number of predictors
     r_grid$mtry = round(r_grid$mtry / params$n_predictors, 2)
-  }
-
-  if (!is.null(fixed_params)) {
-    ## Add fixed params if provided
-    r_grid = rpwf_add_fixed_params(model = model,
-                                   fixed_params = fixed_params,
-                                   r_grid = r_grid)
   }
 
   python_grid = dplyr::rename_with(r_grid, rpwf_grid_rename)

@@ -48,6 +48,7 @@ This attribute holds the name of that folder}
 \item \href{#method-Base-set_db_folder}{\code{Base$set_db_folder()}}
 \item \href{#method-Base-set_query_results}{\code{Base$set_query_results()}}
 \item \href{#method-Base-set_export_query}{\code{Base$set_export_query()}}
+\item \href{#method-Base-set_df}{\code{Base$set_df()}}
 \item \href{#method-Base-export_db}{\code{Base$export_db()}}
 \item \href{#method-Base-export_parquet}{\code{Base$export_parquet()}}
 \item \href{#method-Base-export}{\code{Base$export()}}
@@ -63,15 +64,12 @@ This attribute holds the name of that folder}
 This class is the parent of RGrid and TrainDf R6 object, not meant to be
 called
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Base$new(df, con, proj_root_path)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Base$new(con, proj_root_path)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{df}}{(\code{data.frame()})\cr
-the df that holds the hyper param grid of the transformed df itself.}
-
 \item{\code{con}}{(\code{DBI::dbConnect()})\cr
 a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
 
@@ -187,6 +185,28 @@ Change the SQL query to export metadata to database
 \describe{
 \item{\code{val}}{(\code{glue::glue_sql()})\cr
 New SQL query to export metadata}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Base-set_df"></a>}}
+\if{latex}{\out{\hypertarget{method-Base-set_df}{}}}
+\subsection{Method \code{set_df()}}{
+If the hash of the new object is not found
+in the database, then new data is prepared. If the data
+is found in the metadata but not in the indicated path then new data
+is also prepared. Otherwise, \code{self$df} is
+NULL and will be skipped by the \code{Base::self$export_parquet()} method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Base$set_df(val)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{val}}{(\code{data.frame()})\cr
+Either a recipes::juice() object or a data.frame of the hyper param grid}
 }
 \if{html}{\out{</div>}}
 }

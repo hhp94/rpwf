@@ -41,7 +41,6 @@ python into a python list}
 \item \href{#method-TrainDf-set_idx_col}{\code{TrainDf$set_idx_col()}}
 \item \href{#method-TrainDf-set_target_col}{\code{TrainDf$set_target_col()}}
 \item \href{#method-TrainDf-set_predictors}{\code{TrainDf$set_predictors()}}
-\item \href{#method-TrainDf-set_df}{\code{TrainDf$set_df()}}
 \item \href{#method-TrainDf-clone}{\code{TrainDf$clone()}}
 }
 }
@@ -55,6 +54,7 @@ python into a python list}
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_parquet"><a href='../../rpwf/html/Base.html#method-Base-export_parquet'><code>rpwf::Base$export_parquet()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="query_path"><a href='../../rpwf/html/Base.html#method-Base-query_path'><code>rpwf::Base$query_path()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_db_folder"><a href='../../rpwf/html/Base.html#method-Base-set_db_folder'><code>rpwf::Base$set_db_folder()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_df"><a href='../../rpwf/html/Base.html#method-Base-set_df'><code>rpwf::Base$set_df()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_export_query"><a href='../../rpwf/html/Base.html#method-Base-set_export_query'><code>rpwf::Base$set_export_query()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_hash"><a href='../../rpwf/html/Base.html#method-Base-set_hash'><code>rpwf::Base$set_hash()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_path"><a href='../../rpwf/html/Base.html#method-Base-set_path'><code>rpwf::Base$set_path()</code></a></span></li>
@@ -117,20 +117,6 @@ Store the list of predictors defined by the recipe as a json string
 to be parsed in python
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TrainDf$set_predictors()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-TrainDf-set_df"></a>}}
-\if{latex}{\out{\hypertarget{method-TrainDf-set_df}{}}}
-\subsection{Method \code{set_df()}}{
-If there are no transformed data that has the hash of the prepped object
-in the database, then new data is juiced from the prep obj. If the data
-is found in the metadata but not in the indicated path then new data
-is also prepped. Otherwise, no transformation is needed and \code{self$df} is
-NULL and will be skipped by the \code{Base::self$export_parquet()} method.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TrainDf$set_df()}\if{html}{\out{</div>}}
 }
 
 }

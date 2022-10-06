@@ -48,6 +48,21 @@ xgb_model_spec_ = function() {
     parsnip::set_mode("classification")
 }
 
+
+#' Create a dummy xgb model spec
+#'
+#' For testing, not meant to be called, have no specified tuning parameters to
+#' test edge case of grid generation. Add set_py_engine() to this object
+#'
+#' @return a model spec objection
+#' @export
+xgb_model_spec_no_tune_ = function() {
+  parsnip::boost_tree() |>
+    parsnip::set_engine("xgboost") |>
+    parsnip::set_mode("classification")
+}
+
+
 #' Create a dummy recipe object for testing
 #'
 #' For testing, not meant to be called
