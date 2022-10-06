@@ -363,15 +363,22 @@ RGrid = R6::R6Class(
 #' @examples
 #' rpwf_grid_rename("mtry") # "colsample_bytree"
 rpwf_grid_rename = function(x) {
-  switch(x,
-         "mtry" = "colsample_bytree",
-         "trees" = "n_estimators",
-         "min_n" = "min_child_weight",
-         "tree_depth" = "max_depth",
-         "learn_rate" = "learning_rate",
-         "loss_reduction" = "gamma",
-         "sample_size" = "subsample",
-         x)
+  conv_vector = vapply(x, \(name) {
+    switch(
+      name,
+      "mtry" = "colsample_bytree",
+      "trees" = "n_estimators",
+      "min_n" = "min_child_weight",
+      "tree_depth" = "max_depth",
+      "learn_rate" = "learning_rate",
+      "loss_reduction" = "gamma",
+      "sample_size" = "subsample",
+      name
+    )
+  },
+  "character") |>
+    as.character()
+  return(conv_vector)
 }
 
 
@@ -468,8 +475,10 @@ rpwf_finalize_params = function(model, preproc) {
 #' @param preproc a recipe object defined by `{recipes}`
 #' @param .grid_fun `{dials}` functions e.g., `grid_latin_hypercube`,
 #' `grid_max_entropy`, etc.,
-#' @param fixed_params fixed parameters for the respective model spec object,
-#' e.g, `n_trees` for xgboost
+#' @param fixed_params fixed parameters for the respective model spec object.
+#' NOTE: can also be added in the [rpwf::set_py_engine()] function where the
+#' fixed param, is passed to sklearn through the "args" argument.
+#' e.g, `n_estimators` for xgboost
 #' @param ... additional arguments for the `.grid_fun` functions
 #'
 #' @return a `rpwf_grid` object, which is just a modified `{dials}` grid but
