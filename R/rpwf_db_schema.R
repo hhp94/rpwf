@@ -113,7 +113,7 @@ rpwf_schema = function() {
   tbl$r_grid_tbl =
     "CREATE TABLE IF NOT EXISTS r_grid_tbl(
     grid_id INTEGER PRIMARY KEY,
-    grid_path VARCHAR UNIQUE NOT NULL, /* Path to grid parquet*/
+    grid_path VARCHAR UNIQUE, /* Path to grid parquet, one NULL is accepted*/
     grid_hash VARCHAR UNIQUE NOT NULL /* Hash of the grid for caching */
   );"
 
@@ -121,7 +121,7 @@ rpwf_schema = function() {
     "CREATE TABLE IF NOT EXISTS df_tbl(
     df_id INTEGER PRIMARY KEY,
     idx_col VARCHAR NOT NULL, /* id column for pandas index */
-    target VARCHAR NOT NULL, /* target column */
+    target VARCHAR, /* target column, NULL if test data.frame */
     predictors VARCHAR NOT NULL, /* predictors columns */
     df_path VARCHAR UNIQUE NOT NULL, /* Path to the parquet file of the experiment */
     df_hash VARCHAR UNIQUE NOT NULL /* Hash of the *recipe* to juice the file */
@@ -178,35 +178,33 @@ rpwf_schema = function() {
 #' by adding values to this function.
 #'
 #' @inheritParams rpwf_dm_obj
-#' @param cost_tbl_query a query to add values to the `cost_tbl`
-#' @param model_type_tbl_query a query to add values to the `model_type_tbl`
 #'
 #' @return NULL
 #' @export
 #'
 #' @examples
 #' ?rpwf_db_init()
-rpwf_db_ini_val = function(con,
-                           cost_tbl_query = NULL,
-                           model_type_tbl_query = NULL) {
-  if (is.null(cost_tbl_query)) {
-    cost_tbl_query =
-      'INSERT INTO cost_tbl (cost_name, model_mode)
-      VALUES
-      ("roc_auc", "classification"),
-      ("neg_log_loss", "classification");'
-  }
-  if (is.null(model_type_tbl_query)) {
-    model_type_tbl_query =
-      'INSERT INTO model_type_tbl (py_module, py_base_learner, r_engine, model_mode)
-      VALUES
-      ("xgboost", "XGBClassifier", "xgboost", "classification"),
-      ("lightgbm", "LGBMClassifier", "lightgbm", "classification");'
-  }
+rpwf_db_ini_val = function(con) {
+  cost_tbl_query =
+    'INSERT INTO cost_tbl (cost_name, model_mode)
+    VALUES
+    ("roc_auc", "classification"),
+    ("neg_log_loss", "classification");'
+  model_type_tbl_query =
+    'INSERT INTO model_type_tbl (py_module, py_base_learner, r_engine, model_mode)
+    VALUES
+    ("xgboost", "XGBClassifier", "xgboost", "classification"),
+    ("lightgbm", "LGBMClassifier", "lightgbm", "classification");'
+  grid_tbl_query =
+    'INSERT INTO r_grid_tbl (grid_hash)
+    VALUES
+    ("5963bac0ddd4b0c3af914e1d4375ed4e");' # rlang::hash for NA
   ## Add stuff into cost table
   try(DBI::dbExecute(conn = con, cost_tbl_query), silent = TRUE)
   ## Add stuff into the model_type_tbl
   try(DBI::dbExecute(conn = con, model_type_tbl_query), silent = TRUE)
+  ## Add the empty values for the r grid
+  try(DBI::dbExecute(conn = con, grid_tbl_query), silent = TRUE)
 }
 
 # Wrapper for db creation -------------------------------------------------

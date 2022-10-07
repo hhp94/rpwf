@@ -66,7 +66,8 @@ Base = R6::R6Class(
     set_hash = function(val) {self$hash = as.character(val)},
 
     #' @description
-    #' Change the path where the object is stored
+    #' Change the path where the object is stored. Is NA only when no grid is
+    #' provided. Have to provide a train data
     #' @param val (`character()`)\cr
     #' Path to store the object on disk
     set_path = function(val) {self$path = val},
@@ -108,7 +109,8 @@ Base = R6::R6Class(
         # If query yields 0 rows, then create df
         message("Preparing new data...")
         self$df = val
-      } else if (!file.exists(self$query_results$path)) {
+      } else if (!is.na(self$query_results$path) &
+                 !file.exists(self$query_results$path)) {
         # If parquet file not found but is in found in database
         message("Metadata is in db, but new data needed...")
         self$df = val
@@ -138,7 +140,9 @@ Base = R6::R6Class(
     #' as a parquet file to the location specified in the metadata.
     export_parquet = function() {
       withr::local_dir(self$proj_root_path)
-      if (!file.exists(self$path)) {
+      if (is.na(self$path)){
+        message("No grid provided\n")
+      } else if (!file.exists(self$path)) {
         message("Writing parquet file\n")
         arrow::write_parquet(self$df, self$path)
       } else {
@@ -150,22 +154,20 @@ Base = R6::R6Class(
     #' @description
     #' Wrapper around exporting information to the db and writing the parquet
     #' file
-    export = function() {
-      self$export_db()$export_parquet()
-    },
+    export = function() {self$export_db()$export_parquet()},
 
     #' @description
     #' If the db query found no existing metadata, then an export path is made.
     #' If the metadata is found by the data is not found, then an export path
     #' is also made. Else get the path from the metadata in the db
-    #' @param path_query (`character()`)\cr
+    #' @param new_path (`character()`)\cr
     #' Path to the object
     #' @param new_export_query (`glue::glue_sql()`)\cr
     #' SQL query to export the obj metadata to the db
-    query_path = function(path_query, new_export_query) {
+    query_path = function(new_path, new_export_query) {
       # If the query generate no entry, then make a path
       if (nrow(self$query_results) == 0L) {
-        self$set_path(path_query)
+        self$set_path(new_path)
         self$set_export_query(new_export_query)
       } else {
         # Else get the path from the query results and assign to self$path
@@ -250,7 +252,7 @@ TrainDf = R6::R6Class(
       self$create_folder() # Create the folder if needed
       self$set_df(recipes::juice(self$prepped)) # Generate df if needed
       self$query_path(
-        path_query = glue::glue(
+        new_path = glue::glue(
           'rpwfDb', '{self$db_folder}', '{self$hash}.df.parquet', .sep = "/"
         ),
         new_export_query = glue::glue_sql(
@@ -281,6 +283,7 @@ TrainDf = R6::R6Class(
         self$target = self$term_info[targ, "variable", drop = TRUE]
       } else {
         message("No outcome added. Add in recipe, or assuming this is test data")
+        self$target = NA
       }
       invisible(self)
     },
@@ -321,8 +324,6 @@ RGrid = R6::R6Class(
     #' @param proj_root_path (`character()`)\cr
     #' input the project root path.
     initialize = function(grid_obj, con, proj_root_path) {
-      stopifnot("Run rpwf_grid_gen() first" = "rpwf_grid" %in% class(grid_obj))
-
       super$initialize(con, proj_root_path) # Init from the super class
       self$set_hash(rlang::hash(grid_obj)) # hash the grid
       self$set_query_results(self$exec_query(
@@ -335,7 +336,7 @@ RGrid = R6::R6Class(
       self$create_folder() # Create the folder if needed
       self$set_df(grid_obj) # Generate df if needed
       self$query_path(
-        path_query = glue::glue(
+        new_path = glue::glue(
           'rpwfDb', '{self$db_folder}', '{self$hash}.grid.parquet', .sep = "/"
         ),
         new_export_query = glue::glue_sql(
@@ -365,21 +366,22 @@ RGrid = R6::R6Class(
 #' @examples
 #' rpwf_grid_rename("mtry") # "colsample_bytree"
 rpwf_grid_rename = function(x) {
-  conv_vector = vapply(x, \(name) {
-    switch(
-      name,
-      "mtry" = "colsample_bytree",
-      "trees" = "n_estimators",
-      "min_n" = "min_child_weight",
-      "tree_depth" = "max_depth",
-      "learn_rate" = "learning_rate",
-      "loss_reduction" = "gamma",
-      "sample_size" = "subsample",
-      name
+  conv_vector = as.character(
+    vapply(x, \(name) {
+      switch(
+        name,
+        "mtry" = "colsample_bytree",
+        "trees" = "n_estimators",
+        "min_n" = "min_child_weight",
+        "tree_depth" = "max_depth",
+        "learn_rate" = "learning_rate",
+        "loss_reduction" = "gamma",
+        "sample_size" = "subsample",
+        name
+      )
+    },"character"
     )
-  },
-  "character") |>
-    as.character()
+  )
   return(conv_vector)
 }
 
@@ -445,18 +447,23 @@ rpwf_finalize_params = function(model, preproc) {
 #' @export
 rpwf_grid_gen = function(model,
                          preproc,
-                         .grid_fun,
+                         .grid_fun = NULL,
                          ...) {
   params = rpwf_finalize_params(model = model, preproc = preproc)
+
+  if (nrow(params$pars) == 0 | is.null(.grid_fun)) {
+    message(paste("No tuning is assumed, either no hyper params are provided",
+                  "in the model spec or .grid_fun is NA or NULL", sep = " "))
+    return(NA) #If hash of NA is changed, has to update rpwf_db_ini_val()
+  }
+
   r_grid = .grid_fun(x = params$pars, ...)
 
-  if ("mtry" %in% params$pars$name) {
+  if ("mtry" %in% colnames(r_grid)) {
     # `colby_sample` is mtry converted into proportion so we need a denominator.
     #  Denominator is number is number of predictors
     r_grid$mtry = round(r_grid$mtry / params$n_predictors, 2)
   }
 
-  python_grid = dplyr::rename_with(r_grid, rpwf_grid_rename)
-  class(python_grid) = c("rpwf_grid", class(tibble::tibble()))
-  return(python_grid)
+  return(dplyr::rename_with(r_grid, rpwf_grid_rename))
 }

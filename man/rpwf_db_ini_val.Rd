@@ -4,15 +4,11 @@
 \alias{rpwf_db_ini_val}
 \title{Add initial values to the \code{cost_tbl} and \code{model_type_tbl}}
 \usage{
-rpwf_db_ini_val(con, cost_tbl_query = NULL, model_type_tbl_query = NULL)
+rpwf_db_ini_val(con)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
 a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
-
-\item{cost_tbl_query}{a query to add values to the \code{cost_tbl}}
-
-\item{model_type_tbl_query}{a query to add values to the \code{model_type_tbl}}
 }
 \description{
 Add some initial values such as the cost functions and the XGBoost model as

@@ -1,8 +1,6 @@
 test_that("test if the python codes folder can be moved to the root path", {
-  withr::local_package("fs")
-
   tmp_dir = withr::local_tempdir()
-  copy_python_code(tmp_dir)
+  rpwf_cp_py_codes(tmp_dir)
   python_codes = paste(tmp_dir, "rpwf", sep = "/")
   expect_true(dir.exists(python_codes))
   copied_files = sort(list.files(python_codes))
@@ -17,18 +15,16 @@ test_that("set_py_engine added py_base_learner attributes", {
 })
 
 test_that("set_py_engine added py_base_learner_args attributes", {
-  withr::local_package("jsonlite")
   mod_spec = xgb_model_spec_()
   modified_spec = mod_spec |>
     set_py_engine("XGBClassifier",
                   args = list(eval_metric = "logloss", silent = TRUE))
   expect_type(modified_spec$py_base_learner_args, "character")
-  expect_equal(parse_json(modified_spec$py_base_learner_args),
+  expect_equal(jsonlite::parse_json(modified_spec$py_base_learner_args),
                list(eval_metric = "logloss", silent = TRUE))
 })
 
 test_that("set_py_engine check is working", {
-  withr::local_package("DBI")
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
   con = dummy_con_(tmp_dir = tmp_dir)
 

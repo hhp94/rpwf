@@ -49,7 +49,7 @@ set_py_engine = function(obj, py_base_learner, con = NULL, args = NULL) {
 #' Copy sklearn codes into the project root folder
 #'
 #' these python codes are needed to work with the database. After copying the
-#' codes with [rpwf::copy_python_code()], navigate to the "rpwf" folder and run
+#' codes with [rpwf::rpwf_cp_py_codes()], navigate to the "rpwf" folder and run
 #' `python -m pip install -e .` to install the codes as a local python package.
 #'
 #' @param proj_root_path
@@ -58,8 +58,8 @@ set_py_engine = function(obj, py_base_learner, con = NULL, args = NULL) {
 #' @export
 #'
 #' @examples
-#' copy_python_code(here::here())
-copy_python_code = function(proj_root_path = NULL) {
+#' rpwf_cp_py_codes(here::here())
+rpwf_cp_py_codes = function(proj_root_path = NULL) {
   to_folder = paste(proj_root_path, sep = "/")
   if (!dir.exists(to_folder)) {
     message("creating folder 'rpwf' under provided root path")

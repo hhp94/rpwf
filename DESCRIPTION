@@ -17,6 +17,7 @@ Imports:
     hardhat,
     jsonlite,
     parsnip,
+    purrr,
     R6,
     recipes,
     rlang

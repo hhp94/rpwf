@@ -4,7 +4,7 @@
 \alias{rpwf_grid_gen}
 \title{A wrapper around \verb{dials::grid_<functions>} to create a sklearn suitable grid}
 \usage{
-rpwf_grid_gen(model, preproc, .grid_fun, ...)
+rpwf_grid_gen(model, preproc, .grid_fun = NULL, ...)
 }
 \arguments{
 \item{model}{a model spec object defined by \code{{parsnip}}}

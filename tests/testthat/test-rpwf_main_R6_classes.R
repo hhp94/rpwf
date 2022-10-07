@@ -1,9 +1,5 @@
 # Test TrainDf R6 class --------------------------------------------------------
-test_that("test the initialization of the TrainDf class", {
-  withr::local_package("DBI")
-  withr::local_package("R6")
-  withr::local_package("jsonlite")
-
+test_that("Test the initialization of the TrainDf class", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
   con = dummy_con_(tmp_dir = tmp_dir)
 
@@ -15,7 +11,7 @@ test_that("test the initialization of the TrainDf class", {
   expect_equal(train_df_obj$db_folder, "TrainDf")
   expect_equal(train_df_obj$idx_col, "id")
   expect_equal(train_df_obj$target, "target")
-  expect_equal(parse_json(train_df_obj$predictors),
+  expect_equal(jsonlite::parse_json(train_df_obj$predictors),
                list("X1", "X2", "X3_X1", "X3_X2", "X3_X3", "X3_X4"))
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
   expect_true(is.data.frame(train_df_obj$query_results))
@@ -24,12 +20,7 @@ test_that("test the initialization of the TrainDf class", {
   expect_true(!is.null(train_df_obj$export_query))
 })
 
-test_that("test the export() method of the TrainDf class", {
-  withr::local_package("DBI")
-  withr::local_package("R6")
-  withr::local_package("jsonlite")
-  withr::local_package("glue")
-
+test_that("Test the export() method of the TrainDf class", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
   con = dummy_con_(tmp_dir = tmp_dir)
 
@@ -41,7 +32,8 @@ test_that("test the export() method of the TrainDf class", {
 
   # Check if the data is exported into the database
   expect_equal(
-    DBI::dbGetQuery(con, glue("SELECT df_hash FROM df_tbl WHERE df_id = 1"))$df_hash,
+    DBI::dbGetQuery(
+      con, glue::glue("SELECT df_hash FROM df_tbl WHERE df_id = 1"))$df_hash,
     train_df_obj$hash
   )
   expect_true(file.exists(paste(tmp_dir, train_df_obj$path, sep = "/")))
@@ -53,12 +45,7 @@ test_that("test the export() method of the TrainDf class", {
   expect_true(file.exists(paste(tmp_dir, train_df_obj$path, sep = "/")))
 })
 
-test_that("test that export() method won't add repeated rows class", {
-  withr::local_package("DBI")
-  withr::local_package("R6")
-  withr::local_package("jsonlite")
-  withr::local_package("glue")
-
+test_that("Test that export() method won't add repeated rows class", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
   con = dummy_con_(tmp_dir = tmp_dir)
 
@@ -79,6 +66,31 @@ test_that("test that export() method won't add repeated rows class", {
   expect_equal(train_df_obj_repeated$path, as.character(train_df_obj$path))
 })
 
+test_that("Check if test data (no outcome) can be exported", {
+  tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+  con = dummy_con_(tmp_dir = tmp_dir)
+
+  dummy_test_rec = dummy_recipe_(rpwf_sim(), type = "test")
+  # initialization of a new TrainDf object
+  expect_message(TrainDf$new(dummy_test_rec, con, tmp_dir),
+                 regexp = "No outcome added")
+
+  test_df_obj = TrainDf$new(dummy_test_rec, con, tmp_dir)
+  # write the parquet and export the database
+  test_df_obj$export()
+  # initialize a new TrainDf object using the same recipe
+  test_df_obj_repeated = TrainDf$new(dummy_test_rec, con, tmp_dir)
+  # If we try the same recipe, hash check would find one row
+  expect_equal(nrow(test_df_obj_repeated$query_results), 1)
+  # if hash check find one row, then export query would return NULL
+  expect_true(is.null(test_df_obj_repeated$export_query))
+  # `recipes::juice()` won't run, so self$df is NULL
+  expect_true(is.null(test_df_obj_repeated$df))
+  # and the path to the file would be the same
+  expect_equal(test_df_obj_repeated$path, as.character(test_df_obj$path))
+})
+
+
 # Test Rgrid generation --------------------------------------------------------
 test_that("Test the renaming function", {
   # Check if individual value works
@@ -93,9 +105,6 @@ test_that("Test the renaming function", {
 
 test_that("Test rpwf_grid_gen() with tune()", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
-  withr::local_package("jsonlite")
-  withr::local_package("dials")
-
   con = dummy_con_(tmp_dir = tmp_dir)
 
   dummy_test_rec = dummy_recipe_(rpwf_sim(), type = "train")
@@ -112,31 +121,29 @@ test_that("Test rpwf_grid_gen() with tune()", {
 
   expect_equal(c(nrow(c_grid_lhcube), ncol(c_grid_lhcube)), c(grid_size, 6))
   expect_equal(c(nrow(c_grid_rand), ncol(c_grid_rand)), c(grid_size, 6))
-  expect_true("rpwf_grid" %in% class(c_grid_rand))
+  expect_error(partial_fns(.grid_fun = NA)) # NA is not a function
+  expect_message(partial_fns(.grid_fun = NULL), regex = "No tuning is assumed")
+  expect_true(is.na(partial_fns(.grid_fun = NULL)))
 })
 
 test_that("Test rpwf_grid_gen() no tuning param", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
-  withr::local_package("jsonlite")
-  withr::local_package("dials")
-
   con = dummy_con_(tmp_dir = tmp_dir)
 
   dummy_test_rec = dummy_recipe_(rpwf_sim(), type = "train")
-  dummy_mod_spec = xgb_model_spec_no_tune_() |>
+  no_tune_spec = xgb_model_spec_no_tune_() |>
     set_py_engine("XGBClassifier",
                   args = list(eval_metric = "logloss", silent = TRUE))
   grid_size = 10
   # Test the generation of the grids
-  partial_fns = purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+  partial_fns = purrr::partial(rpwf_grid_gen, no_tune_spec, dummy_test_rec,
                                size = grid_size)
 
   c_grid_lhcube = partial_fns(.grid_fun = dials::grid_latin_hypercube)
   c_grid_rand = partial_fns(.grid_fun = dials::grid_random)
 
-  expect_equal(c(nrow(c_grid_lhcube), ncol(c_grid_lhcube)), c(grid_size, 6))
-  expect_equal(c(nrow(c_grid_rand), ncol(c_grid_rand)), c(grid_size, 6))
-  expect_true("rpwf_grid" %in% class(c_grid_rand))
+  expect_true(is.na(c_grid_lhcube))
+  expect_true(is.na(c_grid_rand))
 })
 
 test_that("Test rpwf_finalize_params()", {
@@ -148,18 +155,13 @@ test_that("Test rpwf_finalize_params()", {
     set_py_engine("XGBClassifier",
                   args = list(eval_metric = "logloss", silent = TRUE))
   expect_equal(nrow(rpwf_finalize_params(dummy_mod_spec, dummy_test_rec)$par), 6)
+  # returning no params so r_grid_gen() would return an NA
   expect_equal(nrow(rpwf_finalize_params(dummy_mod_spec_no_tune_,
                                          dummy_test_rec)$par), 0)
 })
 
-
 # Test RGrid R6 class --------------------------------------------------------
-test_that("test the initialization of the RGrid class", {
-  withr::local_package("DBI")
-  withr::local_package("R6")
-  withr::local_package("jsonlite")
-  withr::local_package("dials")
-
+test_that("Test the initialization of the RGrid class", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
   con = dummy_con_(tmp_dir = tmp_dir)
 
@@ -184,13 +186,30 @@ test_that("test the initialization of the RGrid class", {
   expect_true(!is.null(r_grid_obj$export_query))
 })
 
-test_that("test the export() method of the RGrid class", {
-  withr::local_package("DBI")
-  withr::local_package("R6")
-  withr::local_package("jsonlite")
-  withr::local_package("dials")
-  withr::local_package("glue")
+test_that("Test passing NA to RGrid class", {
+  tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+  con = dummy_con_(tmp_dir = tmp_dir)
 
+  # Generate an object
+  r_grid_obj = RGrid$new(NA, con, tmp_dir)
+  # write the parquet and export the database
+
+  r_grid_obj$export()
+
+  # Check if the data is exported into the database
+  expect_equal(
+    DBI::dbGetQuery(
+      con,
+      glue::glue("SELECT grid_hash FROM r_grid_tbl WHERE grid_id = 1"))$grid_hash,
+    r_grid_obj$hash
+  )
+
+  expect_true(is.na(r_grid_obj$path)) # path is NA because its NULL in the db
+  expect_null(r_grid_obj$export_query) # since a query is found, export_q is NULL
+  expect_null(r_grid_obj$df) # since a query is found, df is NULL
+})
+
+test_that("Test the export() method of the RGrid class", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
   con = dummy_con_(tmp_dir = tmp_dir)
 
@@ -200,6 +219,7 @@ test_that("test the export() method of the RGrid class", {
     set_py_engine("XGBClassifier",
                   args = list(eval_metric = "logloss", silent = TRUE))
   grid_size = 10
+
   # Test the generation of the grids
   partial_fns = purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
                                size = grid_size)
@@ -215,7 +235,7 @@ test_that("test the export() method of the RGrid class", {
   expect_equal(
     DBI::dbGetQuery(
       con,
-      glue("SELECT grid_hash FROM r_grid_tbl WHERE grid_id = 1"))$grid_hash,
+      glue::glue("SELECT grid_hash FROM r_grid_tbl WHERE grid_id = 2"))$grid_hash,
     r_grid_obj$hash
   )
   expect_true(file.exists(paste(tmp_dir, r_grid_obj$path, sep = "/")))
@@ -227,13 +247,7 @@ test_that("test the export() method of the RGrid class", {
   expect_true(file.exists(paste(tmp_dir, r_grid_obj$path, sep = "/")))
 })
 
-test_that("test that export() method won't add repeated rows class", {
-  withr::local_package("DBI")
-  withr::local_package("R6")
-  withr::local_package("jsonlite")
-  withr::local_package("dials")
-  withr::local_package("glue")
-
+test_that("Test export() method won't add repeated rows class", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
   con = dummy_con_(tmp_dir = tmp_dir)
 
@@ -246,7 +260,6 @@ test_that("test that export() method won't add repeated rows class", {
   # Test the generation of the grids
   partial_fns = purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
                                size = grid_size)
-
   c_grid_lhcube = partial_fns(.grid_fun = dials::grid_latin_hypercube)
 
   # Generate an object

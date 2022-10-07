@@ -120,7 +120,8 @@ New hash, either an integer or string}
 \if{html}{\out{<a id="method-Base-set_path"></a>}}
 \if{latex}{\out{\hypertarget{method-Base-set_path}{}}}
 \subsection{Method \code{set_path()}}{
-Change the path where the object is stored
+Change the path where the object is stored. Is NA only when no grid is
+provided. Have to provide a train data
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$set_path(val)}\if{html}{\out{</div>}}
 }
@@ -253,13 +254,13 @@ If the db query found no existing metadata, then an export path is made.
 If the metadata is found by the data is not found, then an export path
 is also made. Else get the path from the metadata in the db
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Base$query_path(path_query, new_export_query)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Base$query_path(new_path, new_export_query)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{path_query}}{(\code{character()})\cr
+\item{\code{new_path}}{(\code{character()})\cr
 Path to the object}
 
 \item{\code{new_export_query}}{(\code{glue::glue_sql()})\cr
