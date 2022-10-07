@@ -18,12 +18,12 @@ a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=
 tibble with the added column "df_id"
 }
 \description{
-Add the \code{\link[=TrainDf]{TrainDf()}} R6 objects using provided recipes. Similar to add_grids, this
-object does the heavy lifting of generating the path, parquet, and updating
-the database.
+Add the \code{\link[=TrainDf]{TrainDf()}} R6 objects using provided recipes. Similar to add_grids,
+this object does the heavy lifting of generating the path, parquet, and
+updating the database.
 }
 \details{
-For each recipe, initialize a new TrainDf(), call self$export(), then return
+For each recipe, initialize a new \code{\link[=TrainDf]{TrainDf()}}, call self$export(), then return
 the object. This make sure the same object called twice will just fetch
 the result from the previous call.
 }

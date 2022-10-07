@@ -1,7 +1,7 @@
 test_that("rpwf_workflow_set()", {
   dummy_test_rec = dummy_recipe_(rpwf_sim(), type = "train")
   dummy_mod_spec = xgb_model_spec_() |>
-    set_py_engine("XGBClassifier",
+    set_py_engine("xgboost", "XGBClassifier",
                   args = list(eval_metric = "logloss", silent = TRUE))
   expect_equal(
     nrow(rpwf_workflow_set(
@@ -12,34 +12,46 @@ test_that("rpwf_workflow_set()", {
 })
 
 test_that("rpwf_add_model_info()", {
+  tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+  con = dummy_con_(tmp_dir = tmp_dir)
+
   t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
-                        list(set_py_engine(xgb_model_spec_(), "XGBClassifier")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
                         list("neg_log_loss"))
 
-  t1 = rpwf_add_model_info(t)
+  t1 = rpwf_add_model_info(t, con)
+  # print(t1)
   expect_true(!all(c("py_base_learner_args", "model_mode") %in% names(t)))
   expect_true(all(c("py_base_learner_args", "model_mode") %in% names(t1)))
 })
 
 test_that("rpwf_add_desc()", {
+  tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+  con = dummy_con_(tmp_dir = tmp_dir)
+
   t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
-                        list(set_py_engine(xgb_model_spec_(), "XGBClassifier")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
                         list("neg_log_loss"))
 
-  t1 = rpwf_add_model_info(t)
+  t1 = rpwf_add_model_info(t, con)
   t2 = rpwf_add_desc(t1)
   expect_true(!"wflow_desc" %in% names(t1))
   expect_true("wflow_desc" %in% names(t2))
 })
 
 test_that("rpwf_add_grid_param()", {
-  t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
-                        list(set_py_engine(xgb_model_spec_(), "XGBClassifier")),
-                        list("neg_log_loss"))
+  tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+  con = dummy_con_(tmp_dir = tmp_dir)
 
   custom_grid = function(x){invisible(list(x)); return(mtcars)}
+  t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
+                        list("neg_log_loss"))
 
-  t1 = rpwf_add_model_info(t)
+  t1 = rpwf_add_model_info(t, con)
   t2 = rpwf_add_desc(t1)
   t3a = rpwf_add_grid_param(t2, custom_grid, seed = 1234)
   expect_equal(t3a$grids[[1]], mtcars)
@@ -53,10 +65,11 @@ test_that("rpwf_add_grids()", {
   con = dummy_con_(tmp_dir = tmp_dir)
 
   t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
-                        list(set_py_engine(xgb_model_spec_(), "XGBClassifier")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
                         list("neg_log_loss"))
 
-  t1 = rpwf_add_model_info(t)
+  t1 = rpwf_add_model_info(t, con)
   t2 = rpwf_add_desc(t1)
   t3 = rpwf_add_grid_param(t2, dials::grid_random, seed = 1234, size = 5)
   t4a = rpwf_add_grids(t3, con, tmp_dir)
@@ -75,7 +88,7 @@ test_that("rpwf_add_dfs()", {
 
   tmp_func = function(obj){
     obj |>
-      rpwf_add_model_info() |>
+      rpwf_add_model_info(con) |>
       rpwf_add_desc() |>
       rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
       rpwf_add_grids(con, tmp_dir) |>
@@ -83,12 +96,14 @@ test_that("rpwf_add_dfs()", {
   }
   # Add a train df
   t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
-                        list(set_py_engine(xgb_model_spec_(), "XGBClassifier")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
                         list("neg_log_loss")) |>
     tmp_func()
   # Add a test df
   t1 = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "test")),
-                        list(set_py_engine(xgb_model_spec_(), "XGBClassifier")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
                         list("neg_log_loss")) |>
     tmp_func()
 
@@ -101,9 +116,10 @@ test_that("rpwf_add_cost()", {
   con = dummy_con_(tmp_dir = tmp_dir)
   # Add a train df
   t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
-                        list(set_py_engine(xgb_model_spec_(), "XGBClassifier")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
                         list("neg_log_loss")) |>
-    rpwf_add_model_info() |>
+    rpwf_add_model_info(con) |>
     rpwf_add_desc() |>
     rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
     rpwf_add_grids(con, tmp_dir) |>
@@ -112,3 +128,55 @@ test_that("rpwf_add_cost()", {
   t1a = rpwf_add_cost(t, con)
   expect_equal(t1a$cost_id, 2)
 })
+
+test_that("rpwf_add_model_type()", {
+  tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+  con = dummy_con_(tmp_dir = tmp_dir)
+  # Add a train df
+  t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
+                        list("neg_log_loss")) |>
+    rpwf_add_model_info(con) |>
+    rpwf_add_desc() |>
+    rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
+    rpwf_add_grids(con, tmp_dir) |>
+    rpwf_add_dfs(con, tmp_dir, 1234) |>
+    rpwf_add_cost(con)
+
+  # print(t)
+  t1a = rpwf_add_model_type(t, con)
+  expect_equal(t1a$model_type_id, 1)
+})
+
+test_that("rpwf_add_random_state()", {
+  tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+  con = dummy_con_(tmp_dir = tmp_dir)
+  # Add a train df
+  t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
+                        list(set_py_engine(xgb_model_spec_(),
+                                           "xgboost", "XGBClassifier")),
+                        list("neg_log_loss")) |>
+    rpwf_add_model_info(con) |>
+    rpwf_add_desc() |>
+    rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
+    rpwf_add_grids(con, tmp_dir) |>
+    rpwf_add_dfs(con, tmp_dir, 1234) |>
+    rpwf_add_cost(con) |>
+    rpwf_add_model_type(con)
+
+  # print(t)
+  t1a = rpwf_add_random_state(t, seed = 1234)
+  expect_true(is.numeric(t1a$random_state))
+  })
+
+# test_that("rpwf_add_all()", {
+#   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
+#   con = dummy_con_(tmp_dir = tmp_dir)
+#   # Add a train df
+#   t = rpwf_workflow_set(list(dummy_recipe_(rpwf_sim(), type = "train")),
+#                         list(set_py_engine(xgb_model_spec_(),
+#                                            "xgboost", "XGBClassifier")),
+#                         list("neg_log_loss"))
+#   t1 = rpwf_add_all(t, con, tmp_dir, rpwf_sim()
+# })

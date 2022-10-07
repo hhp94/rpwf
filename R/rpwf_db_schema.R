@@ -90,6 +90,7 @@ DbCreate = R6::R6Class("DbCreate",
 #' names(definitions)
 rpwf_schema = function() {
   tbl = list()
+# cost_tbl-----------------------------------------------
   tbl$cost_tbl =
     "CREATE TABLE IF NOT EXISTS cost_tbl(
     cost_id INTEGER PRIMARY KEY,
@@ -97,7 +98,7 @@ rpwf_schema = function() {
     model_mode VARCHAR(14) NOT NULL CHECK(model_mode in ('regression', 'classification')),
     UNIQUE(cost_name, model_mode)
   );"
-
+# model_type_tbl-----------------------------------------------
   tbl$model_type_tbl =
     "CREATE TABLE IF NOT EXISTS model_type_tbl(
     model_type_id INTEGER PRIMARY KEY,
@@ -106,17 +107,17 @@ rpwf_schema = function() {
     r_engine VARCHAR(50) NOT NULL, /* R engine types */
     model_mode VARCHAR(14) NOT NULL CHECK(model_mode in ('regression', 'classification')),
     UNIQUE(r_engine, model_mode),
-    UNIQUE(r_engine, py_base_learner),
+    UNIQUE(r_engine, py_base_learner, py_module),
     UNIQUE(py_module, py_base_learner, r_engine, model_mode)
   );"
-
+# r_grid_tbl-----------------------------------------------
   tbl$r_grid_tbl =
     "CREATE TABLE IF NOT EXISTS r_grid_tbl(
     grid_id INTEGER PRIMARY KEY,
     grid_path VARCHAR UNIQUE, /* Path to grid parquet, one NULL is accepted*/
     grid_hash VARCHAR UNIQUE NOT NULL /* Hash of the grid for caching */
   );"
-
+# df_tbl-----------------------------------------------
   tbl$df_tbl =
     "CREATE TABLE IF NOT EXISTS df_tbl(
     df_id INTEGER PRIMARY KEY,
@@ -126,7 +127,7 @@ rpwf_schema = function() {
     df_path VARCHAR UNIQUE NOT NULL, /* Path to the parquet file of the experiment */
     df_hash VARCHAR UNIQUE NOT NULL /* Hash of the *recipe* to juice the file */
   );"
-
+# wflow_tbl-----------------------------------------------
   tbl$wflow_tbl =
     "CREATE TABLE IF NOT EXISTS wflow_tbl(
     wflow_id INTEGER PRIMARY KEY,
@@ -152,7 +153,7 @@ rpwf_schema = function() {
       ON DELETE CASCADE,  /* Allows cascade deletion by removing df id */
     UNIQUE(df_id, grid_id, cost_id, model_type_id, random_state, py_base_learner_args)
   );"
-
+# wflow_result_tbl-----------------------------------------------
   tbl$wflow_result_tbl =
     "CREATE TABLE IF NOT EXISTS wflow_result_tbl(
     result_id INTEGER PRIMARY KEY,

@@ -4,10 +4,13 @@
 \alias{rpwf_add_model_info}
 \title{Add \code{py_base_learner}, \code{py_base_learner_args}, \code{model_mode} to the workflow_set}
 \usage{
-rpwf_add_model_info(obj)
+rpwf_add_model_info(obj, con)
 }
 \arguments{
 \item{obj}{output of \code{\link[=rpwf_workflow_set]{rpwf_workflow_set()}}}
+
+\item{con}{(\code{DBI::dbConnect()})\cr
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
 }
 \value{
 tibble that contains 3 additional columns "py_base_learner",
