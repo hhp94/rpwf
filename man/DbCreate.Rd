@@ -13,8 +13,8 @@ to create new tables in the database. Not meant to be called manually
 ## Method `DbCreate$set_query`
 ## ------------------------------------------------
 
-con = rpwf_db_con("db.SQLite", here::here())
-db = DbCreate(con, "SELECT * FROM wflow_tbl")
+db_con = DbCon$new("db.SQLite", here::here())
+db = DbCreate(db_con$con, "SELECT * FROM wflow_tbl")
 db$query
 
 ## ------------------------------------------------
@@ -26,7 +26,7 @@ db$query
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{con}}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+\item{\code{con}}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
 
 \item{\code{query}}{pre-defined SQL query to create a table}
 }
@@ -46,7 +46,7 @@ db$query
 \if{html}{\out{<a id="method-DbCreate-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DbCreate-new}{}}}
 \subsection{Method \code{new()}}{
-Create an \link{DbCreate} object. Should be a singleton
+Create an \code{DbCreate} object. Should be a singleton
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DbCreate$new(con, query)}\if{html}{\out{</div>}}
 }
@@ -82,8 +82,8 @@ Change the query
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{con = rpwf_db_con("db.SQLite", here::here())
-db = DbCreate(con, "SELECT * FROM wflow_tbl")
+\preformatted{db_con = DbCon$new("db.SQLite", here::here())
+db = DbCreate(db_con$con, "SELECT * FROM wflow_tbl")
 db$query
 }
 \if{html}{\out{</div>}}

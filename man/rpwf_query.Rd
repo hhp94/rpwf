@@ -12,7 +12,7 @@ rpwf_query(val, query, con)
 \item{query}{SQL query}
 
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
 }
 \value{
 a vector of query values

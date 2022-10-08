@@ -1,23 +1,29 @@
 test_that("test if the python codes folder can be moved to the root path", {
   tmp_dir = withr::local_tempdir()
-  rpwf_cp_py_codes(tmp_dir)
-  python_codes = paste(tmp_dir, "rpwf", sep = "/")
-  expect_true(dir.exists(python_codes))
-  copied_files = sort(list.files(python_codes))
+  db_con = dummy_con_(tmp_dir)
+
+  rpwf_cp_py_codes(db_con$proj_root_path)
+  to_folder = paste(db_con$proj_root_path, "rpwf", sep = "/")
+  expect_true(dir.exists(to_folder))
+  copied_files = sort(list.files(to_folder))
   expect_equal(copied_files, c("rpwf", "setup.cfg", "setup.py"))
 })
 
 test_that("rpwf_chk_model_avail()", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
-  con = dummy_con_(tmp_dir = tmp_dir)
-  expect_message(rpwf_chk_model_avail(con, "xgboost", "XGBClassifier", "xgboost"),
+  db_con = dummy_con_(tmp_dir)
+  expect_message(rpwf_chk_model_avail(db_con$con,
+                                      "xgboost", "XGBClassifier", "xgboost"),
                  regexp = "Model found in db")
-  expect_error(rpwf_chk_model_avail(con, "INVALID", "XGBClassifier", "xgboost"),
-               regexp = "Select only one model from the above")
-  expect_error(rpwf_chk_model_avail(con, "xgboost", "INVALID", "xgboost"),
-             regexp = "Select only one model from the above")
-  expect_error(rpwf_chk_model_avail(con, "xgboost", "XGBClassifier", "INVALID"),
-             regexp = "Select only one model from the above")
+  expect_error(rpwf_chk_model_avail(db_con$con,
+                                    "INVALID", "XGBClassifier", "xgboost"),
+               regexp = "Invalid py model selection")
+  expect_error(rpwf_chk_model_avail(db_con$con,
+                                    "xgboost", "INVALID", "xgboost"),
+             regexp = "Invalid py model selection")
+  expect_error(rpwf_chk_model_avail(db_con$con,
+                                    "xgboost", "XGBClassifier", "INVALID"),
+             regexp = "Invalid py model selection")
 })
 
 test_that("set_py_engine() added py_base_learner attributes", {
@@ -40,17 +46,16 @@ test_that("set_py_engine() added py_base_learner_args attributes", {
 
 test_that("set_py_engine() check is working", {
   tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
-  con = dummy_con_(tmp_dir = tmp_dir)
+  db_con = dummy_con_(tmp_dir = tmp_dir)
 
   mod_spec = xgb_model_spec_()
   expect_error(mod_spec |>
-                 set_py_engine("lightgbm","INVALID", con = con))
+                 set_py_engine("lightgbm","INVALID", db_con$con))
   expect_error(mod_spec |>
-                 set_py_engine("INVALID","LGBMClassifier", con = con))
+                 set_py_engine("INVALID","LGBMClassifier", db_con$con))
   expect_error(mod_spec |>
-                 set_py_engine("lightgbm","LGBMClassifier", con = con))
+                 set_py_engine("lightgbm","LGBMClassifier", db_con$con))
   expect_message(mod_spec |>
-                   set_py_engine("xgboost","XGBClassifier", con = con),
+                   set_py_engine("xgboost","XGBClassifier", db_con$con),
                  regex = "Model found in db")
-  DBI::dbDisconnect(con)
 })

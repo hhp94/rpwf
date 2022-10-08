@@ -70,7 +70,7 @@ Create a new instance of the TrainDf class. Also process TestDf if a
 target column is not provided in the recipe. See \code{?rprw::Base} for
 details about the attributes
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TrainDf$new(recipe, con, proj_root_path)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TrainDf$new(recipe, db_con)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -79,11 +79,8 @@ details about the attributes
 \item{\code{recipe}}{(\code{recipes::recipe()})\cr
 provided recipe that defines how the data is transformed}
 
-\item{\code{con}}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
-
-\item{\code{proj_root_path}}{(\code{character()})\cr
-input the project root path.}
+\item{\code{db_con}}{(\code{DbCon})\cr
+a\link{DbCon} object}
 }
 \if{html}{\out{</div>}}
 }

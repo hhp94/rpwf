@@ -43,7 +43,7 @@ Create a new instance of the RGrid class. These are grids made by
 functions such as \code{dials::grid_latin_hypercube} and \code{dials::grid_regular}.
 See \code{?rprw::Base} for details of the attributes
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{RGrid$new(grid_obj, con, proj_root_path)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{RGrid$new(grid_obj, db_con)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -53,11 +53,8 @@ See \code{?rprw::Base} for details of the attributes
 \code{\link[=rpwf_grid_gen]{rpwf_grid_gen()}} performs necessary clean ups before the grid can
 be used in python}
 
-\item{\code{con}}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
-
-\item{\code{proj_root_path}}{(\code{character()})\cr
-input the project root path.}
+\item{\code{db_con}}{(\code{DbCon})\cr
+a\link{DbCon} object}
 }
 \if{html}{\out{</div>}}
 }

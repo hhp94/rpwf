@@ -8,7 +8,7 @@ rpwf_chk_model_avail(con, py_module, py_base_learner, r_engine)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
 
 \item{py_module}{string of what the py module is e.g., xgboost, sklearn.ensemble}
 

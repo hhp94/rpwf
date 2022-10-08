@@ -37,19 +37,17 @@ Base = R6::R6Class(
     #' @description
     #' This class is the parent of RGrid and TrainDf R6 object, not meant to be
     #' called
-    #' @param con (`DBI::dbConnect()`)\cr
-    #' a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
-    #' @param proj_root_path (`character()`)\cr
-    #' input the project root path.
-    initialize = function(con, proj_root_path) {
-      stopifnot("Invalid connection" = DBI::dbIsValid(con)) # Connection is valid
+    #' @param db_con (`DbCon`)\cr
+    #' a[DbCon] object
+    initialize = function(db_con) {
+      stopifnot("input should be a R6 DbCon() object" = R6::is.R6(db_con))
       self$df = NULL
-      self$con = con
+      self$con = db_con$con
       self$hash = NULL
       self$export_query = NULL
       self$query_results = NULL
       self$db_folder = NULL
-      self$proj_root_path = proj_root_path
+      self$proj_root_path = db_con$proj_root_path
     },
 
     #' @description
@@ -229,14 +227,12 @@ TrainDf = R6::R6Class(
     #' details about the attributes
     #' @param recipe (`recipes::recipe()`)\cr
     #' provided recipe that defines how the data is transformed
-    #' @param con (`DBI::dbConnect()`)\cr
-    #' a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
-    #' @param proj_root_path (`character()`)\cr
-    #' input the project root path.
-    initialize = function(recipe, con, proj_root_path) {
+    #' @param db_con (`DbCon`)\cr
+    #' a[DbCon] object
+    initialize = function(recipe, db_con) {
       stopifnot("a recipe object required" = "recipe" %in% class(recipe))
 
-      super$initialize(con, proj_root_path) # Init from the super class
+      super$initialize(db_con) # Init from the super class
       self$prepped = recipes::prep(recipe) # Init the prepped object
       self$term_info = self$prepped$term_info # post-transform train metadata
       self$set_hash(rlang::hash(self$prepped)) # Set the hash of the prepped obj
@@ -319,12 +315,10 @@ RGrid = R6::R6Class(
     #' @param grid_obj (`rpwf::rpwf_grid_gen()`)\cr
     #' [rpwf::rpwf_grid_gen()] performs necessary clean ups before the grid can
     #' be used in python
-    #' @param con (`DBI::dbConnect()`)\cr
-    #' a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
-    #' @param proj_root_path (`character()`)\cr
-    #' input the project root path.
-    initialize = function(grid_obj, con, proj_root_path) {
-      super$initialize(con, proj_root_path) # Init from the super class
+    #' @param db_con (`DbCon`)\cr
+    #' a[DbCon] object
+    initialize = function(grid_obj, db_con) {
+      super$initialize(db_con) # Init from the super class
       self$set_hash(rlang::hash(grid_obj)) # hash the grid
       self$set_query_results(self$exec_query(
         glue::glue_sql( # hash is passed into ?
@@ -451,12 +445,12 @@ rpwf_grid_gen = function(model,
                          ...) {
   params = rpwf_finalize_params(model = model, preproc = preproc)
 
-  if (nrow(params$pars) == 0 | is.null(.grid_fun)) {
+  if (!is.function(.grid_fun) & (nrow(params$pars) == 0 | is.null(.grid_fun))) {
     message(paste("No tuning is assumed, either no hyper params are provided",
                   "in the model spec or .grid_fun is NA or NULL", sep = " "))
     return(NA) #If hash of NA is changed, has to update rpwf_db_ini_val()
   }
-
+  stopifnot(".grid_fun needs to be function" = is.function(.grid_fun))
   r_grid = .grid_fun(x = params$pars, ...)
 
   if ("mtry" %in% colnames(r_grid)) {

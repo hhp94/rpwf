@@ -1,26 +1,47 @@
 # Create a folder and connection -----------------------------------------------
-#' A wrapper for [DBI::dbConnect()] using [RSQLite::SQLite()]
+#' @title R6 object store the connection and path to the db
 #'
-#' Creates, if needed, the `rpwfDb` folder in the project root path that's
-#' needed for python codes and a connection to the database in that folder.
-#'
-#' @param db_name a string name of the database
-#' @param proj_root_path a string that indicate the root of the project.
-#' The use of `here::here()` within an Rstudio project is recommended.
-#'
-#' @return A [DBI::dbConnect()] object
-#' @export
-#'
-#' @examples
-#' con = rpwf_db_con("db.SQLite", here::here())
-#' con
-rpwf_db_con = function(db_name, proj_root_path){
-  withr::local_dir(proj_root_path)
-  if(!dir.exists("rpwfDb")){dir.create("rpwfDb")}
-  db_path = paste("rpwfDb", db_name, sep = "/")
-  if(file.exists(db_path)){ message("db found")} else { message("creating new db") }
-  return(DBI::dbConnect(RSQLite::SQLite(), dbname = db_path))
-}
+#' @description
+#' Create the "rpwfDb" folder in the provided root path and create a db if
+#' needed. Initialize with `db = DbCon$new(<db_name>, here::here())`
+DbCon = R6::R6Class(
+  "DbCon",
+  public = list(
+    #' @field db_name name of the database
+    db_name = NULL,
+    #' @field proj_root_path root path of the project
+    proj_root_path = NULL,
+    #' @field db_path path to the `db_path`
+    db_path = NULL,
+    #' @field con a [DBI::dbConnect()] object
+    con = NULL,
+    #' @description
+    #' Create an `DbCon` object. Should be a singleton. `self$con` returns the
+    #' [DBI::dbConnect()] and `self$proj_root_path` returns the `proj_root_path`.
+    #' @param db_name name of the database
+    #' @param proj_root_path root path of the project
+    #' @return A new `DbCon` object.
+    initialize = function(db_name, proj_root_path){
+      self$db_name = db_name
+      self$proj_root_path = proj_root_path
+      self$db_path = paste("rpwfDb", self$db_name, sep = "/")
+      # Create the root path if needed
+      withr::with_dir(self$proj_root_path, {
+        if (!dir.exists("rpwfDb")) {dir.create("rpwfDb")}
+        if (file.exists(self$db_path)) {
+          message("db found")
+        } else {
+          message("creating new db")
+        }
+        self$con = DBI::dbConnect(RSQLite::SQLite(), dbname = self$db_path)
+      })
+    }
+  ),
+  private = list(
+      finalize = function() {DBI::dbDisconnect(self$con)}
+  ),
+  cloneable = FALSE
+)
 
 # R6 obj to create schema -----------------------------------------------
 #' @title Internal R6 object that set and run a SQL query
@@ -30,12 +51,12 @@ rpwf_db_con = function(db_name, proj_root_path){
 #' to create new tables in the database. Not meant to be called manually
 DbCreate = R6::R6Class("DbCreate",
   public = list(
-    #' @field con a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
+    #' @field con a [DBI::dbConnect()] object, created by [DbCon]
     con = NULL,
     #' @field query pre-defined SQL query to create a table
     query = NULL,
     #' @description
-    #' Create an [rpwf::DbCreate] object. Should be a singleton
+    #' Create an `DbCreate` object. Should be a singleton
     #' @param con [DBI::dbConnect()] connection
     #' @param query a SQL query string
     #' @return A new `DbCreate` object.
@@ -47,8 +68,8 @@ DbCreate = R6::R6Class("DbCreate",
     #' Change the query
     #' @param query a new SQL query string
     #' @examples
-    #' con = rpwf_db_con("db.SQLite", here::here())
-    #' db = DbCreate(con, "SELECT * FROM wflow_tbl")
+    #' db_con = DbCon$new("db.SQLite", here::here())
+    #' db = DbCreate(db_con$con, "SELECT * FROM wflow_tbl")
     #' db$query
     set_query = function(query) {self$query = query; invisible(self)},
 
@@ -222,9 +243,9 @@ rpwf_db_ini_val = function(con) {
 #' @export
 #'
 #' @examples
-#' con = rpwf_db_con("db.SQLite", here::here())
-#' rpwf_db_init(con) # Create the database
-#' DBI::dbDisconnect(con)
+#' db_con = DbCon$new("db.SQLite", here::here())
+#' rpwf_db_init(db_con$con) # Create the database
+#' DBI::dbDisconnect(db_con$con)
 rpwf_db_init = function(con, schema) {
   invisible( ### Create the data base
     DbCreate$new(con = con, query = NULL)$

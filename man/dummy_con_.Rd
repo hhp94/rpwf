@@ -4,18 +4,16 @@
 \alias{dummy_con_}
 \title{Generate temporary database and connection}
 \usage{
-dummy_con_(db_name = "db.SQLite", tmp_dir)
+dummy_con_(tmp_dir)
 }
 \arguments{
-\item{db_name}{Name of the temp database}
-
 \item{tmp_dir}{tmp_dir path}
 }
 \value{
 a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object
 }
 \description{
-Meant to be called in a \code{withr::local_tempdir()} environment of a test
+Meant to be called in a \code{withr::local_tempdir()} environment of a test.
 }
 \examples{
 withr::local_package("DBI")

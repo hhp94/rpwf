@@ -64,17 +64,14 @@ This attribute holds the name of that folder}
 This class is the parent of RGrid and TrainDf R6 object, not meant to be
 called
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Base$new(con, proj_root_path)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Base$new(db_con)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{con}}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
-
-\item{\code{proj_root_path}}{(\code{character()})\cr
-input the project root path.}
+\item{\code{db_con}}{(\code{DbCon})\cr
+a\link{DbCon} object}
 }
 \if{html}{\out{</div>}}
 }

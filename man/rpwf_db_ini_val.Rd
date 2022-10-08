@@ -8,7 +8,7 @@ rpwf_db_ini_val(con)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
 }
 \description{
 Add some initial values such as the cost functions and the XGBoost model as

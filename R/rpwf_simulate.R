@@ -97,9 +97,8 @@ dummy_recipe_ = function(sim_dat, type = "train") {
 
 #' Generate temporary database and connection
 #'
-#' Meant to be called in a `withr::local_tempdir()` environment of a test
+#' Meant to be called in a `withr::local_tempdir()` environment of a test.
 #'
-#' @param db_name Name of the temp database
 #' @param tmp_dir tmp_dir path
 #'
 #' @return a [DBI::dbConnect()] object
@@ -109,8 +108,8 @@ dummy_recipe_ = function(sim_dat, type = "train") {
 #' withr::local_package("DBI")
 #' tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
 #' con = dummy_con_(tmp_dir = tmp_dir)
-dummy_con_ = function(db_name = "db.SQLite", tmp_dir){
-  con = rpwf_db_con(db_name, tmp_dir)
-  rpwf_db_init(con, rpwf_schema())
-  return(con)
+dummy_con_ = function(tmp_dir){
+  DbCon_obj = DbCon$new("db.SQLite", tmp_dir)
+  rpwf_db_init(DbCon_obj$con, rpwf_schema())
+  return(DbCon_obj)
 }

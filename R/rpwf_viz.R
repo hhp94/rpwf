@@ -3,7 +3,7 @@
 #' Working with a `{dm}` object can make life easier than writing manual queries
 #'
 #' @param con (`DBI::dbConnect()`)\cr
-#' a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
+#' a [DBI::dbConnect()] object, created by [DbCon]
 #'
 #' @return `{dm}` object of the created schema
 #' @export
