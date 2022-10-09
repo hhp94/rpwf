@@ -9,11 +9,9 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Delete workflows with id from 1 to 99 of the database defined by `con`
-#' db_con <- DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", tempdir())
 #' rpwf_db_del_wflow(1:99, db_con$con)
-#' }
 rpwf_db_del_wflow <- function(id, con) {
   try(DBI::dbExecute(
     conn = con,
@@ -32,12 +30,11 @@ rpwf_db_del_wflow <- function(id, con) {
 #'
 #' @return a character string of id column for respective table.
 #' @keywords internal
+#' @export
 #'
 #' @examples
-#' \dontrun{
 #' id_col_switch_("cost_tbl")
 #' # id_col_switch_("wflow_tbl") # error
-#' }
 id_col_switch_ <- function(tbl) {
   switch(tbl,
     "cost_tbl" = "cost_id",
@@ -64,15 +61,13 @@ id_col_switch_ <- function(tbl) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' db_con <- DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", tempdir())
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
 #' # Before deleting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM cost_tbl;")
-#' rpwf_db_del_single_tbl("cost_tbl", 1, db_con$con)
+#' rpwf_db_del_entry("cost_tbl", 1, db_con$con)
 #' # After deleting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM cost_tbl;")
-#' }
 rpwf_db_del_entry <- function(tbls, id, con) {
   for (tbl in tbls) {
     id_col <- id_col_switch_(tbl)

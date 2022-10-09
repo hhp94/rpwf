@@ -71,12 +71,6 @@ xgb_model_spec_no_tune_ <- function() {
 #' @return a [recipes::recipe()] object.
 #' @importFrom rlang .data
 #' @keywords internal
-#'
-#' @examples
-#' \dontrun{
-#' test_recipe_train <- dummy_recipe_(rpwf_sim)
-#' test_recipe_test <- dummy_recipe_(rpwf_sim, type = "test")
-#' }
 dummy_recipe_ <- function(sim_dat, type = "train") {
   if (type == "train") {
     return(

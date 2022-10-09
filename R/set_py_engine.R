@@ -20,19 +20,17 @@
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' db_con <- DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", tempdir())
 #' parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
 #'   set_py_engine(
-#'     "XGBClassifier", db_con$con,
+#'     "xgboost", "XGBClassifier", db_con$con,
 #'     list(
 #'       eval_metric = "logloss", use_label_encoder = FALSE,
 #'       verbosity = 0, silent = TRUE, n_estimators = 100
 #'     )
 #'   )
-#' }
 set_py_engine <- function(obj, py_module, py_base_learner, con = NULL, args = NULL) {
   if (!is.null(con)) {
     message("Connection provided, checking if the python module is in the db")
@@ -63,13 +61,12 @@ set_py_engine <- function(obj, py_module, py_base_learner, con = NULL, args = NU
 #'
 #' @return either an error or "Model found in db".
 #' @keywords internal
+#' @export
 #'
 #' @examples
-#' \dontrun{
-#' db_con <- DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", tempdir())
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
-#' rpwf_chk_model_avail(con, "xgboost", "XGBClassifier", "xgboost")
-#' }
+#' rpwf_chk_model_avail(db_con$con, "xgboost", "XGBClassifier", "xgboost")
 rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
   stopifnot("only accept vector of length 1 as arguments" = all(
     c(length(py_module), length(py_base_learner), length(r_engine)) == 1
@@ -94,8 +91,9 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
 #' Copy sklearn Codes into the Project Root Folder
 #'
 #' These python codes are needed to work with the database. After copying the
-#' codes with `rpwf_cp_py_codes`, navigate to the "rpwf" folder and run
+#' codes with `rpwf_cp_py_codes()`, navigate to the "rpwf" folder and run
 #' `python -m pip install -e .` to install the codes as a local python package.
+#' Remove the python codes with `pip uninstall local-rpwf`.
 #'
 #' @param proj_root_path root path of the project, generate with [DbCon] and
 #' assess with DbCon$new()$proj_root_path.
@@ -104,17 +102,18 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
 #' @export
 #'
 #' @examples
-#' rpwf_cp_py_codes(".")
-#' list.files("./rpwf", recursive = TRUE)
+#' tmp = tempdir()
+#' rpwf_cp_py_codes(tmp)
+#' list.files(paste0(tmp, "/rpwf"), recursive = TRUE)
 rpwf_cp_py_codes <- function(proj_root_path) {
-  to_folder <- paste(proj_root_path, sep = "/")
+  to_folder <- paste(proj_root_path, "rpwf", sep = "/")
   if (!dir.exists(to_folder)) {
     message("creating folder 'rpwf' under provided root path")
-    dir.create(to_folder)
+  } else {
+    message("folder 'rpwf' found, overwriting python codes in this folder")
   }
-  message("folder 'rpwf' found, copying package python codes into this folder")
   from_folder <- system.file("python", "rpwf", package = "rpwf", mustWork = TRUE)
-  file.copy(from_folder, to_folder, recursive = TRUE)
+  file.copy(from_folder, proj_root_path, recursive = TRUE)
   message("here are the files in the 'rpwf' folder")
-  print(list.files(paste(to_folder, "rpwf", sep = "/")))
+  print(list.files())
 }

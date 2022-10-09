@@ -4,6 +4,7 @@
 #' @description
 #' Create the "rpwfDb" folder in the provided root path and create a db if
 #' needed. Initialize with `db = DbCon$new(<db_name>, here::here())`.
+#' @export
 DbCon <- R6::R6Class(
   "DbCon",
   public = list(
@@ -23,11 +24,9 @@ DbCon <- R6::R6Class(
     #' @param proj_root_path root path of the project.
     #' @return A new `DbCon` object.
     #' @examples
-    #' \dontrun{
-    #' db_con = DbCon$new("db.SQLite", ".")
+    #' db_con = DbCon$new("db.SQLite", tempdir())
     #' db_con$con
     #' db_con$proj_root_path
-    #' }
     initialize = function(db_name, proj_root_path) {
       self$db_name <- db_name
       self$proj_root_path <- proj_root_path
@@ -60,6 +59,8 @@ DbCon <- R6::R6Class(
 #' @description
 #' A R6 object that provides a shortcut to setting and executing a SQL query
 #' to create new tables in the database. Not meant to be called manually.
+#'
+#' @export
 DbCreate <- R6::R6Class("DbCreate",
   public = list(
     #' @field con a [DBI::dbConnect()] object, created by [DbCon].
@@ -72,11 +73,8 @@ DbCreate <- R6::R6Class("DbCreate",
     #' @param query a SQL query string.
     #' @return A new `DbCreate` object.
     #' @examples
-    #' \dontrun{
-    #' db_con = DbCon$new("db.SQLite", ".")
+    #' db_con = DbCon$new("db.SQLite", tempdir())
     #' db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
-    #' db$query
-    #' }
     initialize = function(con, query) {
       self$con <- con
       self$query <- query
@@ -227,11 +225,9 @@ rpwf_schema <- function() {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' db_con <- DbCon$new("db.SQLite", ".")
-#' rpwf_db_init(db_con$con)
+#' db_con <- DbCon$new("db.SQLite", tempdir())
+#' rpwf_db_init(db_con$con, rpwf_schema()) # Create the db
 #' DBI::dbListTables(db_con$con)
-#' }
 rpwf_db_ini_val <- function(con) {
   cost_tbl_query <-
     'INSERT INTO cost_tbl (cost_name, model_mode)
@@ -270,11 +266,9 @@ rpwf_db_ini_val <- function(con) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
-#' db_con <- DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", tempdir())
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
 #' DBI::dbListTables(db_con$con)
-#' }
 rpwf_db_init <- function(con, schema) {
   invisible( ### Create the data base
     DbCreate$new(con = con, query = NULL)$

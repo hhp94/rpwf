@@ -43,6 +43,7 @@ rpwf_workflow_set <- function(preprocs, models, costs) {
 #' @return tibble that contains 3 additional columns "py_base_learner",
 #' "py_base_learner_args", "model_mode".
 #' @keywords internal
+#' @export
 rpwf_add_model_info <- function(obj, con) {
   stopifnot(
     "Run rpwf_workflow_set() first!" =
@@ -100,6 +101,7 @@ rpwf_add_model_info <- function(obj, con) {
 #'
 #' @return a vector of query values.
 #' @keywords internal
+#' @export
 rpwf_query <- function(query, con, val1, val2 = NULL) {
   if (is.null(val2)) {
     query_res_list <- lapply(
@@ -137,6 +139,7 @@ rpwf_query <- function(query, con, val1, val2 = NULL) {
 #' @return tibble that contains the additional column "wflow_desc".
 #' @importFrom rlang .data
 #' @keywords internal
+#' @export
 rpwf_add_desc <- function(obj) {
   stopifnot("Run rpwf_add_model_info first!" = "py_base_learner" %in% names(obj))
   # by pasting together preprocs, models and costs cols
@@ -161,6 +164,7 @@ rpwf_add_desc <- function(obj) {
 #' @importFrom rlang .data
 #' @return tibble with the additional column "grids".
 #' @keywords internal
+#' @export
 rpwf_add_grid_param <- function(obj, .grid_fun = NULL, seed, ...) {
   # These are columns from rpwf_workflow_set()
   stopifnot(
@@ -193,6 +197,7 @@ rpwf_add_grid_param <- function(obj, .grid_fun = NULL, seed, ...) {
 #'
 #' @return tibble with the added "grid_id" column
 #' @keywords internal
+#' @export
 rpwf_add_grids <- function(obj, db_con) {
   stopifnot("run rpwf_add_grid_param() first" = "grids" %in% names(obj))
   RGrid_obj <- lapply(obj$grids, \(x) {
@@ -228,6 +233,7 @@ rpwf_add_grids <- function(obj, db_con) {
 #'
 #' @return tibble with the added column "df_id".
 #' @keywords internal
+#' @export
 rpwf_add_dfs <- function(obj, db_con, seed) {
   TrainDf_obj <- lapply(obj$preprocs, \(x) {
     set.seed(seed)
@@ -253,6 +259,7 @@ rpwf_add_dfs <- function(obj, db_con, seed) {
 #'
 #' @return tibble with the "cost_id" column added.
 #' @keywords internal
+#' @export
 rpwf_add_cost <- function(obj, con) {
   query_res <- rpwf_query(
     query = "SELECT cost_id FROM cost_tbl WHERE cost_name = ? AND model_mode = ?;",
@@ -272,6 +279,7 @@ rpwf_add_cost <- function(obj, con) {
 #'
 #' @return tibble with the "model_type_id" column added.
 #' @keywords internal
+#' @export
 rpwf_add_model_type <- function(obj, con) {
   stopifnot(
     "add set_py_engine() to your {parsnip} model_spec object" =
@@ -299,6 +307,7 @@ rpwf_add_model_type <- function(obj, con) {
 #'
 #' @return tibble with "random_state" column added.
 #' @keywords internal
+#' @export
 rpwf_add_random_state <- function(obj, range, seed) {
   set.seed(seed)
   stopifnot("range of random_state should be of length 2" = length(range) == 2L)
@@ -319,9 +328,9 @@ rpwf_add_random_state <- function(obj, range, seed) {
 #' @return tibble with the columns necessary for exporting to db.
 #' @export
 #' @examples
-#' \dontrun{
 #' # Create the database
-#' db_con <- DbCon$new("db.SQLite", ".")
+#' tmp <- tempdir()
+#' db_con <- DbCon$new("db.SQLite", tmp)
 #' rpwf_db_init(db_con$con, rpwf_schema())
 #'
 #' # Create a `workflow_set`
@@ -339,8 +348,7 @@ rpwf_add_random_state <- function(obj, range, seed) {
 #'
 #' to_export <- wf |>
 #'   rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
-#' list.files("./rpwfDb", recursive = TRUE) # Files are created
-#' }
+#' list.files(paste0(tmp, "/rpwfDb"), recursive = TRUE) # Files are created
 rpwf_add_all <- function(wflow_obj, db_con, .grid_fun = NULL,
                          ..., range = c(1L, 5000L), seed = 1234L) {
   set.seed(seed)
@@ -365,6 +373,7 @@ rpwf_add_all <- function(wflow_obj, db_con, .grid_fun = NULL,
 #'
 #' @return a vector of [rlang::hash].
 #' @keywords internal
+#' @export
 rpwf_wflow_hash_ <- function(df) {
   apply(as.data.frame(df), 1, rlang::hash)
 }
@@ -377,9 +386,8 @@ rpwf_wflow_hash_ <- function(df) {
 #' @return number of rows exported.
 #' @export
 #' @examples
-#' \dontrun{
 #' # Create the database
-#' db_con <- DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", tempdir())
 #' rpwf_db_init(db_con$con, rpwf_schema())
 #'
 #' # Create a `workflow_set`
@@ -403,7 +411,6 @@ rpwf_wflow_hash_ <- function(df) {
 #' rpwf_export_db(to_export, db_con$con)
 #' # After exporting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
-#' }
 rpwf_export_db <- function(obj, con) {
   # These columns must be present in the data
   required <- c(
