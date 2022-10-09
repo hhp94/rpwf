@@ -34,6 +34,7 @@ db_con$proj_root_path
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-DbCon-new}{\code{DbCon$new()}}
+\item \href{#method-DbCon-clone}{\code{DbCon$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -69,5 +70,22 @@ db_con$proj_root_path
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-DbCon-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-DbCon-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{DbCon$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
 }
 }
