@@ -1,4 +1,4 @@
-# Base -------------------------------------------------------------------------
+# BaseEx -------------------------------------------------------------------------
 #' @title Internal R6 Object Only for Setting up Inheritance
 #'
 #' @description
@@ -6,9 +6,10 @@
 #' data in the db, and 2) export parquet files for python to import. Not
 #' meant to be called manually.
 #' @keywords internal
-#' @export
-Base <- R6::R6Class(
-  "Base",
+#' @export BaseEx
+#' @exportClass BaseEx
+BaseEx <- R6::R6Class(
+  "BaseEx",
   public = list(
     #' @field hash (`character()`)\cr
     #' hash of the object by [rlang::hash()].
@@ -109,7 +110,7 @@ Base <- R6::R6Class(
     #' If the hash of the new object is not found in the database, then new
     #' data is prepared. If the data is found in the metadata but not in the
     #' indicated path then new data is also prepared. Otherwise, `self$df` is
-    #' NULL and will be skipped by the `Base::self$export_parquet()` method.
+    #' NULL and will be skipped by the `BaseEx::self$export_parquet()` method.
     #' @param val (`data.frame()`)\cr
     #' Either a [recipes::juice()] object or a data.frame of the hyper param grid.
     set_df = function(val) {
@@ -213,7 +214,7 @@ Base <- R6::R6Class(
 #'
 #' @details
 #' This object works by:
-#' + inherits from the [Base] class.
+#' + inherits from the [BaseEx] class.
 #' + accept a recipe and generate a prepped object with [recipes::prep()].
 #' + use the prepped object to get the name of the pd.index, target, and
 #' predictors.
@@ -234,10 +235,11 @@ Base <- R6::R6Class(
 #' + update the database with the generated SQL query with `self$export_db()`
 #' + write the parquet with `self$export_parquet()`
 #' @keywords internal
-#' @export
+#' @export TrainDf
+#' @exportClass TrainDf
 TrainDf <- R6::R6Class(
   "TrainDf",
-  inherit = Base,
+  inherit = BaseEx,
   public = list(
     #' @field prepped (`recipes::prep()`)\cr
     #' holds the prepped object.
@@ -262,7 +264,7 @@ TrainDf <- R6::R6Class(
 
     #' @description
     #' Create a new instance of the TrainDf class. Also process TestDf if a
-    #' target column is not provided in the recipe. See `?rprw::Base` for
+    #' target column is not provided in the recipe. See `?rprw::BaseEx` for
     #' details about the attributes.
     #' @param recipe (`recipes::recipe()`)\cr
     #' provided recipe that defines how the data is transformed.
@@ -353,7 +355,7 @@ TrainDf <- R6::R6Class(
 #'
 #' @details
 #' This object works by:
-#' + inherits from the [Base] class.
+#' + inherits from the [BaseEx] class.
 #' + accept a hyper param grid generated with [rpwf_grid_gen].
 #' + calculate the hash of the grid and check the hash is in the database.
 #' + if the hash is found in the database:
@@ -369,15 +371,16 @@ TrainDf <- R6::R6Class(
 #' + update the database with the generated SQL query with `self$export_db()`
 #' + write the parquet with `self$export_parquet()`
 #' @keywords internal
-#' @export
+#' @export RGrid
+#' @exportClass RGrid
 RGrid <- R6::R6Class(
   "RGrid",
-  inherit = Base,
+  inherit = BaseEx,
   public = list(
     #' @description
     #' Create a new instance of the RGrid class. These are grids made by
     #' functions such as `dials::grid_latin_hypercube` and `dials::grid_regular`.
-    #' See [Base] for details of the attributes.
+    #' See [BaseEx] for details of the attributes.
     #' @param grid_obj (`rpwf::rpwf_grid_gen()`)\cr
     #' [rpwf_grid_gen()] performs necessary clean ups before the grid can
     #' be used in python.

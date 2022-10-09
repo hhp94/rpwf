@@ -10,7 +10,7 @@ transformed data defined by the recipe for data transformation.
 \details{
 This object works by:
 \itemize{
-\item inherits from the \link{Base} class.
+\item inherits from the \link{BaseEx} class.
 \item accept a recipe and generate a prepped object with \code{\link[recipes:prep]{recipes::prep()}}.
 \item use the prepped object to get the name of the pd.index, target, and
 predictors.
@@ -38,7 +38,7 @@ assign to \code{self$df}.
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[rpwf:Base]{rpwf::Base}} -> \code{TrainDf}
+\code{\link[rpwf:BaseEx]{rpwf::BaseEx}} -> \code{TrainDf}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -77,18 +77,18 @@ python into a python list.}
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="create_folder"><a href='../../rpwf/html/Base.html#method-Base-create_folder'><code>rpwf::Base$create_folder()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="exec_query"><a href='../../rpwf/html/Base.html#method-Base-exec_query'><code>rpwf::Base$exec_query()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export"><a href='../../rpwf/html/Base.html#method-Base-export'><code>rpwf::Base$export()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_db"><a href='../../rpwf/html/Base.html#method-Base-export_db'><code>rpwf::Base$export_db()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_parquet"><a href='../../rpwf/html/Base.html#method-Base-export_parquet'><code>rpwf::Base$export_parquet()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_prep"><a href='../../rpwf/html/Base.html#method-Base-export_prep'><code>rpwf::Base$export_prep()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="find_path_in_db"><a href='../../rpwf/html/Base.html#method-Base-find_path_in_db'><code>rpwf::Base$find_path_in_db()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_db_folder"><a href='../../rpwf/html/Base.html#method-Base-set_db_folder'><code>rpwf::Base$set_db_folder()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_df"><a href='../../rpwf/html/Base.html#method-Base-set_df'><code>rpwf::Base$set_df()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_export_query"><a href='../../rpwf/html/Base.html#method-Base-set_export_query'><code>rpwf::Base$set_export_query()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_hash"><a href='../../rpwf/html/Base.html#method-Base-set_hash'><code>rpwf::Base$set_hash()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_path"><a href='../../rpwf/html/Base.html#method-Base-set_path'><code>rpwf::Base$set_path()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="create_folder"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-create_folder'><code>rpwf::BaseEx$create_folder()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="exec_query"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-exec_query'><code>rpwf::BaseEx$exec_query()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export'><code>rpwf::BaseEx$export()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_db'><code>rpwf::BaseEx$export_db()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_parquet"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_parquet'><code>rpwf::BaseEx$export_parquet()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_prep"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_prep'><code>rpwf::BaseEx$export_prep()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="find_path_in_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-find_path_in_db'><code>rpwf::BaseEx$find_path_in_db()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_db_folder"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_db_folder'><code>rpwf::BaseEx$set_db_folder()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_df"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_df'><code>rpwf::BaseEx$set_df()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_export_query"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_export_query'><code>rpwf::BaseEx$set_export_query()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_hash"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_hash'><code>rpwf::BaseEx$set_hash()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_path"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_path'><code>rpwf::BaseEx$set_path()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -97,7 +97,7 @@ python into a python list.}
 \if{latex}{\out{\hypertarget{method-TrainDf-new}{}}}
 \subsection{Method \code{new()}}{
 Create a new instance of the TrainDf class. Also process TestDf if a
-target column is not provided in the recipe. See \code{?rprw::Base} for
+target column is not provided in the recipe. See \code{?rprw::BaseEx} for
 details about the attributes.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TrainDf$new(recipe, db_con)}\if{html}{\out{</div>}}

@@ -4,7 +4,8 @@
 #' @description
 #' Create the "rpwfDb" folder in the provided root path and create a db if
 #' needed. Initialize with `db = DbCon$new(<db_name>, here::here())`.
-#' @export
+#' @export DbCon
+#' @exportClass DbCon
 DbCon <- R6::R6Class(
   "DbCon",
   public = list(
@@ -60,7 +61,7 @@ DbCon <- R6::R6Class(
 #' A R6 object that provides a shortcut to setting and executing a SQL query
 #' to create new tables in the database. Not meant to be called manually.
 #'
-#' @export
+#' @export DbCreate
 DbCreate <- R6::R6Class("DbCreate",
   public = list(
     #' @field con a [DBI::dbConnect()] object, created by [DbCon].
