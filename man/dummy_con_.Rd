@@ -2,21 +2,17 @@
 % Please edit documentation in R/rpwf_simulate.R
 \name{dummy_con_}
 \alias{dummy_con_}
-\title{Generate temporary database and connection}
+\title{Generate Temporary Database and Connection}
 \usage{
 dummy_con_(tmp_dir)
 }
 \arguments{
-\item{tmp_dir}{tmp_dir path}
+\item{tmp_dir}{tmp_dir path.}
 }
 \value{
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object.
 }
 \description{
 Meant to be called in a \code{withr::local_tempdir()} environment of a test.
 }
-\examples{
-withr::local_package("DBI")
-tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
-con = dummy_con_(tmp_dir = tmp_dir)
-}
+\keyword{internal}

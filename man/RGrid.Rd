@@ -7,6 +7,7 @@
 A R6 object that manage the export of metadata and parquet file of the
 hyper param grid generated in R
 }
+\keyword{internal}
 \section{Super class}{
 \code{\link[rpwf:Base]{rpwf::Base}} -> \code{RGrid}
 }
@@ -41,7 +42,7 @@ hyper param grid generated in R
 \subsection{Method \code{new()}}{
 Create a new instance of the RGrid class. These are grids made by
 functions such as \code{dials::grid_latin_hypercube} and \code{dials::grid_regular}.
-See \code{?rprw::Base} for details of the attributes
+See \link{Base} for details of the attributes.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{RGrid$new(grid_obj, db_con)}\if{html}{\out{</div>}}
 }
@@ -51,10 +52,10 @@ See \code{?rprw::Base} for details of the attributes
 \describe{
 \item{\code{grid_obj}}{(\code{rpwf::rpwf_grid_gen()})\cr
 \code{\link[=rpwf_grid_gen]{rpwf_grid_gen()}} performs necessary clean ups before the grid can
-be used in python}
+be used in python.}
 
 \item{\code{db_con}}{(\code{DbCon})\cr
-a\link{DbCon} object}
+a \link{DbCon} object.}
 }
 \if{html}{\out{</div>}}
 }

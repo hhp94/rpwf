@@ -2,17 +2,18 @@
 % Please edit documentation in R/rpwf_db_export.R
 \name{rpwf_wflow_hash_}
 \alias{rpwf_wflow_hash_}
-\title{Hash the rows of the workflow to check if its already in the db}
+\title{Hash the Rows of the Workflow to Check if its Already in the db}
 \usage{
 rpwf_wflow_hash_(df)
 }
 \arguments{
-\item{df}{}
+\item{df}{object created by \code{\link[=rpwf_add_all]{rpwf_add_all()}}.}
 }
 \value{
-a vector of \link[rlang:hash]{rlang::hash}
+a vector of \link[rlang:hash]{rlang::hash}.
 }
 \description{
 Export the object that has been processed by the other functions into the
 database so that python can query the information.
 }
+\keyword{internal}

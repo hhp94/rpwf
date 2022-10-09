@@ -2,20 +2,25 @@
 % Please edit documentation in R/rpwf_db_tools.R
 \name{rpwf_db_del_wflow}
 \alias{rpwf_db_del_wflow}
-\title{Delete exported workflows}
+\title{Delete Exported Workflows}
 \usage{
 rpwf_db_del_wflow(id, con)
 }
 \arguments{
 \item{id}{numeric vector of workflow ids to be removed.}
 
-\item{con}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object. Created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+\item{con}{(\code{DBI::dbConnect()})\cr
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+}
+\value{
+Called for the side effect.
 }
 \description{
-This function specifically just deletes the workflows from the \code{wflow_tbl}
+This function specifically just deletes the workflows from the \code{wflow_tbl}.
 }
 \examples{
 # Delete workflows with id from 1 to 99 of the database defined by `con`
-con = rpwf_db_con("db.SQLite", here::here())
-rpwf_db_del_wflow(1:99, con)
+db_con <- DbCon$new("db.SQLite", ".")
+rpwf_db_del_wflow(1:99, db_con$con)
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }

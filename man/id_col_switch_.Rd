@@ -2,13 +2,13 @@
 % Please edit documentation in R/rpwf_db_tools.R
 \name{id_col_switch_}
 \alias{id_col_switch_}
-\title{Switch function to find what the corresponding id column of tables}
+\title{Switch Function to Find What the Corresponding id Column of Tables Are}
 \usage{
 id_col_switch_(tbl)
 }
 \arguments{
 \item{tbl}{table names, i.e., "cost_tbl", "df_tbl", etc. Throw error if
-tries to return id of "wflow_tbl"}
+tries to return id of "wflow_tbl".}
 }
 \value{
 a character string of id column for respective table.
@@ -18,5 +18,6 @@ Not meant to be called manually.
 }
 \examples{
 id_col_switch_("cost_tbl")
-id_col_switch_("wflow_tbl") # error
+# id_col_switch_("wflow_tbl") # error
 }
+\keyword{internal}

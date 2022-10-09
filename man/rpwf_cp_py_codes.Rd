@@ -2,21 +2,25 @@
 % Please edit documentation in R/set_py_engine.R
 \name{rpwf_cp_py_codes}
 \alias{rpwf_cp_py_codes}
-\title{Copy sklearn codes into the project root folder}
+\title{Copy sklearn Codes into the Project Root Folder}
 \usage{
-rpwf_cp_py_codes(proj_root_path = NULL)
+rpwf_cp_py_codes(proj_root_path)
 }
 \arguments{
-\item{proj_root_path}{}
+\item{proj_root_path}{root path of the project, generate with \link{DbCon} and
+assess with DbCon$new()$proj_root_path.}
 }
 \value{
-a newly copied folder "rpwf" under the provided project path
+a newly copied folder called "rpwf" under the provided project path.
 }
 \description{
-these python codes are needed to work with the database. After copying the
-codes with \code{\link[=rpwf_cp_py_codes]{rpwf_cp_py_codes()}}, navigate to the "rpwf" folder and run
+These python codes are needed to work with the database. After copying the
+codes with \code{rpwf_cp_py_codes}, navigate to the "rpwf" folder and run
 \verb{python -m pip install -e .} to install the codes as a local python package.
 }
 \examples{
-rpwf_cp_py_codes(here::here())
+db_con <- DbCon$new("db.SQLite", ".")
+rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
+rpwf_cp_py_codes(db_con$proj_root_path)
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }

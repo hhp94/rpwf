@@ -2,20 +2,21 @@
 % Please edit documentation in R/rpwf_db_export.R
 \name{rpwf_add_model_info}
 \alias{rpwf_add_model_info}
-\title{Add \code{py_base_learner}, \code{py_base_learner_args}, \code{model_mode} to the workflow_set}
+\title{Add \code{py_base_learner}, \code{py_base_learner_args}, \code{model_mode} to the \code{workflow_set}}
 \usage{
 rpwf_add_model_info(obj, con)
 }
 \arguments{
-\item{obj}{output of \code{\link[=rpwf_workflow_set]{rpwf_workflow_set()}}}
+\item{obj}{output of \code{\link[=rpwf_workflow_set]{rpwf_workflow_set()}}.}
 
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
 }
 \value{
 tibble that contains 3 additional columns "py_base_learner",
-"py_base_learner_args", "model_mode"
+"py_base_learner_args", "model_mode".
 }
 \description{
-Add \code{py_base_learner}, \code{py_base_learner_args}, \code{model_mode} to the workflow_set
+Add \code{py_base_learner}, \code{py_base_learner_args}, \code{model_mode} to the \code{workflow_set}
 }
+\keyword{internal}

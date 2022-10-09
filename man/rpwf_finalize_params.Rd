@@ -2,21 +2,23 @@
 % Please edit documentation in R/rpwf_main_R6_classes.R
 \name{rpwf_finalize_params}
 \alias{rpwf_finalize_params}
-\title{Internal function to finalize the parameters that requires train data}
+\title{Internal Function to Finalize the Parameters that Requires Train Data}
 \usage{
 rpwf_finalize_params(model, preproc)
 }
 \arguments{
-\item{model}{a model spec object defined by \code{{parsnip}}}
+\item{model}{a model spec object defined by \code{{parsnip}}.}
 
-\item{preproc}{a recipe object defined by \code{{recipes}}}
+\item{preproc}{a recipe object defined by \code{{recipes}}.}
 }
 \value{
-finalized parameter object
+finalized parameter object.
 }
 \description{
-mtry is the number of columns in R, whereas in sklearn it's the proportion of
-columns (randomly chosen for a base learner). This function creates the
+\code{mtry} is the number of columns in R, whereas in sklearn it's the proportion
+of columns (randomly chosen for a base learner). This function creates the
 finalized parameter object in R and pass the number of predictors to
-\code{\link[=r_grid_gen]{r_grid_gen()}} to convert from mtry count to mtry proportion for sklearn.
+\code{\link[=rpwf_grid_gen]{rpwf_grid_gen()}} to convert from \code{mtry} count to \code{col_by_sample} proportion
+for sklearn.
 }
+\keyword{internal}

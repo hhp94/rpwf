@@ -2,13 +2,14 @@
 % Please edit documentation in R/rpwf_simulate.R
 \name{xgb_model_spec_}
 \alias{xgb_model_spec_}
-\title{Create a dummy xgb model spec}
+\title{Create a Dummy XGB Model Spec}
 \usage{
 xgb_model_spec_()
 }
 \value{
-a model spec objection
+a model spec objection.
 }
 \description{
-For testing, not meant to be called, add set_py_engine() to this object
+For testing, not meant to be called, add \code{\link[=set_py_engine]{set_py_engine()}} to this object.
 }
+\keyword{internal}

@@ -2,14 +2,15 @@
 % Please edit documentation in R/rpwf_simulate.R
 \name{xgb_model_spec_no_tune_}
 \alias{xgb_model_spec_no_tune_}
-\title{Create a dummy xgb model spec}
+\title{Create a Dummy XGB Model Spec with no Tune Params}
 \usage{
 xgb_model_spec_no_tune_()
 }
 \value{
-a model spec objection
+a model spec objection.
 }
 \description{
 For testing, not meant to be called, have no specified tuning parameters to
-test edge case of grid generation. Add set_py_engine() to this object
+test edge case of grid generation. Add \code{\link[=set_py_engine]{set_py_engine()}} to this object.
 }
+\keyword{internal}

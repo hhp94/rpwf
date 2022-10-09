@@ -2,13 +2,16 @@
 % Please edit documentation in R/rpwf_db_schema.R
 \name{rpwf_db_ini_val}
 \alias{rpwf_db_ini_val}
-\title{Add initial values to the \code{cost_tbl} and \code{model_type_tbl}}
+\title{Add Initial Values to \code{r_grid_tbl}, \code{cost_tbl} and \code{model_type_tbl}}
 \usage{
 rpwf_db_ini_val(con)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+}
+\value{
+Used for side effects.
 }
 \description{
 Add some initial values such as the cost functions and the XGBoost model as
@@ -16,5 +19,8 @@ defined in R and Python. Won't update duplicated rows. Expand compatibility
 by adding values to this function.
 }
 \examples{
-?rpwf_db_init()
+db_con = DbCon$new("db.SQLite", ".")
+rpwf_db_init(db_con$con)
+DBI::dbListTables(db_con$con)
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }

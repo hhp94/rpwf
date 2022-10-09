@@ -2,22 +2,23 @@
 % Please edit documentation in R/rpwf_viz.R
 \name{rpwf_dm_obj}
 \alias{rpwf_dm_obj}
-\title{Generate a \code{{dm}} object of the database}
+\title{Generate a \code{{dm}} Object of the Database}
 \usage{
 rpwf_dm_obj(con)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
 }
 \value{
-\code{{dm}} object of the created schema
+\code{{dm}} object of the created schema.
 }
 \description{
 Working with a \code{{dm}} object can make life easier than writing manual queries
 }
 \examples{
-con = rpwf_db_con("db.SQLite", here::here())
-dm_obj = rpwf_dm_obj(con)
-dm_obj |> dm::dm_draw()
+db_con <- DbCon$new("db.SQLite", ".")
+dm_obj <- rpwf_dm_obj(db_con$con)
+dm_obj
+# dm_obj |> dm::dm_draw()
 }

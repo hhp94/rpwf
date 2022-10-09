@@ -7,18 +7,19 @@
 rpwf_grid_gen(model, preproc, .grid_fun = NULL, ...)
 }
 \arguments{
-\item{model}{a model spec object defined by \code{{parsnip}}}
+\item{model}{a model spec object defined by \code{{parsnip}}.}
 
-\item{preproc}{a recipe object defined by \code{{recipes}}}
+\item{preproc}{a recipe object defined by \code{{recipes}}.}
 
-\item{.grid_fun}{\code{{dials}} functions e.g., \code{grid_latin_hypercube},
-\code{grid_max_entropy}, etc.,}
+\item{.grid_fun}{a \verb{dials::grid_<functions>}, e.g., \code{grid_random()},
+\code{grid_latin_hypercube()}. Default \code{NULL} assumes that no grid search is
+performed and default params in sklearn are used. See details for custom grids.}
 
-\item{...}{additional arguments for the \code{.grid_fun} functions}
+\item{...}{additional arguments for the \code{.grid_fun} functions.}
 }
 \value{
 a \code{rpwf_grid} object, which is just a modified \code{{dials}} grid but
-made suitable for sklearn
+made suitable for sklearn.
 }
 \description{
 This function takes whatever grid functions that are available in \code{{dials}},
@@ -27,3 +28,4 @@ well as adding fixed parameters to overwrite the default values in sklearn if
 provided and perform some cleaning such as converting R \code{mtry} counts to
 Python \code{col_by_sample} proportion.
 }
+\keyword{internal}

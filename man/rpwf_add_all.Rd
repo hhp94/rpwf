@@ -2,7 +2,7 @@
 % Please edit documentation in R/rpwf_db_export.R
 \name{rpwf_add_all}
 \alias{rpwf_add_all}
-\title{Wrapper to generate the object to be exported to the database}
+\title{Wrapper to Generate the Object to be Exported to the Database}
 \usage{
 rpwf_add_all(
   wflow_obj,
@@ -14,22 +14,46 @@ rpwf_add_all(
 )
 }
 \arguments{
-\item{wflow_obj}{object created by the \code{\link[=rpwf_workflow_set]{rpwf_workflow_set()}} function}
+\item{wflow_obj}{object created by the \code{\link[=rpwf_workflow_set]{rpwf_workflow_set()}} function.}
 
-\item{db_con}{a \link{DbCon} object}
+\item{db_con}{a \link{DbCon} object.}
 
-\item{.grid_fun}{\code{{dials}} functions e.g., \code{grid_latin_hypercube},
-\code{grid_max_entropy}, etc.,}
+\item{.grid_fun}{a \verb{dials::grid_<functions>}, e.g., \code{grid_random()},
+\code{grid_latin_hypercube()}. Default \code{NULL} assumes that no grid search is
+performed and default params in sklearn are used. See details for custom grids.}
 
-\item{...}{additional arguments for the \code{.grid_fun} functions}
+\item{...}{additional arguments for the \code{.grid_fun} functions.}
 
-\item{range}{range of seed to sample from}
+\item{range}{range of seed to sample from.}
 
-\item{seed}{random seed to sample the random_state}
+\item{seed}{random seed to sample the \code{random_state}.}
 }
 \value{
-tibble with the columns necessary for exporting to db
+tibble with the columns necessary for exporting to db.
 }
 \description{
-Wrapper to generate the object to be exported to the database
+Wrapper to Generate the Object to be Exported to the Database
+}
+\examples{
+# Create the database
+db_con = DbCon$new("db.SQLite", ".")
+rpwf_db_init(db_con$con, rpwf_schema())
+
+# Create a `workflow_set`
+d = rpwf_sim()$train
+m1 = parsnip::boost_tree() |>
+  parsnip::set_engine("xgboost") |>
+  parsnip::set_mode("classification") |>
+  set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
+r1 = d |>
+  recipes::recipe(target ~ .) |>
+  recipes::step_dummy(.data$X3, one_hot = TRUE) |>
+  # "pd.index" is the special column that used for indexing in pandas
+  recipes::update_role(.data$id, new_role = "pd.index")
+wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
+
+to_export = wf |>
+  rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
+list.files("./rpwfDb", recursive = TRUE) # Files are created
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }

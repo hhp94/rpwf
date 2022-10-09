@@ -2,22 +2,25 @@
 % Please edit documentation in R/rpwf_db_export.R
 \name{rpwf_query}
 \alias{rpwf_query}
-\title{Internal function for running query to add ids to the workflow_set}
+\title{Helper Function for Running Query to Add ids to the \code{workflow_set}}
 \usage{
-rpwf_query(val, query, con)
+rpwf_query(query, con, val1, val2 = NULL)
 }
 \arguments{
-\item{val}{value vector to search the tables by}
-
-\item{query}{SQL query}
+\item{query}{SQL query.}
 
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+
+\item{val1}{value vector to search the tables by.}
+
+\item{val2}{value vector to search the tables by.}
 }
 \value{
-a vector of query values
+a vector of query values.
 }
 \description{
 This function is a wrapper for \code{\link[DBI:dbGetQuery]{DBI::dbGetQuery()}} that also perform some
 cleaning. Should only return one column and <= 1 row for every query.
 }
+\keyword{internal}

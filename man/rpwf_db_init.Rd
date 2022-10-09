@@ -2,24 +2,28 @@
 % Please edit documentation in R/rpwf_db_schema.R
 \name{rpwf_db_init}
 \alias{rpwf_db_init}
-\title{Create the database and add initial values}
+\title{Create the Database and Add Initial Values}
 \usage{
 rpwf_db_init(con, schema)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
 
-\item{schema}{a \code{\link[=rpwf_schema]{rpwf_schema()}} object}
+\item{schema}{output of \code{\link[=rpwf_schema]{rpwf_schema()}}.}
+}
+\value{
+Used for side effects.
 }
 \description{
-A wrapper around \code{\link[=DbCreate$execute]{DbCreate$execute()}} and \code{\link[=rpwf_db_ini_val]{rpwf_db_ini_val()}}.
-This function iteratively runs through the table creation queries in the schema
+A wrapper around \link{DbCreate} and \code{\link[=rpwf_db_ini_val]{rpwf_db_ini_val()}}. This function
+iteratively runs through the table creation queries in the schema
 object and create the tables after creating a new \code{rpwfDb} folder and
-database specified by the \code{rpwf_db_con()} function.
+database specified by the \code{DbCon$new()} object.
 }
 \examples{
-db_con = DbCon$new("db.SQLite", here::here())
-rpwf_db_init(db_con$con) # Create the database
-DBI::dbDisconnect(db_con$con)
+db_con <- DbCon$new("db.SQLite", ".")
+rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
+DBI::dbListTables(db_con$con)
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }

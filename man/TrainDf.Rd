@@ -2,11 +2,12 @@
 % Please edit documentation in R/rpwf_main_R6_classes.R
 \name{TrainDf}
 \alias{TrainDf}
-\title{Internal R6 object that process the data transformation}
+\title{Internal R6 Object that Process the Data Transformation}
 \description{
 A R6 object that manage the export of metadata and parquet file of the
 transformed data defined by the recipe for data transformation.
 }
+\keyword{internal}
 \section{Super class}{
 \code{\link[rpwf:Base]{rpwf::Base}} -> \code{TrainDf}
 }
@@ -14,23 +15,23 @@ transformed data defined by the recipe for data transformation.
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
 \item{\code{prepped}}{(\code{recipes::prep()})\cr
-holds the prepped object}
+holds the prepped object.}
 
 \item{\code{term_info}}{(\code{dplyr::tibble()})\cr
 the \code{self$prepped} object has the attribute \code{term_info} that has
-information of transformed variable before actually transforming the data}
+information of transformed variable before actually transforming the data.}
 
 \item{\code{idx_col}}{(\code{character()})\cr
-Having a pre-defined index in R makes working with pandas.DataFrame less
-error prone. Defined by the provided recipe}
+Having a pre-defined index in R makes working with \code{pandas.DataFrame} less
+error prone. Defined by the provided recipe.}
 
 \item{\code{target}}{(\code{character()})\cr
 Name of the target variable. If missing, then a message is returned to say
-that a test df is assumed to be generated. Defined by the provided recipe}
+that a test df is assumed to be generated. Defined by the provided recipe.}
 
 \item{\code{predictors}}{(\code{character()})\cr
 List of names of the predictors. Stored as JSON string to be parsed in
-python into a python list}
+python into a python list.}
 }
 \if{html}{\out{</div>}}
 }
@@ -68,7 +69,7 @@ python into a python list}
 \subsection{Method \code{new()}}{
 Create a new instance of the TrainDf class. Also process TestDf if a
 target column is not provided in the recipe. See \code{?rprw::Base} for
-details about the attributes
+details about the attributes.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TrainDf$new(recipe, db_con)}\if{html}{\out{</div>}}
 }
@@ -77,10 +78,10 @@ details about the attributes
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{recipe}}{(\code{recipes::recipe()})\cr
-provided recipe that defines how the data is transformed}
+provided recipe that defines how the data is transformed.}
 
 \item{\code{db_con}}{(\code{DbCon})\cr
-a\link{DbCon} object}
+a \link{DbCon} object.}
 }
 \if{html}{\out{</div>}}
 }
@@ -89,7 +90,7 @@ a\link{DbCon} object}
 \if{html}{\out{<a id="method-TrainDf-set_idx_col"></a>}}
 \if{latex}{\out{\hypertarget{method-TrainDf-set_idx_col}{}}}
 \subsection{Method \code{set_idx_col()}}{
-Set the index column as defined by the recipe
+Set the index column as defined by the recipe.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TrainDf$set_idx_col()}\if{html}{\out{</div>}}
 }
@@ -111,7 +112,7 @@ if the target is not found.
 \if{latex}{\out{\hypertarget{method-TrainDf-set_predictors}{}}}
 \subsection{Method \code{set_predictors()}}{
 Store the list of predictors defined by the recipe as a json string
-to be parsed in python
+to be parsed in python.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TrainDf$set_predictors()}\if{html}{\out{</div>}}
 }

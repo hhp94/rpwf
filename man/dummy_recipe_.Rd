@@ -2,22 +2,23 @@
 % Please edit documentation in R/rpwf_simulate.R
 \name{dummy_recipe_}
 \alias{dummy_recipe_}
-\title{Create a dummy recipe object for testing}
+\title{Create a Dummy Recipe Object for Testing}
 \usage{
 dummy_recipe_(sim_dat, type = "train")
 }
 \arguments{
-\item{sim_dat}{a \code{\link[=rpwf_sim]{rpwf_sim()}} object}
+\item{sim_dat}{a \code{\link[=rpwf_sim]{rpwf_sim()}} object.}
 
-\item{type}{either \code{"train"} or \code{"test"}}
+\item{type}{either \code{"train"} or \code{"test"}.}
 }
 \value{
-a \code{\link[recipes:recipe]{recipes::recipe()}} object
+a \code{\link[recipes:recipe]{recipes::recipe()}} object.
 }
 \description{
-For testing, not meant to be called
+For testing, not meant to be called.
 }
 \examples{
-test_recipe_train = dummy_recipe_(rpwf_sim)
-test_recipe_test = dummy_recipe_(rpwf_sim, type = "test")
+test_recipe_train <- dummy_recipe_(rpwf_sim)
+test_recipe_test <- dummy_recipe_(rpwf_sim, type = "test")
 }
+\keyword{internal}

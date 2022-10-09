@@ -1,41 +1,41 @@
-#' Generate the data needed for testing
+#' Generate the Data Needed for Testing
 #'
-#' Generate dummy data for testing of the rpwf package
+#' Generate dummy data for testing of the `rpwf` package.
 #'
-#' @param n_train number of train rows
-#' @param n_test number of test rows
-#' @param seed random seed
+#' @param n_train number of train rows.
+#' @param n_test number of test rows.
+#' @param seed random seed.
 #'
-#' @return a list of train and test df and the id and target column names
-#' @export
+#' @return a list of train and test df and the id and target column names.
+#' @keywords internal
 #'
 #' @examples
-#' dim_dat = rpwf_sim()
-rpwf_sim = function(n_train = 100, n_test = 10, seed = 1234) {
+#' dim_dat <- rpwf_sim()
+#' dim_dat$train
+#' dim_dat$test
+rpwf_sim <- function(n_train = 100, n_test = 10, seed = 1234) {
   set.seed(seed)
-  n = n_train + n_test
-  df = data.frame(
-    X1 = rnorm(n),
-    X2 = rnorm(n),
+  n <- n_train + n_test
+  df <- data.frame(
+    X1 = stats::rnorm(n),
+    X2 = stats::rnorm(n),
     X3 = factor(rep(1:4, length.out = n)),
-    target = rbinom(n, size = 1, prob = 0.5),
+    target = stats::rbinom(n, size = 1, prob = 0.5),
     id = seq_len(n)
   )
   return(list(
     train = df[1:n_train, ],
-    test = df[(n_train + 1):n, ],
-    id = "id",
-    target = "target"
+    test = df[(n_train + 1):n, ]
   ))
 }
 
-#' Create a dummy xgb model spec
+#' Create a Dummy XGB Model Spec
 #'
-#' For testing, not meant to be called, add set_py_engine() to this object
+#' For testing, not meant to be called, add [set_py_engine()] to this object.
 #'
-#' @return a model spec objection
-#' @export
-xgb_model_spec_ = function() {
+#' @return a model spec objection.
+#' @keywords internal
+xgb_model_spec_ <- function() {
   parsnip::boost_tree(
     tree_depth = hardhat::tune(),
     min_n = hardhat::tune(),
@@ -48,68 +48,63 @@ xgb_model_spec_ = function() {
     parsnip::set_mode("classification")
 }
 
-
-#' Create a dummy xgb model spec
+#' Create a Dummy XGB Model Spec with no Tune Params
 #'
 #' For testing, not meant to be called, have no specified tuning parameters to
-#' test edge case of grid generation. Add set_py_engine() to this object
+#' test edge case of grid generation. Add [set_py_engine()] to this object.
 #'
-#' @return a model spec objection
-#' @export
-xgb_model_spec_no_tune_ = function() {
+#' @return a model spec objection.
+#' @keywords internal
+xgb_model_spec_no_tune_ <- function() {
   parsnip::boost_tree() |>
     parsnip::set_engine("xgboost") |>
     parsnip::set_mode("classification")
 }
 
-
-#' Create a dummy recipe object for testing
+#' Create a Dummy Recipe Object for Testing
 #'
-#' For testing, not meant to be called
+#' For testing, not meant to be called.
 #'
-#' @param sim_dat a [rpwf_sim()] object
-#' @param type either `"train"` or `"test"`
+#' @param sim_dat a [rpwf_sim()] object.
+#' @param type either `"train"` or `"test"`.
 #'
-#' @return a [recipes::recipe()] object
-#' @export
+#' @return a [recipes::recipe()] object.
+#' @importFrom rlang .data
+#' @keywords internal
 #'
 #' @examples
-#' test_recipe_train = dummy_recipe_(rpwf_sim)
-#' test_recipe_test = dummy_recipe_(rpwf_sim, type = "test")
-dummy_recipe_ = function(sim_dat, type = "train") {
+#' test_recipe_train <- dummy_recipe_(rpwf_sim)
+#' test_recipe_test <- dummy_recipe_(rpwf_sim, type = "test")
+dummy_recipe_ <- function(sim_dat, type = "train") {
   if (type == "train") {
     return(
       recipes::recipe(target ~ ., data = sim_dat$train) |>
-      recipes::step_dummy(X3, one_hot = TRUE) |>
-      recipes::update_role(id, new_role = "index")
+        recipes::step_dummy(.data$X3, one_hot = TRUE) |>
+        recipes::update_role(.data$id, new_role = "pd.index")
     )
   }
   if (type == "test") {
     return(
       recipes::recipe(
-        ~ .,
-        data = sim_dat$test[, which(!names(sim_dat$test) %in% sim_dat$target)]) |>
-      recipes::step_dummy(X3, one_hot = TRUE) |>
-      recipes::update_role(id, new_role = "index")
+        ~.,
+        data = sim_dat$test[, which(!names(sim_dat$test) %in% sim_dat$target)]
+      ) |>
+        recipes::step_dummy(.data$X3, one_hot = TRUE) |>
+        recipes::update_role(.data$id, new_role = "pd.index")
     )
   }
 }
 
-#' Generate temporary database and connection
+#' Generate Temporary Database and Connection
 #'
 #' Meant to be called in a `withr::local_tempdir()` environment of a test.
 #'
-#' @param tmp_dir tmp_dir path
+#' @param tmp_dir tmp_dir path.
 #'
-#' @return a [DBI::dbConnect()] object
-#' @export
-#'
-#' @examples
-#' withr::local_package("DBI")
-#' tmp_dir = withr::local_tempdir(pattern = "rpwfDb")
-#' con = dummy_con_(tmp_dir = tmp_dir)
-dummy_con_ = function(tmp_dir){
-  DbCon_obj = DbCon$new("db.SQLite", tmp_dir)
+#' @return a [DBI::dbConnect()] object.
+#' @keywords internal
+dummy_con_ <- function(tmp_dir) {
+  DbCon_obj <- DbCon$new("db.SQLite", tmp_dir)
   rpwf_db_init(DbCon_obj$con, rpwf_schema())
   return(DbCon_obj)
 }

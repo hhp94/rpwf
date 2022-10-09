@@ -2,33 +2,28 @@
 % Please edit documentation in R/rpwf_db_schema.R
 \name{DbCreate}
 \alias{DbCreate}
-\title{Internal R6 object that set and run a SQL query}
+\title{Internal R6 Object that Set and Run a SQL Query}
 \description{
 A R6 object that provides a shortcut to setting and executing a SQL query
-to create new tables in the database. Not meant to be called manually
+to create new tables in the database. Not meant to be called manually.
 }
 \examples{
 
 ## ------------------------------------------------
-## Method `DbCreate$set_query`
+## Method `DbCreate$new`
 ## ------------------------------------------------
 
-db_con = DbCon$new("db.SQLite", here::here())
-db = DbCreate(db_con$con, "SELECT * FROM wflow_tbl")
+db_con = DbCon$new("db.SQLite", ".")
+db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
 db$query
-
-## ------------------------------------------------
-## Method `DbCreate$run`
-## ------------------------------------------------
-
-?rpwf::rpwf_db_init()
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{con}}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
+\item{\code{con}}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}.}
 
-\item{\code{query}}{pre-defined SQL query to create a table}
+\item{\code{query}}{pre-defined SQL query to create a table.}
 }
 \if{html}{\out{</div>}}
 }
@@ -46,7 +41,7 @@ db$query
 \if{html}{\out{<a id="method-DbCreate-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DbCreate-new}{}}}
 \subsection{Method \code{new()}}{
-Create an \code{DbCreate} object. Should be a singleton
+Create an \code{DbCreate} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DbCreate$new(con, query)}\if{html}{\out{</div>}}
 }
@@ -54,15 +49,26 @@ Create an \code{DbCreate} object. Should be a singleton
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{con}}{\code{\link[DBI:dbConnect]{DBI::dbConnect()}} connection}
+\item{\code{con}}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} connection to the database.}
 
-\item{\code{query}}{a SQL query string}
+\item{\code{query}}{a SQL query string.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A new \code{DbCreate} object.
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{db_con = DbCon$new("db.SQLite", ".")
+db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
+db$query
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DbCreate-set_query"></a>}}
@@ -76,20 +82,10 @@ Change the query
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{query}}{a new SQL query string}
+\item{\code{query}}{a new SQL query string.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{db_con = DbCon$new("db.SQLite", here::here())
-db = DbCreate(db_con$con, "SELECT * FROM wflow_tbl")
-db$query
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DbCreate-execute"></a>}}
@@ -108,24 +104,16 @@ Run the SQL query
 Wrapper around \code{self$set_query()} and \code{self$execute()} that set query and
 run the query.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{DbCreate$run(query)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{DbCreate$run(new_table)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{query}}{a new SQL query string}
+\item{\code{new_table}}{a new SQL query string.}
 }
 \if{html}{\out{</div>}}
 }
-\subsection{Examples}{
-\if{html}{\out{<div class="r example copy">}}
-\preformatted{?rpwf::rpwf_db_init()
-}
-\if{html}{\out{</div>}}
-
-}
-
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-DbCreate-clone"></a>}}

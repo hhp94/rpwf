@@ -2,23 +2,26 @@
 % Please edit documentation in R/rpwf_simulate.R
 \name{rpwf_sim}
 \alias{rpwf_sim}
-\title{Generate the data needed for testing}
+\title{Generate the Data Needed for Testing}
 \usage{
 rpwf_sim(n_train = 100, n_test = 10, seed = 1234)
 }
 \arguments{
-\item{n_train}{number of train rows}
+\item{n_train}{number of train rows.}
 
-\item{n_test}{number of test rows}
+\item{n_test}{number of test rows.}
 
-\item{seed}{random seed}
+\item{seed}{random seed.}
 }
 \value{
-a list of train and test df and the id and target column names
+a list of train and test df and the id and target column names.
 }
 \description{
-Generate dummy data for testing of the rpwf package
+Generate dummy data for testing of the \code{rpwf} package.
 }
 \examples{
-dim_dat = rpwf_sim()
+dim_dat <- rpwf_sim()
+dim_dat$train
+dim_dat$test
 }
+\keyword{internal}

@@ -2,27 +2,32 @@
 % Please edit documentation in R/set_py_engine.R
 \name{rpwf_chk_model_avail}
 \alias{rpwf_chk_model_avail}
-\title{Internal function to check if the specified model is available in the database}
+\title{Internal Function to check if the Specified Model is Available in the Database}
 \usage{
 rpwf_chk_model_avail(con, py_module, py_base_learner, r_engine)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
 
-\item{py_module}{string of what the py module is e.g., xgboost, sklearn.ensemble}
+\item{py_module}{string of what the py module is e.g., \code{xgboost},
+\code{sklearn.ensemble}.}
 
-\item{py_base_learner}{string of what the base learner is e.g., XGBClassifier}
+\item{py_base_learner}{string of what the base learner is e.g.,
+\code{XGBClassifier}.}
 
-\item{r_engine}{string of the r_engine used}
+\item{r_engine}{string of the r_engine used.}
 }
 \value{
-either an error or "Model found in db"
+either an error or "Model found in db".
 }
 \description{
-Internal function to check if the specified model is available in the database
+Internal Function to check if the Specified Model is Available in the Database
 }
 \examples{
-con = rpwf_db_con("db.SQLite", here::here())
+db_con <- DbCon$new("db.SQLite", ".")
+rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
 rpwf_chk_model_avail(con, "xgboost", "XGBClassifier", "xgboost")
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }
+\keyword{internal}

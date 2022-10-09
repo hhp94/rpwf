@@ -2,23 +2,33 @@
 % Please edit documentation in R/rpwf_db_tools.R
 \name{rpwf_db_del_entry}
 \alias{rpwf_db_del_entry}
-\title{Deletes rows from tables other than \code{wflow_tbl}}
+\title{Deletes Rows from Tables Other than \code{wflow_tbl}}
 \usage{
 rpwf_db_del_entry(tbls, id, con)
 }
 \arguments{
 \item{tbls}{vector of character of table names, i.e., "cost_tbl", "df_tbl",
-"model_type_tbl", "r_grid_tbl", "r_grid_tbl", "wflow_result_tbl"}
+"model_type_tbl", "r_grid_tbl", "r_grid_tbl", "wflow_result_tbl".}
 
-\item{id}{vector of ids to be deleted from a particular table}
+\item{id}{vector of ids to be deleted from a particular table.}
 
-\item{con}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object. Created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+\item{con}{(\code{DBI::dbConnect()})\cr
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+}
+\value{
+Called for the side effect.
 }
 \description{
 The deletion of workflows from \code{wflow_tbl} is specified separately to
 avoid mistakes.
 }
 \examples{
-con = rpwf_db_con("db.SQLite", here::here())
-rpwf_db_del_single_tbl("cost_tbl", 1, con)
+db_con <- DbCon$new("db.SQLite", ".")
+rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
+# Before deleting
+DBI::dbGetQuery(db_con$con, "SELECT * FROM cost_tbl;")
+rpwf_db_del_single_tbl("cost_tbl", 1, db_con$con)
+# After deleting
+DBI::dbGetQuery(db_con$con, "SELECT * FROM cost_tbl;")
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }

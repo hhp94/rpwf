@@ -2,39 +2,40 @@
 % Please edit documentation in R/rpwf_main_R6_classes.R
 \name{Base}
 \alias{Base}
-\title{Internal R6 object only for setting up inheritance}
+\title{Internal R6 Object Only for Setting up Inheritance}
 \description{
-A R6 object that provides a common set of methods to 1- store the metadata of
-data in the db, and 2- export parquet files for python to import. Not
-meant to be called manually
+A R6 object that provides a common set of methods to 1) store the metadata of
+data in the db, and 2) export parquet files for python to import. Not
+meant to be called manually.
 }
+\keyword{internal}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
 \item{\code{hash}}{(\code{character()})\cr
-hash of the object by \code{\link[rlang:hash]{rlang::hash()}}}
+hash of the object by \code{\link[rlang:hash]{rlang::hash()}}.}
 
 \item{\code{path}}{(\code{character()})\cr
-path to the file in the project folder}
+path to the file in the project folder.}
 
 \item{\code{df}}{(\code{data.frame()})\cr
-the df for the hyper param grid or the transformed df}
+the df for the hyper param grid or the transformed df.}
 
 \item{\code{con}}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \code{\link[=rpwf_db_con]{rpwf_db_con()}}}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}.}
 
 \item{\code{export_query}}{(\code{glue::glue_sql()})\cr
-SQL query to upload metadata of the data into the db}
+SQL query to upload metadata of the data into the db.}
 
 \item{\code{query_results}}{(\code{glue::glue_sql()})\cr
-SQL query results to check if the object already exists}
+SQL query results to check if the object already exists.}
 
 \item{\code{proj_root_path}}{(\code{character()})\cr
-root path of the project, using \code{here::here()} is recommended}
+root path of the project, using \code{here::here()} is recommended.}
 
 \item{\code{db_folder}}{(\code{character()})\cr
 the hyper param grid and transformed df are stored in separate folders.
-This attribute holds the name of that folder}
+This attribute holds the name of that folder.}
 }
 \if{html}{\out{</div>}}
 }
@@ -62,7 +63,7 @@ This attribute holds the name of that folder}
 \if{latex}{\out{\hypertarget{method-Base-new}{}}}
 \subsection{Method \code{new()}}{
 This class is the parent of RGrid and TrainDf R6 object, not meant to be
-called
+called.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$new(db_con)}\if{html}{\out{</div>}}
 }
@@ -71,7 +72,7 @@ called
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{db_con}}{(\code{DbCon})\cr
-a\link{DbCon} object}
+a \link{DbCon} object.}
 }
 \if{html}{\out{</div>}}
 }
@@ -81,7 +82,7 @@ a\link{DbCon} object}
 \if{latex}{\out{\hypertarget{method-Base-exec_query}{}}}
 \subsection{Method \code{exec_query()}}{
 Run the query that check if the object exists in the db by checking the
-hash of the object in the db. Either find one unique row or no row
+hash of the object in the db. Either find one unique row or no row.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$exec_query(query)}\if{html}{\out{</div>}}
 }
@@ -90,7 +91,7 @@ hash of the object in the db. Either find one unique row or no row
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{query}}{(\code{glue::glue_sql()})\cr
-SQL query for either the hyper parameter grid or the transformed df}
+SQL query for either the hyper parameter grid or the transformed df.}
 }
 \if{html}{\out{</div>}}
 }
@@ -99,7 +100,7 @@ SQL query for either the hyper parameter grid or the transformed df}
 \if{html}{\out{<a id="method-Base-set_hash"></a>}}
 \if{latex}{\out{\hypertarget{method-Base-set_hash}{}}}
 \subsection{Method \code{set_hash()}}{
-Pass the hash of the object to this function to set the hash attribute
+Pass the hash of the object to this function to set the hash attribute.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$set_hash(val)}\if{html}{\out{</div>}}
 }
@@ -108,7 +109,7 @@ Pass the hash of the object to this function to set the hash attribute
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{val}}{(\code{any})\cr
-New hash, either an integer or string}
+New hash, either an integer or string.}
 }
 \if{html}{\out{</div>}}
 }
@@ -118,7 +119,7 @@ New hash, either an integer or string}
 \if{latex}{\out{\hypertarget{method-Base-set_path}{}}}
 \subsection{Method \code{set_path()}}{
 Change the path where the object is stored. Is NA only when no grid is
-provided. Have to provide a train data
+provided. Have to provide a train data.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$set_path(val)}\if{html}{\out{</div>}}
 }
@@ -127,7 +128,7 @@ provided. Have to provide a train data
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{val}}{(\code{character()})\cr
-Path to store the object on disk}
+Path to store the object on disk.}
 }
 \if{html}{\out{</div>}}
 }
@@ -136,7 +137,7 @@ Path to store the object on disk}
 \if{html}{\out{<a id="method-Base-set_db_folder"></a>}}
 \if{latex}{\out{\hypertarget{method-Base-set_db_folder}{}}}
 \subsection{Method \code{set_db_folder()}}{
-Change the folder name that store the object
+Change the folder name that store the object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$set_db_folder(val)}\if{html}{\out{</div>}}
 }
@@ -145,7 +146,7 @@ Change the folder name that store the object
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{val}}{(\code{character()})\cr
-New folder names}
+New folder names.}
 }
 \if{html}{\out{</div>}}
 }
@@ -173,7 +174,7 @@ New data frame generated by \code{self$exec_query}.}
 \if{html}{\out{<a id="method-Base-set_export_query"></a>}}
 \if{latex}{\out{\hypertarget{method-Base-set_export_query}{}}}
 \subsection{Method \code{set_export_query()}}{
-Change the SQL query to export metadata to database
+Change the SQL query to export metadata to database.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$set_export_query(val)}\if{html}{\out{</div>}}
 }
@@ -182,7 +183,7 @@ Change the SQL query to export metadata to database
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{val}}{(\code{glue::glue_sql()})\cr
-New SQL query to export metadata}
+New SQL query to export metadata.}
 }
 \if{html}{\out{</div>}}
 }
@@ -191,10 +192,9 @@ New SQL query to export metadata}
 \if{html}{\out{<a id="method-Base-set_df"></a>}}
 \if{latex}{\out{\hypertarget{method-Base-set_df}{}}}
 \subsection{Method \code{set_df()}}{
-If the hash of the new object is not found
-in the database, then new data is prepared. If the data
-is found in the metadata but not in the indicated path then new data
-is also prepared. Otherwise, \code{self$df} is
+If the hash of the new object is not found in the database, then new
+data is prepared. If the data is found in the metadata but not in the
+indicated path then new data is also prepared. Otherwise, \code{self$df} is
 NULL and will be skipped by the \code{Base::self$export_parquet()} method.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$set_df(val)}\if{html}{\out{</div>}}
@@ -204,7 +204,7 @@ NULL and will be skipped by the \code{Base::self$export_parquet()} method.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{val}}{(\code{data.frame()})\cr
-Either a recipes::juice() object or a data.frame of the hyper param grid}
+Either a \code{\link[recipes:juice]{recipes::juice()}} object or a data.frame of the hyper param grid.}
 }
 \if{html}{\out{</div>}}
 }
@@ -215,7 +215,7 @@ Either a recipes::juice() object or a data.frame of the hyper param grid}
 \subsection{Method \code{export_db()}}{
 If the \code{self$export_query} is generated because metadata is not found in
 the database, then export the metadata to the db using this query.
-Otherwise return NULL
+Otherwise return NULL.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$export_db()}\if{html}{\out{</div>}}
 }
@@ -237,7 +237,7 @@ as a parquet file to the location specified in the metadata.
 \if{latex}{\out{\hypertarget{method-Base-export}{}}}
 \subsection{Method \code{export()}}{
 Wrapper around exporting information to the db and writing the parquet
-file
+file.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$export()}\if{html}{\out{</div>}}
 }
@@ -249,7 +249,7 @@ file
 \subsection{Method \code{query_path()}}{
 If the db query found no existing metadata, then an export path is made.
 If the metadata is found by the data is not found, then an export path
-is also made. Else get the path from the metadata in the db
+is also made. Else get the path from the metadata in the db.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$query_path(new_path, new_export_query)}\if{html}{\out{</div>}}
 }
@@ -258,10 +258,10 @@ is also made. Else get the path from the metadata in the db
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{new_path}}{(\code{character()})\cr
-Path to the object}
+Path to the object.}
 
 \item{\code{new_export_query}}{(\code{glue::glue_sql()})\cr
-SQL query to export the obj metadata to the db}
+SQL query to export the obj metadata to the db.}
 }
 \if{html}{\out{</div>}}
 }
@@ -270,7 +270,7 @@ SQL query to export the obj metadata to the db}
 \if{html}{\out{<a id="method-Base-create_folder"></a>}}
 \if{latex}{\out{\hypertarget{method-Base-create_folder}{}}}
 \subsection{Method \code{create_folder()}}{
-Create the "rpwfDb" folder to store the database if it doesn't exists
+Create the "rpwfDb" folder to store the parquet if it doesn't exists.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Base$create_folder()}\if{html}{\out{</div>}}
 }

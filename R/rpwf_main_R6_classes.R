@@ -1,80 +1,89 @@
 # Base -------------------------------------------------------------------------
-#' @title Internal R6 object only for setting up inheritance
+#' @title Internal R6 Object Only for Setting up Inheritance
 #'
 #' @description
-#' A R6 object that provides a common set of methods to 1- store the metadata of
-#' data in the db, and 2- export parquet files for python to import. Not
-#' meant to be called manually
-Base = R6::R6Class(
+#' A R6 object that provides a common set of methods to 1) store the metadata of
+#' data in the db, and 2) export parquet files for python to import. Not
+#' meant to be called manually.
+#' @keywords internal
+Base <- R6::R6Class(
   "Base",
   public = list(
     #' @field hash (`character()`)\cr
-    #' hash of the object by [rlang::hash()]
+    #' hash of the object by [rlang::hash()].
     hash = NULL,
     #' @field path (`character()`)\cr
-    #' path to the file in the project folder
+    #' path to the file in the project folder.
     path = NULL,
     #' @field df (`data.frame()`)\cr
-    #' the df for the hyper param grid or the transformed df
+    #' the df for the hyper param grid or the transformed df.
     df = NULL,
     #' @field con (`DBI::dbConnect()`)\cr
-    #' a [DBI::dbConnect()] object, created by [rpwf::rpwf_db_con()]
+    #' a [DBI::dbConnect()] object, created by [DbCon].
     con = NULL,
     #' @field export_query (`glue::glue_sql()`)\cr
-    #' SQL query to upload metadata of the data into the db
+    #' SQL query to upload metadata of the data into the db.
     export_query = NULL,
     #' @field query_results (`glue::glue_sql()`)\cr
-    #' SQL query results to check if the object already exists
+    #' SQL query results to check if the object already exists.
     query_results = NULL,
     #' @field proj_root_path (`character()`)\cr
-    #' root path of the project, using `here::here()` is recommended
+    #' root path of the project, using `here::here()` is recommended.
     proj_root_path = NULL,
     #' @field db_folder (`character()`)\cr
     #' the hyper param grid and transformed df are stored in separate folders.
-    #' This attribute holds the name of that folder
+    #' This attribute holds the name of that folder.
     db_folder = NULL,
 
     #' @description
     #' This class is the parent of RGrid and TrainDf R6 object, not meant to be
-    #' called
+    #' called.
     #' @param db_con (`DbCon`)\cr
-    #' a[DbCon] object
+    #' a [DbCon] object.
     initialize = function(db_con) {
       stopifnot("input should be a R6 DbCon() object" = R6::is.R6(db_con))
-      self$df = NULL
-      self$con = db_con$con
-      self$hash = NULL
-      self$export_query = NULL
-      self$query_results = NULL
-      self$db_folder = NULL
-      self$proj_root_path = db_con$proj_root_path
+      self$df <- NULL
+      self$con <- db_con$con
+      self$hash <- NULL
+      self$export_query <- NULL
+      self$query_results <- NULL
+      self$db_folder <- NULL
+      self$proj_root_path <- db_con$proj_root_path
     },
 
     #' @description
     #' Run the query that check if the object exists in the db by checking the
-    #' hash of the object in the db. Either find one unique row or no row
+    #' hash of the object in the db. Either find one unique row or no row.
     #' @param query (`glue::glue_sql()`)\cr
-    #' SQL query for either the hyper parameter grid or the transformed df
-    exec_query = function(query) {DBI::dbGetQuery(self$con, query, list(self$hash))},
+    #' SQL query for either the hyper parameter grid or the transformed df.
+    exec_query = function(query) {
+      DBI::dbGetQuery(self$con, query, list(self$hash))
+    },
 
     #' @description
-    #' Pass the hash of the object to this function to set the hash attribute
+    #' Pass the hash of the object to this function to set the hash attribute.
     #' @param val (`any`)\cr
-    #' New hash, either an integer or string
-    set_hash = function(val) {self$hash = as.character(val)},
+    #' New hash, either an integer or string.
+    set_hash = function(val) {
+      self$hash <- as.character(val)
+    },
 
     #' @description
     #' Change the path where the object is stored. Is NA only when no grid is
-    #' provided. Have to provide a train data
+    #' provided. Have to provide a train data.
     #' @param val (`character()`)\cr
-    #' Path to store the object on disk
-    set_path = function(val) {self$path = val},
+    #' Path to store the object on disk.
+    set_path = function(val) {
+      self$path <- val
+    },
 
     #' @description
-    #' Change the folder name that store the object
+    #' Change the folder name that store the object.
     #' @param val (`character()`)\cr
-    #' New folder names
-    set_db_folder = function(val) {self$db_folder = val},
+    #' New folder names.
+    set_db_folder = function(val) {
+      self$db_folder <- val
+    },
 
     #' @description
     #' Store the results of the query from the db in a data.frame. Query have to
@@ -83,35 +92,36 @@ Base = R6::R6Class(
     #' New data frame generated by `self$exec_query`.
     set_query_results = function(val) {
       stopifnot(is.data.frame(val) & nrow(val) < 2)
-      self$query_results = val
+      self$query_results <- val
     },
 
     #' @description
-    #' Change the SQL query to export metadata to database
+    #' Change the SQL query to export metadata to database.
     #' @param val (`glue::glue_sql()`)\cr
-    #' New SQL query to export metadata
-    set_export_query = function(val) {self$export_query = val},
+    #' New SQL query to export metadata.
+    set_export_query = function(val) {
+      self$export_query <- val
+    },
 
     #' @description
-    #' If the hash of the new object is not found
-    #' in the database, then new data is prepared. If the data
-    #' is found in the metadata but not in the indicated path then new data
-    #' is also prepared. Otherwise, `self$df` is
+    #' If the hash of the new object is not found in the database, then new
+    #' data is prepared. If the data is found in the metadata but not in the
+    #' indicated path then new data is also prepared. Otherwise, `self$df` is
     #' NULL and will be skipped by the `Base::self$export_parquet()` method.
     #' @param val (`data.frame()`)\cr
-    #' Either a recipes::juice() object or a data.frame of the hyper param grid
+    #' Either a [recipes::juice()] object or a data.frame of the hyper param grid.
     set_df = function(val) {
       withr::local_dir(new = self$proj_root_path)
       # set_query_results must be run first
       if (nrow(self$query_results) == 0L) {
         # If query yields 0 rows, then create df
         message("Preparing new data...")
-        self$df = val
+        self$df <- val
       } else if (!is.na(self$query_results$path) &
-                 !file.exists(self$query_results$path)) {
+        !file.exists(self$query_results$path)) {
         # If parquet file not found but is in found in database
         message("Metadata is in db, but new data needed...")
-        self$df = val
+        self$df <- val
       } # Otherwise no transformation needed, leave `self$df` as NULL
       else {
         message("File found in the project")
@@ -121,7 +131,7 @@ Base = R6::R6Class(
     #' @description
     #' If the `self$export_query` is generated because metadata is not found in
     #' the database, then export the metadata to the db using this query.
-    #' Otherwise return NULL
+    #' Otherwise return NULL.
     export_db = function() {
       if (!is.null(self$export_query)) {
         message("Exporting to db")
@@ -138,7 +148,7 @@ Base = R6::R6Class(
     #' as a parquet file to the location specified in the metadata.
     export_parquet = function() {
       withr::local_dir(self$proj_root_path)
-      if (is.na(self$path)){
+      if (is.na(self$path)) {
         message("No grid provided\n")
       } else if (!file.exists(self$path)) {
         message("Writing parquet file\n")
@@ -151,17 +161,19 @@ Base = R6::R6Class(
 
     #' @description
     #' Wrapper around exporting information to the db and writing the parquet
-    #' file
-    export = function() {self$export_db()$export_parquet()},
+    #' file.
+    export = function() {
+      self$export_db()$export_parquet()
+    },
 
     #' @description
     #' If the db query found no existing metadata, then an export path is made.
     #' If the metadata is found by the data is not found, then an export path
-    #' is also made. Else get the path from the metadata in the db
+    #' is also made. Else get the path from the metadata in the db.
     #' @param new_path (`character()`)\cr
-    #' Path to the object
+    #' Path to the object.
     #' @param new_export_query (`glue::glue_sql()`)\cr
-    #' SQL query to export the obj metadata to the db
+    #' SQL query to export the obj metadata to the db.
     query_path = function(new_path, new_export_query) {
       # If the query generate no entry, then make a path
       if (nrow(self$query_results) == 0L) {
@@ -174,11 +186,11 @@ Base = R6::R6Class(
     },
 
     #' @description
-    #' Create the "rpwfDb" folder to store the database if it doesn't exists
+    #' Create the "rpwfDb" folder to store the parquet if it doesn't exists.
     create_folder = function() {
       ## Create folder if not exists
       withr::local_dir(self$proj_root_path)
-      folder = paste("rpwfDb", self$db_folder, sep = "/")
+      folder <- paste("rpwfDb", self$db_folder, sep = "/")
       if (!dir.exists(folder)) {
         message(glue::glue("Creating {folder} folder..."))
         dir.create(folder)
@@ -191,55 +203,57 @@ Base = R6::R6Class(
 
 
 # TrainDf ----------------------------------------------------------------------
-#' @title Internal R6 object that process the data transformation
+#' @title Internal R6 Object that Process the Data Transformation
 #'
 #' @description
 #' A R6 object that manage the export of metadata and parquet file of the
 #' transformed data defined by the recipe for data transformation.
-TrainDf = R6::R6Class(
+#' @keywords internal
+TrainDf <- R6::R6Class(
   "TrainDf",
   inherit = Base,
   public = list(
     #' @field prepped (`recipes::prep()`)\cr
-    #' holds the prepped object
+    #' holds the prepped object.
     prepped = NULL,
     #' @field term_info (`dplyr::tibble()`)\cr
     #' the `self$prepped` object has the attribute `term_info` that has
-    #' information of transformed variable before actually transforming the data
+    #' information of transformed variable before actually transforming the data.
     term_info = NULL,
     #' @field idx_col (`character()`)\cr
-    #' Having a pre-defined index in R makes working with pandas.DataFrame less
-    #' error prone. Defined by the provided recipe
+    #' Having a pre-defined index in R makes working with `pandas.DataFrame` less
+    #' error prone. Defined by the provided recipe.
     idx_col = NULL,
     #' @field target (`character()`)\cr
     #' Name of the target variable. If missing, then a message is returned to say
-    #' that a test df is assumed to be generated. Defined by the provided recipe
+    #' that a test df is assumed to be generated. Defined by the provided recipe.
     target = NULL,
     #' @field predictors (`character()`)\cr
     #' List of names of the predictors. Stored as JSON string to be parsed in
-    #' python into a python list
+    #' python into a python list.
     predictors = NULL,
-    # Holds the recipe to transform the data
+    # Holds the recipe to transform the data.
 
     #' @description
     #' Create a new instance of the TrainDf class. Also process TestDf if a
     #' target column is not provided in the recipe. See `?rprw::Base` for
-    #' details about the attributes
+    #' details about the attributes.
     #' @param recipe (`recipes::recipe()`)\cr
-    #' provided recipe that defines how the data is transformed
+    #' provided recipe that defines how the data is transformed.
     #' @param db_con (`DbCon`)\cr
-    #' a[DbCon] object
+    #' a [DbCon] object.
     initialize = function(recipe, db_con) {
       stopifnot("a recipe object required" = "recipe" %in% class(recipe))
 
       super$initialize(db_con) # Init from the super class
-      self$prepped = recipes::prep(recipe) # Init the prepped object
-      self$term_info = self$prepped$term_info # post-transform train metadata
+      self$prepped <- recipes::prep(recipe) # Init the prepped object
+      self$term_info <- self$prepped$term_info # post-transform train metadata
       self$set_hash(rlang::hash(self$prepped)) # Set the hash of the prepped obj
       # use the hash of the prepped to find the path
       self$set_query_results(self$exec_query(
-        glue::glue_sql('SELECT df_path AS path FROM df_tbl WHERE df_hash = ?',
-                       .con = self$con)
+        glue::glue_sql("SELECT df_path AS path FROM df_tbl WHERE df_hash = ?",
+          .con = self$con
+        )
       ))
       self$set_idx_col() # set index column for pandas
       self$set_target_col() # set target column for pandas
@@ -249,11 +263,12 @@ TrainDf = R6::R6Class(
       self$set_df(recipes::juice(self$prepped)) # Generate df if needed
       self$query_path(
         new_path = glue::glue(
-          'rpwfDb', '{self$db_folder}', '{self$hash}.df.parquet', .sep = "/"
+          "rpwfDb", "{self$db_folder}", "{self$hash}.df.parquet",
+          .sep = "/"
         ),
         new_export_query = glue::glue_sql(
-          'INSERT INTO df_tbl (idx_col, target, predictors, df_path, df_hash)
-            VALUES ({vals*})',
+          "INSERT INTO df_tbl (idx_col, target, predictors, df_path, df_hash)
+            VALUES ({vals*})",
           vals = c(
             self$idx_col, self$target, self$predictors, self$path, self$hash
           ), .con = self$con
@@ -262,11 +277,16 @@ TrainDf = R6::R6Class(
     },
 
     #' @description
-    #' Set the index column as defined by the recipe
+    #' Set the index column as defined by the recipe.
     set_idx_col = function() {
-      idx = which(self$term_info$role == "index") # which var is "index"
-      stopifnot("Run `recipes::update_role(<one index column>, new_role = 'index')" = length(idx) == 1)
-      self$idx_col = self$term_info[idx, "variable", drop = TRUE]
+      idx <- which(self$term_info$role == "pd.index") # which var is "index"
+      if (length(idx) == 1) {
+        self$idx_col <- self$term_info[idx, "variable", drop = TRUE]
+        message(glue::glue("Adding {self$idx_col} as pandas idx"))
+      } else {
+        message("No pandas idx added. Use update_roles() with 'pd.index' for one")
+        self$idx_col <- NA
+      }
       invisible(self)
     },
 
@@ -274,23 +294,23 @@ TrainDf = R6::R6Class(
     #' Set the target column as defined by the recipe. Assume to be test data
     #' if the target is not found.
     set_target_col = function() {
-      targ = which(self$term_info$role == "outcome") # which var is "outcome"
-      if(length(targ) == 1){
-        self$target = self$term_info[targ, "variable", drop = TRUE]
+      targ <- which(self$term_info$role == "outcome") # which var is "outcome"
+      if (length(targ) == 1) {
+        self$target <- self$term_info[targ, "variable", drop = TRUE]
       } else {
         message("No outcome added. Add in recipe, or assuming this is test data")
-        self$target = NA
+        self$target <- NA
       }
       invisible(self)
     },
 
     #' @description
     #' Store the list of predictors defined by the recipe as a json string
-    #' to be parsed in python
+    #' to be parsed in python.
     set_predictors = function() {
-      pred = which(self$term_info$role == "predictor") # which are predictors
+      pred <- which(self$term_info$role == "predictor") # which are predictors
       stopifnot("Must have more than 0 predictors" = length(pred) > 0)
-      self$predictors = as.character(
+      self$predictors <- as.character(
         jsonlite::toJSON(self$term_info[pred, "variable", drop = TRUE])
       )
     }
@@ -304,25 +324,26 @@ TrainDf = R6::R6Class(
 #' @description
 #' A R6 object that manage the export of metadata and parquet file of the
 #' hyper param grid generated in R
-RGrid = R6::R6Class(
+#' @keywords internal
+RGrid <- R6::R6Class(
   "RGrid",
   inherit = Base,
   public = list(
     #' @description
     #' Create a new instance of the RGrid class. These are grids made by
     #' functions such as `dials::grid_latin_hypercube` and `dials::grid_regular`.
-    #' See `?rprw::Base` for details of the attributes
+    #' See [Base] for details of the attributes.
     #' @param grid_obj (`rpwf::rpwf_grid_gen()`)\cr
-    #' [rpwf::rpwf_grid_gen()] performs necessary clean ups before the grid can
-    #' be used in python
+    #' [rpwf_grid_gen()] performs necessary clean ups before the grid can
+    #' be used in python.
     #' @param db_con (`DbCon`)\cr
-    #' a[DbCon] object
+    #' a [DbCon] object.
     initialize = function(grid_obj, db_con) {
       super$initialize(db_con) # Init from the super class
       self$set_hash(rlang::hash(grid_obj)) # hash the grid
       self$set_query_results(self$exec_query(
         glue::glue_sql( # hash is passed into ?
-          'SELECT grid_path AS path FROM r_grid_tbl WHERE grid_hash = ?',
+          "SELECT grid_path AS path FROM r_grid_tbl WHERE grid_hash = ?",
           .con = self$con
         )
       ))
@@ -331,96 +352,21 @@ RGrid = R6::R6Class(
       self$set_df(grid_obj) # Generate df if needed
       self$query_path(
         new_path = glue::glue(
-          'rpwfDb', '{self$db_folder}', '{self$hash}.grid.parquet', .sep = "/"
+          "rpwfDb", "{self$db_folder}", "{self$hash}.grid.parquet",
+          .sep = "/"
         ),
         new_export_query = glue::glue_sql(
-          'INSERT INTO r_grid_tbl (grid_path, grid_hash) VALUES ({vals*})',
+          "INSERT INTO r_grid_tbl (grid_path, grid_hash) VALUES ({vals*})",
           vals = c(self$path, self$hash),
           .con = self$con
         ) # Get the path for parquet file
       )
     }
-))
+  )
+)
 
 
 # Functions related to hyper param grids ---------------------------------------
-#' rename hyper param to sklearn API suitable names
-#'
-#' sklearn uses different names for the same hyper params. This function
-#' renames the names generated by `dials::grid_functions` into python suitable
-#' names of the hyper parameters that requires tuning. Called by
-#' [dplyr::rename_with()] in [rpwf::r_grid_gen()]. Add more to this function
-#' to expand
-#'
-#' @param x name of the hyper param in R
-#'
-#' @return a string of the corresponding hyper param in sklearn
-#' @export
-#'
-#' @examples
-#' rpwf_grid_rename("mtry") # "colsample_bytree"
-rpwf_grid_rename = function(x) {
-  conv_vector = as.character(
-    vapply(x, \(name) {
-      switch(
-        name,
-        "mtry" = "colsample_bytree",
-        "trees" = "n_estimators",
-        "min_n" = "min_child_weight",
-        "tree_depth" = "max_depth",
-        "learn_rate" = "learning_rate",
-        "loss_reduction" = "gamma",
-        "sample_size" = "subsample",
-        name
-      )
-    },"character"
-    )
-  )
-  return(conv_vector)
-}
-
-
-#' Internal function to finalize the parameters that requires train data
-#'
-#' mtry is the number of columns in R, whereas in sklearn it's the proportion of
-#' columns (randomly chosen for a base learner). This function creates the
-#' finalized parameter object in R and pass the number of predictors to
-#' [r_grid_gen()] to convert from mtry count to mtry proportion for sklearn.
-#'
-#' @inheritParams rpwf_grid_gen
-#'
-#' @return finalized parameter object
-#' @export
-rpwf_finalize_params = function(model, preproc) {
-  # some parameters (mtry) requires the data to be finalized
-  stopifnot("model_spec" %in% class(model) &
-              "recipe" %in% class(preproc))
-
-  # Get just the predictors of pre-transformed data
-  preds = preproc$var_info[
-    which(preproc$var_info$role == "predictor"), "variable", drop = TRUE
-    ]
-
-  # mtry conversion to python requires ncol() and nrow() of pre-transform data
-  finalized_params = dials::finalize(
-    hardhat::extract_parameter_set_dials(model),
-    dplyr::select(preproc$template , dplyr::all_of(preds))
-  )
-
-  # prevent specifying of params not belonging to the model in R. Works by
-  # raising an subscript out of range error if the param not found.
-  tryCatch({
-    labels = sapply(finalized_params$object, \(x) {
-      x[["label"]]
-    })
-  },
-  error = function(c) {
-    message("Tuning params not found")
-    stop(c)
-  })
-
-  return(list(pars = finalized_params, n_predictors = length(preds)))
-}
 
 #' A wrapper around `dials::grid_<functions>` to create a sklearn suitable grid
 #'
@@ -430,34 +376,117 @@ rpwf_finalize_params = function(model, preproc) {
 #' provided and perform some cleaning such as converting R `mtry` counts to
 #' Python `col_by_sample` proportion.
 #'
-#' @param model a model spec object defined by `{parsnip}`
-#' @param preproc a recipe object defined by `{recipes}`
-#' @param .grid_fun `{dials}` functions e.g., `grid_latin_hypercube`,
-#' `grid_max_entropy`, etc.,
-#' @param ... additional arguments for the `.grid_fun` functions
+#' @param model a model spec object defined by `{parsnip}`.
+#' @param preproc a recipe object defined by `{recipes}`.
+#' @param .grid_fun a `dials::grid_<functions>`, e.g., `grid_random()`,
+#' `grid_latin_hypercube()`. Default `NULL` assumes that no grid search is
+#' performed and default params in sklearn are used. See details for custom grids.
+#' @param ... additional arguments for the `.grid_fun` functions.
 #'
 #' @return a `rpwf_grid` object, which is just a modified `{dials}` grid but
-#' made suitable for sklearn
-#' @export
-rpwf_grid_gen = function(model,
-                         preproc,
-                         .grid_fun = NULL,
-                         ...) {
-  params = rpwf_finalize_params(model = model, preproc = preproc)
+#' made suitable for sklearn.
+#' @keywords internal
+rpwf_grid_gen <- function(model,
+                          preproc,
+                          .grid_fun = NULL,
+                          ...) {
+  params <- rpwf_finalize_params(model = model, preproc = preproc)
 
-  if (!is.function(.grid_fun) & (nrow(params$pars) == 0 | is.null(.grid_fun))) {
+  if (nrow(params$pars) == 0 | (!is.function(.grid_fun) & is.null(.grid_fun))) {
     message(paste("No tuning is assumed, either no hyper params are provided",
-                  "in the model spec or .grid_fun is NA or NULL", sep = " "))
-    return(NA) #If hash of NA is changed, has to update rpwf_db_ini_val()
+      "in the model spec or .grid_fun is NA or NULL",
+      sep = " "
+    ))
+    return(NA) # If hash of NA is changed, has to update rpwf_db_ini_val()
   }
   stopifnot(".grid_fun needs to be function" = is.function(.grid_fun))
-  r_grid = .grid_fun(x = params$pars, ...)
+  r_grid <- .grid_fun(x = params$pars, ...)
 
   if ("mtry" %in% colnames(r_grid)) {
     # `colby_sample` is mtry converted into proportion so we need a denominator.
     #  Denominator is number is number of predictors
-    r_grid$mtry = round(r_grid$mtry / params$n_predictors, 2)
+    r_grid$mtry <- round(r_grid$mtry / params$n_predictors, 2)
   }
 
   return(dplyr::rename_with(r_grid, rpwf_grid_rename))
+}
+
+#' Rename Hyper Params to sklearn API Suitable Names
+#'
+#' sklearn uses different names for the same hyper params in `{parsnips}`. This
+#' function renames the names generated by `dials::grid_functions` into python
+#' suitable names of the hyper parameters that requires tuning. Called by
+#' [dplyr::rename_with()] in [rpwf_grid_gen()]. Add more to this function
+#' to expand.
+#'
+#' @param x name of the hyper param in R.
+#'
+#' @return a string of the corresponding hyper param in sklearn.
+#' @keywords internal
+#'
+#' @examples
+#' rpwf_grid_rename("mtry") # "colsample_bytree"
+rpwf_grid_rename <- function(x) {
+  conv_vector <- as.character(
+    vapply(x, \(name) {
+      switch(name,
+        "mtry" = "colsample_bytree",
+        "trees" = "n_estimators",
+        "min_n" = "min_child_weight",
+        "tree_depth" = "max_depth",
+        "learn_rate" = "learning_rate",
+        "loss_reduction" = "gamma",
+        "sample_size" = "subsample",
+        name
+      )
+    }, "character")
+  )
+  return(conv_vector)
+}
+
+
+#' Internal Function to Finalize the Parameters that Requires Train Data
+#'
+#' `mtry` is the number of columns in R, whereas in sklearn it's the proportion
+#' of columns (randomly chosen for a base learner). This function creates the
+#' finalized parameter object in R and pass the number of predictors to
+#' [rpwf_grid_gen()] to convert from `mtry` count to `col_by_sample` proportion
+#' for sklearn.
+#'
+#' @inheritParams rpwf_grid_gen
+#'
+#' @return finalized parameter object.
+#' @keywords internal
+rpwf_finalize_params <- function(model, preproc) {
+  # some parameters (mtry) requires the data to be finalized
+  stopifnot("model_spec" %in% class(model) &
+    "recipe" %in% class(preproc))
+
+  # Get just the predictors of pre-transformed data
+  preds <- preproc$var_info[
+    which(preproc$var_info$role == "predictor"), "variable",
+    drop = TRUE
+  ]
+
+  # mtry conversion to python requires ncol() and nrow() of pre-transform data
+  finalized_params <- dials::finalize(
+    hardhat::extract_parameter_set_dials(model),
+    dplyr::select(preproc$template, dplyr::all_of(preds))
+  )
+
+  # prevent specifying of params not belonging to the model in R. Works by
+  # raising an subscript out of range error if the param not found.
+  tryCatch(
+    {
+      labels <- sapply(finalized_params$object, \(x) {
+        x[["label"]]
+      })
+    },
+    error = function(c) {
+      message("Tuning params not found")
+      stop(c)
+    }
+  )
+
+  return(list(pars = finalized_params, n_predictors = length(preds)))
 }

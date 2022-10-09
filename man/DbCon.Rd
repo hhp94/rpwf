@@ -2,21 +2,32 @@
 % Please edit documentation in R/rpwf_db_schema.R
 \name{DbCon}
 \alias{DbCon}
-\title{R6 object store the connection and path to the db}
+\title{R6 Object that Stores the Connection and Path to the Db}
 \description{
 Create the "rpwfDb" folder in the provided root path and create a db if
-needed. Initialize with \verb{db = DbCon$new(<db_name>, here::here())}
+needed. Initialize with \verb{db = DbCon$new(<db_name>, here::here())}.
+}
+\examples{
+
+## ------------------------------------------------
+## Method `DbCon$new`
+## ------------------------------------------------
+
+db_con = DbCon$new("db.SQLite", ".")
+db_con$con
+db_con$proj_root_path
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{db_name}}{name of the database}
+\item{\code{db_name}}{name of the database.}
 
-\item{\code{proj_root_path}}{root path of the project}
+\item{\code{proj_root_path}}{root path of the project.}
 
-\item{\code{db_path}}{path to the \code{db_path}}
+\item{\code{db_path}}{path to the database.}
 
-\item{\code{con}}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object}
+\item{\code{con}}{a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object to the database.}
 }
 \if{html}{\out{</div>}}
 }
@@ -30,8 +41,9 @@ needed. Initialize with \verb{db = DbCon$new(<db_name>, here::here())}
 \if{html}{\out{<a id="method-DbCon-new"></a>}}
 \if{latex}{\out{\hypertarget{method-DbCon-new}{}}}
 \subsection{Method \code{new()}}{
-Create an \code{DbCon} object. Should be a singleton. \code{self$con} returns the
-\code{\link[DBI:dbConnect]{DBI::dbConnect()}} and \code{self$proj_root_path} returns the \code{proj_root_path}.
+Create an \code{DbCon} object. Should be a singleton. \code{self$con} returns a
+\code{\link[DBI:dbConnect]{DBI::dbConnect()}} object and \code{self$proj_root_path} returns
+\code{proj_root_path}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{DbCon$new(db_name, proj_root_path)}\if{html}{\out{</div>}}
 }
@@ -39,14 +51,25 @@ Create an \code{DbCon} object. Should be a singleton. \code{self$con} returns th
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{db_name}}{name of the database}
+\item{\code{db_name}}{name of the database.}
 
-\item{\code{proj_root_path}}{root path of the project}
+\item{\code{proj_root_path}}{root path of the project.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
 A new \code{DbCon} object.
 }
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{db_con = DbCon$new("db.SQLite", ".")
+db_con$con
+db_con$proj_root_path
+unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
+\if{html}{\out{</div>}}
+
+}
+
 }
 }
