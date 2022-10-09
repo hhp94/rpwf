@@ -228,7 +228,7 @@ rpwf_schema <- function() {
 #'
 #' @examples
 #' \dontrun{
-#' db_con = DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", ".")
 #' rpwf_db_init(db_con$con)
 #' DBI::dbListTables(db_con$con)
 #' }

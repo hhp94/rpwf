@@ -25,16 +25,16 @@ Wrapper around \code{\link[tidyr:expand]{tidyr::crossing()}} that creates all co
 and models.
 }
 \examples{
-d = rpwf_sim()$train
-m1 = parsnip::boost_tree() |>
+d <- rpwf_sim()$train
+m1 <- parsnip::boost_tree() |>
   parsnip::set_engine("xgboost") |>
   parsnip::set_mode("classification") |>
   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
-r1 = d |>
+r1 <- d |>
   recipes::recipe(target ~ .) |>
   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
   # "pd.index" is the special column that used for indexing in pandas
   recipes::update_role(.data$id, new_role = "pd.index")
-wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
+wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 wf
 }

@@ -21,7 +21,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' db_con = DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", ".")
 #' parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>

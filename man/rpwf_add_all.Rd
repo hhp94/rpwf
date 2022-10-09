@@ -37,23 +37,23 @@ Wrapper to Generate the Object to be Exported to the Database
 \examples{
 \dontrun{
 # Create the database
-db_con = DbCon$new("db.SQLite", ".")
+db_con <- DbCon$new("db.SQLite", ".")
 rpwf_db_init(db_con$con, rpwf_schema())
 
 # Create a `workflow_set`
-d = rpwf_sim()$train
-m1 = parsnip::boost_tree() |>
+d <- rpwf_sim()$train
+m1 <- parsnip::boost_tree() |>
   parsnip::set_engine("xgboost") |>
   parsnip::set_mode("classification") |>
   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
-r1 = d |>
+r1 <- d |>
   recipes::recipe(target ~ .) |>
   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
   # "pd.index" is the special column that used for indexing in pandas
   recipes::update_role(.data$id, new_role = "pd.index")
-wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
+wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 
-to_export = wf |>
+to_export <- wf |>
   rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
 list.files("./rpwfDb", recursive = TRUE) # Files are created
 }

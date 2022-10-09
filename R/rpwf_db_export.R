@@ -14,17 +14,17 @@
 #' and costs.
 #' @export
 #' @examples
-#' d = rpwf_sim()$train
-#' m1 = parsnip::boost_tree() |>
+#' d <- rpwf_sim()$train
+#' m1 <- parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
 #'   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
-#' r1 = d |>
+#' r1 <- d |>
 #'   recipes::recipe(target ~ .) |>
 #'   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
 #'   # "pd.index" is the special column that used for indexing in pandas
 #'   recipes::update_role(.data$id, new_role = "pd.index")
-#' wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
+#' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 #' wf
 rpwf_workflow_set <- function(preprocs, models, costs) {
   stopifnot(is.vector(preprocs) & is.vector(models) & is.vector(costs))
@@ -101,7 +101,7 @@ rpwf_add_model_info <- function(obj, con) {
 #' @return a vector of query values.
 #' @keywords internal
 rpwf_query <- function(query, con, val1, val2 = NULL) {
-  if(is.null(val2)) {
+  if (is.null(val2)) {
     query_res_list <- lapply(
       val1,
       \(x) {
@@ -202,7 +202,9 @@ rpwf_add_grids <- function(obj, db_con) {
   query_res <- rpwf_query( # Use the hash to find the grid_id
     query = "SELECT grid_id FROM r_grid_tbl WHERE grid_hash = ?",
     con = db_con$con,
-    val1 = sapply(RGrid_obj, \(x) {x$hash})
+    val1 = sapply(RGrid_obj, \(x) {
+      x$hash
+    })
   )
   # Add `grid_id` to the accumulating object
   return(dplyr::mutate(obj, grid_id = query_res))
@@ -235,7 +237,9 @@ rpwf_add_dfs <- function(obj, db_con, seed) {
   query_res <- rpwf_query(
     con = db_con$con,
     query = "SELECT df_id FROM df_tbl WHERE df_hash = ?",
-    val1 = sapply(TrainDf_obj, \(x) {x$hash})
+    val1 = sapply(TrainDf_obj, \(x) {
+      x$hash
+    })
   )
   # Add `df_id` to the accumulating object
   return(dplyr::mutate(obj, df_id = query_res))
@@ -317,23 +321,23 @@ rpwf_add_random_state <- function(obj, range, seed) {
 #' @examples
 #' \dontrun{
 #' # Create the database
-#' db_con = DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", ".")
 #' rpwf_db_init(db_con$con, rpwf_schema())
 #'
 #' # Create a `workflow_set`
-#' d = rpwf_sim()$train
-#' m1 = parsnip::boost_tree() |>
+#' d <- rpwf_sim()$train
+#' m1 <- parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
 #'   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
-#' r1 = d |>
+#' r1 <- d |>
 #'   recipes::recipe(target ~ .) |>
 #'   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
 #'   # "pd.index" is the special column that used for indexing in pandas
 #'   recipes::update_role(.data$id, new_role = "pd.index")
-#' wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
+#' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 #'
-#' to_export = wf |>
+#' to_export <- wf |>
 #'   rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
 #' list.files("./rpwfDb", recursive = TRUE) # Files are created
 #' }
@@ -375,23 +379,23 @@ rpwf_wflow_hash_ <- function(df) {
 #' @examples
 #' \dontrun{
 #' # Create the database
-#' db_con = DbCon$new("db.SQLite", ".")
+#' db_con <- DbCon$new("db.SQLite", ".")
 #' rpwf_db_init(db_con$con, rpwf_schema())
 #'
 #' # Create a `workflow_set`
-#' d = rpwf_sim()$train
-#' m1 = parsnip::boost_tree() |>
+#' d <- rpwf_sim()$train
+#' m1 <- parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
 #'   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
-#' r1 = d |>
+#' r1 <- d |>
 #'   recipes::recipe(target ~ .) |>
 #'   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
 #'   # "pd.index" is the special column that used for indexing in pandas
 #'   recipes::update_role(.data$id, new_role = "pd.index")
-#' wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
+#' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 #'
-#' to_export = wf |>
+#' to_export <- wf |>
 #'   rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
 #'
 #' # Before exporting
@@ -399,7 +403,6 @@ rpwf_wflow_hash_ <- function(df) {
 #' rpwf_export_db(to_export, db_con$con)
 #' # After exporting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
-#'
 #' }
 rpwf_export_db <- function(obj, con) {
   # These columns must be present in the data

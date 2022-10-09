@@ -21,23 +21,23 @@ Export the \code{\link[=rpwf_add_all]{rpwf_add_all()}} Object into the Database
 \examples{
 \dontrun{
 # Create the database
-db_con = DbCon$new("db.SQLite", ".")
+db_con <- DbCon$new("db.SQLite", ".")
 rpwf_db_init(db_con$con, rpwf_schema())
 
 # Create a `workflow_set`
-d = rpwf_sim()$train
-m1 = parsnip::boost_tree() |>
+d <- rpwf_sim()$train
+m1 <- parsnip::boost_tree() |>
   parsnip::set_engine("xgboost") |>
   parsnip::set_mode("classification") |>
   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
-r1 = d |>
+r1 <- d |>
   recipes::recipe(target ~ .) |>
   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
   # "pd.index" is the special column that used for indexing in pandas
   recipes::update_role(.data$id, new_role = "pd.index")
-wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
+wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 
-to_export = wf |>
+to_export <- wf |>
   rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
 
 # Before exporting
@@ -45,6 +45,5 @@ DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
 rpwf_export_db(to_export, db_con$con)
 # After exporting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
-
 }
 }
