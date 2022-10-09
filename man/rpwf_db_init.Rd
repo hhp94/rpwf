@@ -22,9 +22,7 @@ object and create the tables after creating a new \code{rpwfDb} folder and
 database specified by the \code{DbCon$new()} object.
 }
 \examples{
-\dontrun{
-db_con <- DbCon$new("db.SQLite", ".")
+db_con <- DbCon$new("db.SQLite", tempdir())
 rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
 DBI::dbListTables(db_con$con)
-}
 }

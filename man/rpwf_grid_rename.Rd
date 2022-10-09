@@ -20,8 +20,6 @@ suitable names of the hyper parameters that requires tuning. Called by
 to expand.
 }
 \examples{
-\dontrun{
 rpwf_grid_rename("mtry") # "colsample_bytree"
-}
 }
 \keyword{internal}

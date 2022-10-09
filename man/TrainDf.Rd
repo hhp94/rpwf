@@ -7,6 +7,35 @@
 A R6 object that manage the export of metadata and parquet file of the
 transformed data defined by the recipe for data transformation.
 }
+\details{
+This object works by:
+\itemize{
+\item inherits from the \link{Base} class.
+\item accept a recipe and generate a prepped object with \code{\link[recipes:prep]{recipes::prep()}}.
+\item use the prepped object to get the name of the pd.index, target, and
+predictors.
+\item calculate the hash of the prepped recipe (not the data frame) and check
+the hash of the prepped recipe in the database.
+\item if the hash is found in the database:
+\itemize{
+\item assign the path associated with the hash of the data.frame to \code{self$path}.
+\item check if the file exists with the \code{self$path}.
+\item if not exists, transform the prepped object with \code{\link[recipes:juice]{recipes::juice()}} and
+assign to \code{self$df}.
+\item if the file exists, then assign \code{NULL} to \code{self$df} attribute to stop
+\code{self$export_parquet()} from executing.
+}
+\item if the hash is not found in the database:
+\itemize{
+\item transform the prepped object with \code{\link[recipes:juice]{recipes::juice()}} and assign to
+\code{self$df}.
+\item generate a new path to write the transformed data.
+\item generate a SQL query to update the database with the new hash and new path
+}
+\item update the database with the generated SQL query with \code{self$export_db()}
+\item write the parquet with \code{self$export_parquet()}
+}
+}
 \keyword{internal}
 \section{Super class}{
 \code{\link[rpwf:Base]{rpwf::Base}} -> \code{TrainDf}
@@ -53,13 +82,13 @@ python into a python list.}
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export"><a href='../../rpwf/html/Base.html#method-Base-export'><code>rpwf::Base$export()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_db"><a href='../../rpwf/html/Base.html#method-Base-export_db'><code>rpwf::Base$export_db()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_parquet"><a href='../../rpwf/html/Base.html#method-Base-export_parquet'><code>rpwf::Base$export_parquet()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="query_path"><a href='../../rpwf/html/Base.html#method-Base-query_path'><code>rpwf::Base$query_path()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="export_prep"><a href='../../rpwf/html/Base.html#method-Base-export_prep'><code>rpwf::Base$export_prep()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="find_path_in_db"><a href='../../rpwf/html/Base.html#method-Base-find_path_in_db'><code>rpwf::Base$find_path_in_db()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_db_folder"><a href='../../rpwf/html/Base.html#method-Base-set_db_folder'><code>rpwf::Base$set_db_folder()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_df"><a href='../../rpwf/html/Base.html#method-Base-set_df'><code>rpwf::Base$set_df()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_export_query"><a href='../../rpwf/html/Base.html#method-Base-set_export_query'><code>rpwf::Base$set_export_query()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_hash"><a href='../../rpwf/html/Base.html#method-Base-set_hash'><code>rpwf::Base$set_hash()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_path"><a href='../../rpwf/html/Base.html#method-Base-set_path'><code>rpwf::Base$set_path()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="Base" data-id="set_query_results"><a href='../../rpwf/html/Base.html#method-Base-set_query_results'><code>rpwf::Base$set_query_results()</code></a></span></li>
 </ul>
 </details>
 }}

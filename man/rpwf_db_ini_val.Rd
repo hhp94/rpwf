@@ -19,9 +19,7 @@ defined in R and Python. Won't update duplicated rows. Expand compatibility
 by adding values to this function.
 }
 \examples{
-\dontrun{
-db_con <- DbCon$new("db.SQLite", ".")
-rpwf_db_init(db_con$con)
+db_con <- DbCon$new("db.SQLite", tempdir())
+rpwf_db_init(db_con$con, rpwf_schema()) # Create the db
 DBI::dbListTables(db_con$con)
-}
 }

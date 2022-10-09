@@ -50,3 +50,21 @@ rpwf::rpwf_cp_py_codes(<project root path here>)
 ```
 
 Then, install the package as a local package with pip with `python -m pip install -e <path to the downloaded folder>` so that the imports works.  
+
+### linux installation
+[`{arrow}`](https://arrow.apache.org/) installation on linux might fail. In 
+which case, use this [instruction](https://cran.r-project.org/web/packages/arrow/vignettes/install.html). 
+The following codes worked for me:
+
+``` r
+Sys.setenv(NOT_CRAN = TRUE)
+install.packages("arrow", repos = c(arrow = "https://nightlies.apache.org/arrow/r", getOption("repos")))
+```
+
+Or update your current build of arrow with
+
+``` r
+source("https://raw.githubusercontent.com/apache/arrow/master/r/R/install-arrow.R")
+install_arrow(verbose = TRUE)
+```
+

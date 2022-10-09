@@ -23,13 +23,11 @@ The deletion of workflows from \code{wflow_tbl} is specified separately to
 avoid mistakes.
 }
 \examples{
-\dontrun{
-db_con <- DbCon$new("db.SQLite", ".")
+db_con <- DbCon$new("db.SQLite", tempdir())
 rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
 # Before deleting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM cost_tbl;")
-rpwf_db_del_single_tbl("cost_tbl", 1, db_con$con)
+rpwf_db_del_entry("cost_tbl", 1, db_con$con)
 # After deleting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM cost_tbl;")
-}
 }

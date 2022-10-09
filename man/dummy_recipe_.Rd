@@ -17,10 +17,4 @@ a \code{\link[recipes:recipe]{recipes::recipe()}} object.
 \description{
 For testing, not meant to be called.
 }
-\examples{
-\dontrun{
-test_recipe_train <- dummy_recipe_(rpwf_sim)
-test_recipe_test <- dummy_recipe_(rpwf_sim, type = "test")
-}
-}
 \keyword{internal}

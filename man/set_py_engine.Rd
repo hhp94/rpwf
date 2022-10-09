@@ -32,17 +32,15 @@ needed to run sklearn models. Importantly, also passes sklearn base learner
 specific arguments through the \code{args} parameter.
 }
 \examples{
-\dontrun{
-db_con <- DbCon$new("db.SQLite", ".")
+db_con <- DbCon$new("db.SQLite", tempdir())
 parsnip::boost_tree() |>
   parsnip::set_engine("xgboost") |>
   parsnip::set_mode("classification") |>
   set_py_engine(
-    "XGBClassifier", db_con$con,
+    "xgboost", "XGBClassifier", db_con$con,
     list(
       eval_metric = "logloss", use_label_encoder = FALSE,
       verbosity = 0, silent = TRUE, n_estimators = 100
     )
   )
-}
 }

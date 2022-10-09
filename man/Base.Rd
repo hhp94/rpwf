@@ -27,8 +27,9 @@ a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}.
 \item{\code{export_query}}{(\code{glue::glue_sql()})\cr
 SQL query to upload metadata of the data into the db.}
 
-\item{\code{query_results}}{(\code{glue::glue_sql()})\cr
-SQL query results to check if the object already exists.}
+\item{\code{queried_path}}{(\code{glue::glue_sql()})\cr
+SQL query results to check if metadata of the object already exists in
+the db.}
 
 \item{\code{proj_root_path}}{(\code{character()})\cr
 root path of the project, using \code{here::here()} is recommended.}
@@ -47,13 +48,13 @@ This attribute holds the name of that folder.}
 \item \href{#method-Base-set_hash}{\code{Base$set_hash()}}
 \item \href{#method-Base-set_path}{\code{Base$set_path()}}
 \item \href{#method-Base-set_db_folder}{\code{Base$set_db_folder()}}
-\item \href{#method-Base-set_query_results}{\code{Base$set_query_results()}}
+\item \href{#method-Base-find_path_in_db}{\code{Base$find_path_in_db()}}
 \item \href{#method-Base-set_export_query}{\code{Base$set_export_query()}}
 \item \href{#method-Base-set_df}{\code{Base$set_df()}}
 \item \href{#method-Base-export_db}{\code{Base$export_db()}}
 \item \href{#method-Base-export_parquet}{\code{Base$export_parquet()}}
 \item \href{#method-Base-export}{\code{Base$export()}}
-\item \href{#method-Base-query_path}{\code{Base$query_path()}}
+\item \href{#method-Base-export_prep}{\code{Base$export_prep()}}
 \item \href{#method-Base-create_folder}{\code{Base$create_folder()}}
 \item \href{#method-Base-clone}{\code{Base$clone()}}
 }
@@ -152,13 +153,13 @@ New folder names.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Base-set_query_results"></a>}}
-\if{latex}{\out{\hypertarget{method-Base-set_query_results}{}}}
-\subsection{Method \code{set_query_results()}}{
+\if{html}{\out{<a id="method-Base-find_path_in_db"></a>}}
+\if{latex}{\out{\hypertarget{method-Base-find_path_in_db}{}}}
+\subsection{Method \code{find_path_in_db()}}{
 Store the results of the query from the db in a data.frame. Query have to
 return a df (so \code{\link[=nrow]{nrow()}} works) with 0 <= \code{nrow()} < 2.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Base$set_query_results(val)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Base$find_path_in_db(val)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -244,14 +245,14 @@ file.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Base-query_path"></a>}}
-\if{latex}{\out{\hypertarget{method-Base-query_path}{}}}
-\subsection{Method \code{query_path()}}{
+\if{html}{\out{<a id="method-Base-export_prep"></a>}}
+\if{latex}{\out{\hypertarget{method-Base-export_prep}{}}}
+\subsection{Method \code{export_prep()}}{
 If the db query found no existing metadata, then an export path is made.
 If the metadata is found by the data is not found, then an export path
 is also made. Else get the path from the metadata in the db.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Base$query_path(new_path, new_export_query)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Base$export_prep(new_path, new_export_query)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

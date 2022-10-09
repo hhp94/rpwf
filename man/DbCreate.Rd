@@ -13,11 +13,8 @@ to create new tables in the database. Not meant to be called manually.
 ## Method `DbCreate$new`
 ## ------------------------------------------------
 
-\dontrun{
-db_con = DbCon$new("db.SQLite", ".")
+db_con = DbCon$new("db.SQLite", tempdir())
 db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
-db$query
-}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -61,11 +58,8 @@ A new \code{DbCreate} object.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{\dontrun{
-db_con = DbCon$new("db.SQLite", ".")
+\preformatted{db_con = DbCon$new("db.SQLite", tempdir())
 db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
-db$query
-}
 }
 \if{html}{\out{</div>}}
 

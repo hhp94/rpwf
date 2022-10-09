@@ -17,10 +17,8 @@ a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}.
 Working with a \code{{dm}} object can make life easier than writing manual queries
 }
 \examples{
-\dontrun{
-db_con <- DbCon$new("db.SQLite", ".")
+db_con <- DbCon$new("db.SQLite", tempdir())
 dm_obj <- rpwf_dm_obj(db_con$con)
 dm_obj
 # dm_obj |> dm::dm_draw()
-}
 }

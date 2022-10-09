@@ -25,10 +25,8 @@ either an error or "Model found in db".
 Internal Function to check if the Specified Model is Available in the Database
 }
 \examples{
-\dontrun{
-db_con <- DbCon$new("db.SQLite", ".")
+db_con <- DbCon$new("db.SQLite", tempdir())
 rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
-rpwf_chk_model_avail(con, "xgboost", "XGBClassifier", "xgboost")
-}
+rpwf_chk_model_avail(db_con$con, "xgboost", "XGBClassifier", "xgboost")
 }
 \keyword{internal}

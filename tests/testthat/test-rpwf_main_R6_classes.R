@@ -16,8 +16,8 @@ test_that("initialization of the TrainDf class", {
     list("X1", "X2", "X3_X1", "X3_X2", "X3_X3", "X3_X4")
   )
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
-  expect_true(is.data.frame(train_df_obj$query_results))
-  expect_equal(nrow(train_df_obj$query_results), 0)
+  expect_true(is.data.frame(train_df_obj$queried_path))
+  expect_equal(nrow(train_df_obj$queried_path), 0)
   # The SQL query is 0 row, make a new export query to insert to database
   expect_true(!is.null(train_df_obj$export_query))
 })
@@ -63,7 +63,7 @@ test_that("export() method won't add repeated rows class", {
   # initialize a new TrainDf object using the same recipe
   train_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)
   # If we try the same recipe, hash check would find one row
-  expect_equal(nrow(train_df_obj_repeated$query_results), 1)
+  expect_equal(nrow(train_df_obj_repeated$queried_path), 1)
   # if hash check find one row, then export query would return NULL
   expect_true(is.null(train_df_obj_repeated$export_query))
   # `recipes::juice()` won't run, so self$df is NULL
@@ -88,7 +88,7 @@ test_that("Check if data (no outcome) can be exported", {
   # initialize a new TrainDf object using the same recipe
   test_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)
   # If we try the same recipe, hash check would find one row
-  expect_equal(nrow(test_df_obj_repeated$query_results), 1)
+  expect_equal(nrow(test_df_obj_repeated$queried_path), 1)
   # if hash check find one row, then export query would return NULL
   expect_true(is.null(test_df_obj_repeated$export_query))
   # `recipes::juice()` won't run, so self$df is NULL
@@ -215,8 +215,8 @@ test_that("initialization of the RGrid class", {
   # Generate an object
   r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
-  expect_true(is.data.frame(r_grid_obj$query_results))
-  expect_equal(nrow(r_grid_obj$query_results), 0)
+  expect_true(is.data.frame(r_grid_obj$queried_path))
+  expect_equal(nrow(r_grid_obj$queried_path), 0)
   # The SQL query is 0 row, make a new export query to insert to database
   expect_true(!is.null(r_grid_obj$export_query))
 })
@@ -309,7 +309,7 @@ test_that("export() method won't add repeated rows class", {
   # initialize a new RGrid object using the same recipe
   rgrid_obj_repeated <- RGrid$new(c_grid_lhcube, db_con)
   # If we try the same recipe, hash check would find one row
-  expect_equal(nrow(rgrid_obj_repeated$query_results), 1)
+  expect_equal(nrow(rgrid_obj_repeated$queried_path), 1)
   # if hash check find one row, then export query would return NULL
   expect_true(is.null(rgrid_obj_repeated$export_query))
   # `recipes::juice()` won't run, so self$df is NULL
