@@ -17,7 +17,9 @@ a character string of id column for respective table.
 Not meant to be called manually.
 }
 \examples{
+\dontrun{
 id_col_switch_("cost_tbl")
 # id_col_switch_("wflow_tbl") # error
+}
 }
 \keyword{internal}

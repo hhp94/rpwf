@@ -19,8 +19,9 @@ defined in R and Python. Won't update duplicated rows. Expand compatibility
 by adding values to this function.
 }
 \examples{
+\dontrun{
 db_con = DbCon$new("db.SQLite", ".")
 rpwf_db_init(db_con$con)
 DBI::dbListTables(db_con$con)
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
 }

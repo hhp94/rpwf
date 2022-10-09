@@ -35,6 +35,7 @@ tibble with the columns necessary for exporting to db.
 Wrapper to Generate the Object to be Exported to the Database
 }
 \examples{
+\dontrun{
 # Create the database
 db_con = DbCon$new("db.SQLite", ".")
 rpwf_db_init(db_con$con, rpwf_schema())
@@ -55,5 +56,5 @@ wf = rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 to_export = wf |>
   rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
 list.files("./rpwfDb", recursive = TRUE) # Files are created
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
 }

@@ -19,6 +19,7 @@ number of rows exported.
 Export the \code{\link[=rpwf_add_all]{rpwf_add_all()}} Object into the Database
 }
 \examples{
+\dontrun{
 # Create the database
 db_con = DbCon$new("db.SQLite", ".")
 rpwf_db_init(db_con$con, rpwf_schema())
@@ -45,5 +46,5 @@ rpwf_export_db(to_export, db_con$con)
 # After exporting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
 
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
 }

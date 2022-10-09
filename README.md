@@ -3,21 +3,32 @@
 
 # rpwf
 
-``` r
-# usethis::use_coverage()
-```
-
 <!-- badges: start -->
 
 [![Codecov test
 coverage](https://codecov.io/gh/hhp94/rpwf/branch/master/graph/badge.svg)](https://app.codecov.io/gh/hhp94/rpwf?branch=master)
 <!-- badges: end -->
 
-The goal of rpwf is to …
+`{rpwf}` allows data engineering in R with
+[{tidymodels}](https://www.tidymodels.org/) and running the generated
+workflow sets using python’s very mature ML framework
+[scikit-learn](https://scikit-learn.org/stable/index.html). To
+facilitate this, a SQLite database is created to handles all the paths
+and information needed to fit models between R and Python. On top of the
+wonderful experience manipulating data in R, `{rpwf}` also enables the
+ability to use the generation of hyper parameter grids using the
+[{dials}](https://dials.tidymodels.org/) functions such as
+[`grid_max_entropy`](https://dials.tidymodels.org/reference/grid_max_entropy.html)
+and etc. for grid search in
+[scikit-learn](https://scikit-learn.org/stable/index.html).
+
+The combination of automated handling of paths and files with SQLite and
+provided python CLI templates aims to make feature engineering on HPCs a
+smoother experience.
 
 ## Installation
 
-You can install the development version of rpwf from
+You can install the development version of `{rpwf}` from
 [GitHub](https://github.com/) with:
 
 ``` r
@@ -25,31 +36,15 @@ You can install the development version of rpwf from
 devtools::install_github("hhp94/rpwf")
 ```
 
-## Example
-
-This is a basic example which shows you how to solve a common problem:
-
-``` r
-# library(rpwf)
-## basic example code
-```
-
-What is special about using `README.Rmd` instead of just `README.md`?
-You can include R chunks like so:
+After installing the package, make sure to either download the python
+codes at [this
+link](https://github.com/hhp94/rpwf/tree/master/inst/python/rpwf) or run
+the function:
 
 ``` r
-summary(cars)
-#>      speed           dist       
-#>  Min.   : 4.0   Min.   :  2.00  
-#>  1st Qu.:12.0   1st Qu.: 26.00  
-#>  Median :15.0   Median : 36.00  
-#>  Mean   :15.4   Mean   : 42.98  
-#>  3rd Qu.:19.0   3rd Qu.: 56.00  
-#>  Max.   :25.0   Max.   :120.00
+rpwf::rpwf_cp_py_codes(<project root path here>)
 ```
 
-You’ll still need to render `README.Rmd` regularly, to keep `README.md`
-up-to-date. `devtools::build_readme()` is handy for this. You could also
-use GitHub Actions to re-render `README.Rmd` every time you push. An
-example workflow can be found here:
-<https://github.com/r-lib/actions/tree/v1/examples>.
+Then, install the package as a local package with pip with
+`python -m pip install -e <path to the downloaded folder>` so that the
+imports works.

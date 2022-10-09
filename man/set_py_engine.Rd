@@ -32,6 +32,7 @@ needed to run sklearn models. Importantly, also passes sklearn base learner
 specific arguments through the \code{args} parameter.
 }
 \examples{
+\dontrun{
 db_con = DbCon$new("db.SQLite", ".")
 parsnip::boost_tree() |>
   parsnip::set_engine("xgboost") |>
@@ -43,5 +44,5 @@ parsnip::boost_tree() |>
       verbosity = 0, silent = TRUE, n_estimators = 100
     )
   )
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
 }

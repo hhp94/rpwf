@@ -315,6 +315,7 @@ rpwf_add_random_state <- function(obj, range, seed) {
 #' @return tibble with the columns necessary for exporting to db.
 #' @export
 #' @examples
+#' \dontrun{
 #' # Create the database
 #' db_con = DbCon$new("db.SQLite", ".")
 #' rpwf_db_init(db_con$con, rpwf_schema())
@@ -335,7 +336,7 @@ rpwf_add_random_state <- function(obj, range, seed) {
 #' to_export = wf |>
 #'   rpwf_add_all(db_con, dials::grid_latin_hypercube, size = 10)
 #' list.files("./rpwfDb", recursive = TRUE) # Files are created
-#' unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+#' }
 rpwf_add_all <- function(wflow_obj, db_con, .grid_fun = NULL,
                          ..., range = c(1L, 5000L), seed = 1234L) {
   set.seed(seed)
@@ -372,6 +373,7 @@ rpwf_wflow_hash_ <- function(df) {
 #' @return number of rows exported.
 #' @export
 #' @examples
+#' \dontrun{
 #' # Create the database
 #' db_con = DbCon$new("db.SQLite", ".")
 #' rpwf_db_init(db_con$con, rpwf_schema())
@@ -398,7 +400,7 @@ rpwf_wflow_hash_ <- function(df) {
 #' # After exporting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
 #'
-#' unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+#' }
 rpwf_export_db <- function(obj, con) {
   # These columns must be present in the data
   required <- c(

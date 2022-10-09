@@ -19,8 +19,9 @@ Called for the side effect.
 This function specifically just deletes the workflows from the \code{wflow_tbl}.
 }
 \examples{
+\dontrun{
 # Delete workflows with id from 1 to 99 of the database defined by `con`
 db_con <- DbCon$new("db.SQLite", ".")
 rpwf_db_del_wflow(1:99, db_con$con)
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
 }

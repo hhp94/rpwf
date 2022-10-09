@@ -9,10 +9,12 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' db_con <- DbCon$new("db.SQLite", ".")
 #' dm_obj <- rpwf_dm_obj(db_con$con)
 #' dm_obj
 #' # dm_obj |> dm::dm_draw()
+#' }
 rpwf_dm_obj <- function(con) {
   cost_tbl <- cost_tbl <- model_type_tbl <- model_type_id <- r_grid_tbl <- NULL
   grid_id <- df_tbl <- df_id <- wflow_tbl <- wflow_id <- wflow_result_tbl <- NULL

@@ -425,7 +425,9 @@ rpwf_grid_gen <- function(model,
 #' @keywords internal
 #'
 #' @examples
+#' \dontrun{
 #' rpwf_grid_rename("mtry") # "colsample_bytree"
+#' }
 rpwf_grid_rename <- function(x) {
   conv_vector <- as.character(
     vapply(x, \(name) {

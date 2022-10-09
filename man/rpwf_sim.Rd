@@ -24,4 +24,3 @@ dim_dat <- rpwf_sim()
 dim_dat$train
 dim_dat$test
 }
-\keyword{internal}

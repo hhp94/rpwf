@@ -13,10 +13,11 @@ needed. Initialize with \verb{db = DbCon$new(<db_name>, here::here())}.
 ## Method `DbCon$new`
 ## ------------------------------------------------
 
+\dontrun{
 db_con = DbCon$new("db.SQLite", ".")
 db_con$con
 db_con$proj_root_path
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -62,10 +63,11 @@ A new \code{DbCon} object.
 }
 \subsection{Examples}{
 \if{html}{\out{<div class="r example copy">}}
-\preformatted{db_con = DbCon$new("db.SQLite", ".")
+\preformatted{\dontrun{
+db_con = DbCon$new("db.SQLite", ".")
 db_con$con
 db_con$proj_root_path
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+}
 }
 \if{html}{\out{</div>}}
 

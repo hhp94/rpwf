@@ -16,3 +16,4 @@
 # usethis::use_readme_rmd()
 # devtools::check()
 # styler::style_pkg()
+# usethis::use_coverage

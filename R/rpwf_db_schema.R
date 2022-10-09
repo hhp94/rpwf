@@ -23,10 +23,11 @@ DbCon <- R6::R6Class(
     #' @param proj_root_path root path of the project.
     #' @return A new `DbCon` object.
     #' @examples
+    #' \dontrun{
     #' db_con = DbCon$new("db.SQLite", ".")
     #' db_con$con
     #' db_con$proj_root_path
-    #' unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+    #' }
     initialize = function(db_name, proj_root_path) {
       self$db_name <- db_name
       self$proj_root_path <- proj_root_path
@@ -71,10 +72,11 @@ DbCreate <- R6::R6Class("DbCreate",
     #' @param query a SQL query string.
     #' @return A new `DbCreate` object.
     #' @examples
+    #' \dontrun{
     #' db_con = DbCon$new("db.SQLite", ".")
     #' db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
     #' db$query
-    #' unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+    #' }
     initialize = function(con, query) {
       self$con <- con
       self$query <- query
@@ -225,10 +227,11 @@ rpwf_schema <- function() {
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' db_con = DbCon$new("db.SQLite", ".")
 #' rpwf_db_init(db_con$con)
 #' DBI::dbListTables(db_con$con)
-#' unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+#' }
 rpwf_db_ini_val <- function(con) {
   cost_tbl_query <-
     'INSERT INTO cost_tbl (cost_name, model_mode)
@@ -267,10 +270,11 @@ rpwf_db_ini_val <- function(con) {
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' db_con <- DbCon$new("db.SQLite", ".")
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
 #' DBI::dbListTables(db_con$con)
-#' unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+#' }
 rpwf_db_init <- function(con, schema) {
   invisible( ### Create the data base
     DbCreate$new(con = con, query = NULL)$

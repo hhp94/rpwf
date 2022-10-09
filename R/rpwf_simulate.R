@@ -7,7 +7,7 @@
 #' @param seed random seed.
 #'
 #' @return a list of train and test df and the id and target column names.
-#' @keywords internal
+#' @export
 #'
 #' @examples
 #' dim_dat <- rpwf_sim()
@@ -73,8 +73,10 @@ xgb_model_spec_no_tune_ <- function() {
 #' @keywords internal
 #'
 #' @examples
+#' \dontrun{
 #' test_recipe_train <- dummy_recipe_(rpwf_sim)
 #' test_recipe_test <- dummy_recipe_(rpwf_sim, type = "test")
+#' }
 dummy_recipe_ <- function(sim_dat, type = "train") {
   if (type == "train") {
     return(

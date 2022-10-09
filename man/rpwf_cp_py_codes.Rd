@@ -19,8 +19,6 @@ codes with \code{rpwf_cp_py_codes}, navigate to the "rpwf" folder and run
 \verb{python -m pip install -e .} to install the codes as a local python package.
 }
 \examples{
-db_con <- DbCon$new("db.SQLite", ".")
-rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
-rpwf_cp_py_codes(db_con$proj_root_path)
-unlink("./rpwfDb", recursive = TRUE, force = TRUE)
+rpwf_cp_py_codes(".")
+list.files("./rpwf", recursive = TRUE)
 }
