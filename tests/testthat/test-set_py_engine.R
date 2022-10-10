@@ -16,25 +16,25 @@ test_that("rpwf_chk_model_avail()", {
     db_con$con,
     "xgboost", "XGBClassifier", "xgboost"
   ),
-  regexp = "Model found in db"
+  regexp = "Valid scikit-learn model"
   )
   expect_error(rpwf_chk_model_avail(
     db_con$con,
     "INVALID", "XGBClassifier", "xgboost"
   ),
-  regexp = "Invalid py model selection"
+  regexp = "Invalid scikit-learn model"
   )
   expect_error(rpwf_chk_model_avail(
     db_con$con,
     "xgboost", "INVALID", "xgboost"
   ),
-  regexp = "Invalid py model selection"
+  regexp = "Invalid scikit-learn model"
   )
   expect_error(rpwf_chk_model_avail(
     db_con$con,
     "xgboost", "XGBClassifier", "INVALID"
   ),
-  regexp = "Invalid py model selection"
+  regexp = "Invalid scikit-learn model"
   )
 })
 
@@ -65,13 +65,16 @@ test_that("set_py_engine() check is working", {
 
   mod_spec <- xgb_model_spec_()
   expect_error(mod_spec |>
-    set_py_engine("lightgbm", "INVALID", db_con$con))
+                 set_py_engine("lightgbm", db_con$con),
+               regexp = "need to be of type character")
   expect_error(mod_spec |>
-    set_py_engine("INVALID", "LGBMClassifier", db_con$con))
+    set_py_engine("lightgbm", "INVALID", con = db_con$con))
   expect_error(mod_spec |>
-    set_py_engine("lightgbm", "LGBMClassifier", db_con$con))
+    set_py_engine("INVALID", "LGBMClassifier", con = db_con$con))
+  expect_error(mod_spec |>
+    set_py_engine("lightgbm", "LGBMClassifier", con = db_con$con))
   expect_message(mod_spec |>
-    set_py_engine("xgboost", "XGBClassifier", db_con$con),
-  regex = "Model found in db"
+    set_py_engine("xgboost", "XGBClassifier", con = db_con$con),
+  regexp = "Valid scikit-learn model"
   )
 })

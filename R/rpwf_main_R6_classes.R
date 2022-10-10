@@ -6,8 +6,8 @@
 #' data in the db, and 2) export parquet files for python to import. Not
 #' meant to be called manually.
 #' @keywords internal
-#' @export BaseEx
 #' @exportClass BaseEx
+#' @export BaseEx
 BaseEx <- R6::R6Class(
   "BaseEx",
   public = list(
@@ -113,21 +113,23 @@ BaseEx <- R6::R6Class(
     #' NULL and will be skipped by the `BaseEx::self$export_parquet()` method.
     #' @param val (`data.frame()`)\cr
     #' Either a [recipes::juice()] object or a data.frame of the hyper param grid.
-    set_df = function(val) {
+    #' @param type (`character()`)\cr
+    #' Used in message
+    set_df = function(val, type) {
       withr::local_dir(new = self$proj_root_path)
       # find_path_in_db must be run first
       if (nrow(self$queried_path) == 0L) {
         # If query yields 0 rows, then create df
-        message("Preparing new data...")
+        message(glue::glue("Preparing new {type}..."))
         self$df <- val
       } else if (!is.na(self$queried_path$path) &
         !file.exists(self$queried_path$path)) {
         # If parquet file not found but is in found in database
-        message("Metadata is in db, but new parquet is needed...")
+        message(glue::glue("Metadata found, but new {type} is needed..."))
         self$df <- val
       } # Otherwise no transformation needed, leave `self$df` as NULL
       else {
-        message("File found in the project")
+        message(glue::glue("{type} parquet found in {self$db_folder}"))
       }
     },
 
@@ -235,8 +237,8 @@ BaseEx <- R6::R6Class(
 #' + update the database with the generated SQL query with `self$export_db()`
 #' + write the parquet with `self$export_parquet()`
 #' @keywords internal
-#' @export TrainDf
 #' @exportClass TrainDf
+#' @export TrainDf
 TrainDf <- R6::R6Class(
   "TrainDf",
   inherit = BaseEx,
@@ -288,7 +290,7 @@ TrainDf <- R6::R6Class(
       self$set_predictors() # get the predictors
       self$set_db_folder("TrainDf") # Set the root folder to "TrainDf"
       self$create_folder() # Create the folder if needed
-      self$set_df(recipes::juice(self$prepped)) # Generate df if needed
+      self$set_df(recipes::juice(self$prepped), "transformed data")
       self$export_prep(
         new_path = glue::glue(
           "rpwfDb", "{self$db_folder}", "{self$hash}.df.parquet",
@@ -371,8 +373,8 @@ TrainDf <- R6::R6Class(
 #' + update the database with the generated SQL query with `self$export_db()`
 #' + write the parquet with `self$export_parquet()`
 #' @keywords internal
-#' @export RGrid
 #' @exportClass RGrid
+#' @export RGrid
 RGrid <- R6::R6Class(
   "RGrid",
   inherit = BaseEx,
@@ -397,7 +399,7 @@ RGrid <- R6::R6Class(
       ))
       self$set_db_folder("rpwf_grids") # Set the root folder to "rpwf_grids"
       self$create_folder() # Create the folder if needed
-      self$set_df(grid_obj) # Generate df if needed
+      self$set_df(grid_obj, "hyper param grid")
       self$export_prep(
         new_path = glue::glue(
           "rpwfDb", "{self$db_folder}", "{self$hash}.grid.parquet",
@@ -442,15 +444,13 @@ rpwf_grid_gen <- function(model,
   params <- rpwf_finalize_params(model = model, preproc = preproc)
 
   if (nrow(params$pars) == 0 | (!is.function(.grid_fun) & is.null(.grid_fun))) {
-    message(paste("No tuning is assumed, either no hyper params are provided",
-      "in the model spec or .grid_fun is NA or NULL",
-      sep = " "
-    ))
+    message("No hyper param tuning is requested or .grid_fun is NULL")
     return(NA) # If hash of NA is changed, has to update rpwf_db_ini_val()
   }
   stopifnot(".grid_fun needs to be function" = is.function(.grid_fun))
   r_grid <- .grid_fun(x = params$pars, ...)
 
+  message("Generating hyper param tune grid")
   if ("mtry" %in% colnames(r_grid)) {
     # `colby_sample` is mtry converted into proportion so we need a denominator.
     #  Denominator is number is number of predictors

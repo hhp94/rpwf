@@ -10,6 +10,7 @@
 #' base learner comes from (i.e., `xgboost`, `sklearn.ensemble`, etc.).
 #' @param py_base_learner a character value that select the python base learner,
 #' (i.e., XGBClassifier, DecisionTreeClassifier, etc.).
+#' @param ... not used. Include to force `con` and `args` to be specified by names
 #' @param con created by [DbCon].
 #' If provided will perform check if the py_base_learner is in the database or not.
 #' @param args arguments passed to the python base learner via named list.
@@ -31,7 +32,10 @@
 #'       verbosity = 0, silent = TRUE, n_estimators = 100
 #'     )
 #'   )
-set_py_engine <- function(obj, py_module, py_base_learner, con = NULL, args = NULL) {
+set_py_engine <- function(obj, py_module, py_base_learner, ...,
+                          con = NULL, args = NULL) {
+  stopifnot("`py_module` and `py_base_learner` need to be of type character" =
+              all(sapply(c(py_module, py_base_learner), is.character)))
   if (!is.null(con)) {
     message("Connection provided, checking if the python module is in the db")
     rpwf_chk_model_avail(con, py_module, py_base_learner, obj$engine)
@@ -83,9 +87,9 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
   if (nrow(query_results) != 1) {
     print(DBI::dbGetQuery(con, "SELECT * FROM model_type_tbl;"))
     cat("\n")
-    stop("Invalid py model selection, select only one model from the above")
+    stop("Invalid scikit-learn model, select only one model from the above")
   }
-  message("Model found in db")
+  message("Valid scikit-learn model")
 }
 
 #' Copy sklearn Codes into the Project Root Folder

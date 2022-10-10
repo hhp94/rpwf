@@ -104,7 +104,7 @@ test_that("rpwf_add_grids()", {
   expect_message(rpwf_add_grids(
     rpwf_add_grid_param(t2, NULL, seed = 1234), db_con
   ), # Not use grid
-  regex = "No tuning is assumed"
+  regex = "No hyper param tuning"
   )
 })
 

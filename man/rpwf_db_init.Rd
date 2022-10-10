@@ -4,7 +4,7 @@
 \alias{rpwf_db_init}
 \title{Create the Database and Add Initial Values}
 \usage{
-rpwf_db_init(con, schema)
+rpwf_db_init(con, schema = rpwf_schema())
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr

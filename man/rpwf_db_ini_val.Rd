@@ -23,3 +23,4 @@ db_con <- DbCon$new("db.SQLite", tempdir())
 rpwf_db_init(db_con$con, rpwf_schema()) # Create the db
 DBI::dbListTables(db_con$con)
 }
+\keyword{internal}

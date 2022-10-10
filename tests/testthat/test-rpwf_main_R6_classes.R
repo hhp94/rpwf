@@ -149,7 +149,8 @@ test_that("rpwf_grid_gen() with tune()", {
   expect_equal(c(nrow(c_grid_lhcube), ncol(c_grid_lhcube)), c(grid_size, 6))
   expect_equal(c(nrow(c_grid_rand), ncol(c_grid_rand)), c(grid_size, 6))
   expect_error(partial_fns(.grid_fun = NA)) # NA is not a function
-  expect_message(partial_fns(.grid_fun = NULL), regex = "No tuning is assumed")
+  expect_message(partial_fns(.grid_fun = NULL),
+                 regex = "No hyper param tuning")
   expect_true(is.na(partial_fns(.grid_fun = NULL)))
 })
 

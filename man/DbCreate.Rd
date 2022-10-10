@@ -16,6 +16,7 @@ to create new tables in the database. Not meant to be called manually.
 db_con = DbCon$new("db.SQLite", tempdir())
 db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
 }
+\keyword{internal}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{

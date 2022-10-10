@@ -62,6 +62,9 @@ DbCon <- R6::R6Class(
 #' A R6 object that provides a shortcut to setting and executing a SQL query
 #' to create new tables in the database. Not meant to be called manually.
 #'
+#' @keywords internal
+#'
+#' @exportClass DbCreate
 #' @export DbCreate
 DbCreate <- R6::R6Class("DbCreate",
   public = list(
@@ -164,7 +167,7 @@ rpwf_schema <- function() {
   tbl$df_tbl <-
     "CREATE TABLE IF NOT EXISTS df_tbl(
     df_id INTEGER PRIMARY KEY,
-    idx_col VARCHAR NOT NULL, /* id column for pandas index */
+    idx_col VARCHAR, /* id column for pandas index */
     target VARCHAR, /* target column, NULL if test data.frame */
     predictors VARCHAR NOT NULL, /* predictors columns */
     df_path VARCHAR UNIQUE NOT NULL, /* Path to the parquet file of the experiment */
@@ -224,6 +227,7 @@ rpwf_schema <- function() {
 #' @inheritParams rpwf_dm_obj
 #'
 #' @return Used for side effects.
+#' @keywords internal
 #' @export
 #'
 #' @examples
@@ -271,7 +275,7 @@ rpwf_db_ini_val <- function(con) {
 #' db_con <- DbCon$new("db.SQLite", tempdir())
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
 #' DBI::dbListTables(db_con$con)
-rpwf_db_init <- function(con, schema) {
+rpwf_db_init <- function(con, schema = rpwf_schema()) {
   invisible( ### Create the data base
     DbCreate$new(con = con, query = NULL)$
       run(schema$cost_tbl)$

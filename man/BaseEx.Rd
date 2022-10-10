@@ -198,7 +198,7 @@ data is prepared. If the data is found in the metadata but not in the
 indicated path then new data is also prepared. Otherwise, \code{self$df} is
 NULL and will be skipped by the \code{BaseEx::self$export_parquet()} method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{BaseEx$set_df(val)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{BaseEx$set_df(val, type)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -206,6 +206,9 @@ NULL and will be skipped by the \code{BaseEx::self$export_parquet()} method.
 \describe{
 \item{\code{val}}{(\code{data.frame()})\cr
 Either a \code{\link[recipes:juice]{recipes::juice()}} object or a data.frame of the hyper param grid.}
+
+\item{\code{type}}{(\code{character()})\cr
+Used in message}
 }
 \if{html}{\out{</div>}}
 }
