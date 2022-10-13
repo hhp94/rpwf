@@ -3,7 +3,7 @@ from __future__ import annotations
 import importlib
 import json
 import pathlib
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import joblib
 import pdcast
@@ -38,11 +38,13 @@ class _RpwfSQL:
         except Exception as exc:
             raise ValueError("Query matched no id") from exc
 
-    def _import_parquet(self, parquet_name: str) -> None:
+    def _import_parquet(self, df_path: str) -> None:
         """Create attribute `self.parquet` file for importing"""
-        self.parquet = pyarrow.parquet.read_table(
-            self.base.proj_root_path.joinpath(self.query_results[parquet_name])
-        )
+        # If no grid is used, then `parquet_path` would be NA
+        if (parquet_path := self.query_results.get(df_path, None)) is not None:
+            self.parquet = pyarrow.parquet.read_table(
+                self.base.proj_root_path.joinpath(parquet_path)
+            )
 
 
 class Wflow(_RpwfSQL):
@@ -88,6 +90,8 @@ class RGrid(_RpwfSQL):
 
     def get_grid(self) -> Dict[str, Any]:
         """Read in the parquet file and return as dict"""
+        if self.parquet is None:
+            return None
         return self.parquet.to_pydict()
 
 
@@ -102,30 +106,38 @@ class TrainDf(_RpwfSQL):
             self.base.meta_dat.tables["df_tbl"].c.df_id == self.df_id
         )
         self._exec_query()
+        self._index: Union[None, str] = self.query_results["idx_col"]
+        self._target: Union[None, str] = self.query_results["target"]
         self._import_parquet("df_path")  # Import the parquet file
         self._get_df(downcast)  # Convert to pandas DataFrame, can perform downcast
 
     def _get_df(self, downcast) -> None:
         """Convert to pandas DataFrame"""
-        index_col = self.query_results["idx_col"]
         if downcast:
             # Downcast the numeric columns to save memory and generate index
             min_schema = pdcast.infer_schema(self.parquet.to_pandas())
-            del min_schema[self.query_results["target"]]
-            self.df = pdcast.coerce_df(self.parquet.to_pandas(), min_schema).set_index(
-                index_col
-            )
+            try: # Exclude the target from downcasting, a test df's target is None
+                del min_schema[self._target]
+            except KeyError: # if target column not provided then cannot try to delete
+                pass
+            self.df = pdcast.coerce_df(self.parquet.to_pandas(), min_schema)
         else:
-            self.df = self.parquet.to_pandas().set_index(index_col)
-        assert index_col not in self.df.columns, f"{index_col} is still in the data"
+            self.df = self.parquet.to_pandas()
+
+        if self._index:
+            self.df.set_index(self._index, drop=True, inplace=True)
+        assert self._index not in self.df.columns, f"{self._index} is still in the data"
 
     def get_df_X(self) -> pandas.DataFrame:
         """Return the predictor DataFrame"""
         return self.df.loc[:, json.loads(self.query_results["predictors"])]
 
-    def get_df_y(self) -> pandas.Series:
+    def get_df_y(self) -> Union[None, pandas.Series]:
         """Return the response Series"""
-        return self.df.loc[:, self.df.columns == self.query_results["target"]]
+        if self._target is None:
+            print("no target column provided")
+            return None
+        return self.df.loc[:, self.df.columns == self._target]
 
 
 class Cost(_RpwfSQL):
@@ -211,15 +223,14 @@ class Export(_RpwfSQL):
         self.export_query = None
 
     def _wflow_results_query(self) -> None:
+        query = sqlalchemy.select(self.res_tbl).where(
+            self.res_tbl.c.wflow_id == self.wflow_id
+            )
         with self.base.engine.connect() as conn:
             try:
                 self.query_results: Dict[str, Any] = [
                     row._asdict()
-                    for row in conn.execute(
-                        sqlalchemy.select(self.res_tbl).where(
-                            self.res_tbl.c.wflow_id == self.wflow_id
-                        )
-                    )
+                    for row in conn.execute(query)
                 ][0]
             except IndexError:
                 print("No results for this wflow in the db")

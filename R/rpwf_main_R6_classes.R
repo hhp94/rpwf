@@ -37,6 +37,8 @@ BaseEx <- R6::R6Class(
     #' the hyper param grid and transformed df are stored in separate folders.
     #' This attribute holds the name of that folder.
     db_folder = NULL,
+    #' @field db_name name of the database.
+    db_name = NULL,
 
     #' @description
     #' This class is the parent of RGrid and TrainDf R6 object, not meant to be
@@ -47,6 +49,7 @@ BaseEx <- R6::R6Class(
       stopifnot("input should be a R6 DbCon() object" = R6::is.R6(db_con))
       self$df <- NULL
       self$con <- db_con$con
+      self$db_name <- db_con$db_name
       self$hash <- NULL
       self$export_query <- NULL
       self$queried_path <- NULL
@@ -288,7 +291,7 @@ TrainDf <- R6::R6Class(
       self$set_idx_col() # set index column for pandas
       self$set_target_col() # set target column for pandas
       self$set_predictors() # get the predictors
-      self$set_db_folder("TrainDf") # Set the root folder to "TrainDf"
+      self$set_db_folder(glue::glue("df_{self$db_name}")) # Set the root folder
       self$create_folder() # Create the folder if needed
       self$set_df(recipes::juice(self$prepped), "transformed data")
       self$export_prep(
@@ -397,7 +400,7 @@ RGrid <- R6::R6Class(
           .con = self$con
         )
       ))
-      self$set_db_folder("rpwf_grids") # Set the root folder to "rpwf_grids"
+      self$set_db_folder(glue::glue("grid_{self$db_name}")) # Set the root folder to "rpwf_grids"
       self$create_folder() # Create the folder if needed
       self$set_df(grid_obj, "hyper param grid")
       self$export_prep(

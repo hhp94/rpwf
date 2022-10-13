@@ -78,7 +78,7 @@ test_that("rpwf_add_grid_param()", {
   expect_true(is.na(t3b$grids[[1]]))
 })
 
-test_that("rpwf_add_grids()", {
+test_that("rpwf_export_grid()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
@@ -94,21 +94,21 @@ test_that("rpwf_add_grids()", {
   t1 <- rpwf_add_model_info(t, db_con$con)
   t2 <- rpwf_add_desc(t1)
   t3 <- rpwf_add_grid_param(t2, dials::grid_random, seed = 1234, size = 5)
-  t4a <- rpwf_add_grids(t3, db_con)
-  t4b <- rpwf_add_grids(
+  t4a <- rpwf_export_grid(t3, db_con)
+  t4b <- rpwf_export_grid(
     rpwf_add_grid_param(t2, NULL, seed = 1234), # Not use grid
     db_con
   )
   expect_equal(t4a$grid_id, 2)
   expect_equal(t4b$grid_id, 1)
-  expect_message(rpwf_add_grids(
+  expect_message(rpwf_export_grid(
     rpwf_add_grid_param(t2, NULL, seed = 1234), db_con
   ), # Not use grid
   regex = "No hyper param tuning"
   )
 })
 
-test_that("rpwf_add_dfs()", {
+test_that("rpwf_export_df()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
@@ -117,8 +117,8 @@ test_that("rpwf_add_dfs()", {
       rpwf_add_model_info(db_con$con) |>
       rpwf_add_desc() |>
       rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
-      rpwf_add_grids(db_con) |>
-      rpwf_add_dfs(db_con, 1234)
+      rpwf_export_grid(db_con) |>
+      rpwf_export_df(db_con, 1234)
   }
   # Add a train df
   t <- rpwf_workflow_set(
@@ -160,8 +160,8 @@ test_that("rpwf_add_cost()", {
     rpwf_add_model_info(db_con$con) |>
     rpwf_add_desc() |>
     rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
-    rpwf_add_grids(db_con) |>
-    rpwf_add_dfs(db_con, 1234)
+    rpwf_export_grid(db_con) |>
+    rpwf_export_df(db_con, 1234)
 
   t1a <- rpwf_add_cost(t, db_con$con)
   expect_equal(t1a$cost_id, 2)
@@ -182,8 +182,8 @@ test_that("rpwf_add_model_type()", {
     rpwf_add_model_info(db_con$con) |>
     rpwf_add_desc() |>
     rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
-    rpwf_add_grids(db_con) |>
-    rpwf_add_dfs(db_con, 1234) |>
+    rpwf_export_grid(db_con) |>
+    rpwf_export_df(db_con, 1234) |>
     rpwf_add_cost(db_con$con)
 
   # print(t)
@@ -206,8 +206,8 @@ test_that("rpwf_add_random_state()", {
     rpwf_add_model_info(db_con$con) |>
     rpwf_add_desc() |>
     rpwf_add_grid_param(dials::grid_random, seed = 1234, size = 5) |>
-    rpwf_add_grids(db_con) |>
-    rpwf_add_dfs(db_con, 1234) |>
+    rpwf_export_grid(db_con) |>
+    rpwf_export_df(db_con, 1234) |>
     rpwf_add_cost(db_con$con) |>
     rpwf_add_model_type(db_con$con)
 
@@ -219,7 +219,7 @@ test_that("rpwf_add_random_state()", {
   expect_equal(t1a$random_state, t1b$random_state)
 })
 
-test_that("rpwf_add_all()", {
+test_that("rpwf_augment()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
   # Add a train df
@@ -231,8 +231,8 @@ test_that("rpwf_add_all()", {
     )),
     list("neg_log_loss")
   )
-  expect_error(rpwf_add_all(t, db_con, .grid_fun = "INVALID"))
-  t1 <- rpwf_add_all(t, db_con, dials::grid_latin_hypercube)
+  expect_error(rpwf_augment(t, db_con, .grid_fun = "INVALID"))
+  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
   expect_equal(nrow(t1), 1)
 })
 
@@ -251,8 +251,12 @@ test_that("rpwf_export_db()", {
       "xgboost", "XGBClassifier"
     )),
     list("neg_log_loss")
-  )
-  t1 <- rpwf_add_all(t, db_con, dials::grid_latin_hypercube)
+  ) |>
+    rpwf_augment(db_con, dials::grid_latin_hypercube)
+
+  t1 <- t |>
+    rpwf_export_grid(db_con) |>
+    rpwf_export_df(db_con, 1234)
 
   before <- query_wflow_tbl()
   expect_equal(nrow(before), 0) # before export, there would be no wflow
@@ -262,4 +266,12 @@ test_that("rpwf_export_db()", {
   rpwf_export_db(t1, db_con$con)
   after1 <- query_wflow_tbl() # exporting the same wflow would not work
   expect_equal(nrow(after1), 1)
+
+  # Check if rwpf_export_grid or export_df hasn't been run
+  expect_error(rpwf_export_db(rpwf_export_grid(t, db_con), db_con$con),
+    regexp = "to write parquet files first"
+  )
+  expect_error(rpwf_export_db(rpwf_export_df(t, db_con, 1234), db_con$con),
+    regexp = "to write parquet files first"
+  )
 })

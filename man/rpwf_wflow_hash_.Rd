@@ -7,7 +7,7 @@
 rpwf_wflow_hash_(df)
 }
 \arguments{
-\item{df}{object created by \code{\link[=rpwf_add_all]{rpwf_add_all()}}.}
+\item{df}{object created by \code{\link[=rpwf_augment]{rpwf_augment()}}.}
 }
 \value{
 a vector of \link[rlang:hash]{rlang::hash}.

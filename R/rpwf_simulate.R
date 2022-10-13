@@ -72,11 +72,12 @@ xgb_model_spec_no_tune_ <- function() {
 #' @importFrom rlang .data
 #' @keywords internal
 dummy_recipe_ <- function(sim_dat, type = "train") {
+  id <- X3 <- NULL
   if (type == "train") {
     return(
       recipes::recipe(target ~ ., data = sim_dat$train) |>
-        recipes::step_dummy(.data$X3, one_hot = TRUE) |>
-        recipes::update_role(.data$id, new_role = "pd.index")
+        recipes::step_dummy(X3, one_hot = TRUE) |>
+        recipes::update_role(id, new_role = "pd.index")
     )
   }
   if (type == "test") {
@@ -85,8 +86,8 @@ dummy_recipe_ <- function(sim_dat, type = "train") {
         ~.,
         data = sim_dat$test[, which(!names(sim_dat$test) %in% sim_dat$target)]
       ) |>
-        recipes::step_dummy(.data$X3, one_hot = TRUE) |>
-        recipes::update_role(.data$id, new_role = "pd.index")
+        recipes::step_dummy(X3, one_hot = TRUE) |>
+        recipes::update_role(id, new_role = "pd.index")
     )
   }
 }

@@ -34,8 +34,10 @@
 #'   )
 set_py_engine <- function(obj, py_module, py_base_learner, ...,
                           con = NULL, args = NULL) {
-  stopifnot("`py_module` and `py_base_learner` need to be of type character" =
-              all(sapply(c(py_module, py_base_learner), is.character)))
+  stopifnot(
+    "`py_module` and `py_base_learner` need to be of type character" =
+      all(sapply(c(py_module, py_base_learner), is.character))
+  )
   if (!is.null(con)) {
     message("Connection provided, checking if the python module is in the db")
     rpwf_chk_model_avail(con, py_module, py_base_learner, obj$engine)
@@ -97,7 +99,7 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
 #' These python codes are needed to work with the database. After copying the
 #' codes with `rpwf_cp_py_codes()`, navigate to the "rpwf" folder and run
 #' `python -m pip install -e .` to install the codes as a local python package.
-#' Remove the python codes with `pip uninstall local-rpwf`.
+#' Remove the python codes with `pip uninstall local-rpwf`
 #'
 #' @param proj_root_path root path of the project, generate with [DbCon] and
 #' assess with DbCon$new()$proj_root_path.
@@ -106,7 +108,7 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
 #' @export
 #'
 #' @examples
-#' tmp = tempdir()
+#' tmp <- tempdir()
 #' rpwf_cp_py_codes(tmp)
 #' list.files(paste0(tmp, "/rpwf"), recursive = TRUE)
 rpwf_cp_py_codes <- function(proj_root_path) {

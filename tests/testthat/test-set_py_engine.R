@@ -65,8 +65,9 @@ test_that("set_py_engine() check is working", {
 
   mod_spec <- xgb_model_spec_()
   expect_error(mod_spec |>
-                 set_py_engine("lightgbm", db_con$con),
-               regexp = "need to be of type character")
+    set_py_engine("lightgbm", db_con$con),
+  regexp = "need to be of type character"
+  )
   expect_error(mod_spec |>
     set_py_engine("lightgbm", "INVALID", con = db_con$con))
   expect_error(mod_spec |>

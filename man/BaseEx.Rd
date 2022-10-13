@@ -37,6 +37,8 @@ root path of the project, using \code{here::here()} is recommended.}
 \item{\code{db_folder}}{(\code{character()})\cr
 the hyper param grid and transformed df are stored in separate folders.
 This attribute holds the name of that folder.}
+
+\item{\code{db_name}}{name of the database.}
 }
 \if{html}{\out{</div>}}
 }

@@ -17,7 +17,7 @@ a newly copied folder called "rpwf" under the provided project path.
 These python codes are needed to work with the database. After copying the
 codes with \code{rpwf_cp_py_codes()}, navigate to the "rpwf" folder and run
 \verb{python -m pip install -e .} to install the codes as a local python package.
-Remove the python codes with \verb{pip uninstall local-rpwf}.
+Remove the python codes with \verb{pip uninstall local-rpwf}
 }
 \examples{
 tmp = tempdir()
