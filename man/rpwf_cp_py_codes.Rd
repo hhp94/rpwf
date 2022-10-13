@@ -20,7 +20,7 @@ codes with \code{rpwf_cp_py_codes()}, navigate to the "rpwf" folder and run
 Remove the python codes with \verb{pip uninstall local-rpwf}
 }
 \examples{
-tmp = tempdir()
+tmp <- tempdir()
 rpwf_cp_py_codes(tmp)
 list.files(paste0(tmp, "/rpwf"), recursive = TRUE)
 }

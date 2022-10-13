@@ -19,7 +19,9 @@ test_that("rpwf_db_del_wflow()", {
     )),
     list("neg_log_loss")
   )
-  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
+  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube) |>
+    rpwf_export_grid(db_con) |>
+    rpwf_export_df(db_con)
   rpwf_export_db(t1, db_con$con)
   expect_equal(nrow(query_wflow_tbl()), 1)
 
@@ -44,7 +46,9 @@ test_that("rpwf_db_del_entry()", {
     )),
     list("neg_log_loss")
   )
-  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
+  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube) |>
+    rpwf_export_grid(db_con) |>
+    rpwf_export_df(db_con)
   rpwf_export_db(t1, db_con$con)
   expect_equal(nrow(query_wflow_tbl("wflow_tbl")), 1)
 
