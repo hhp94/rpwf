@@ -6,7 +6,7 @@
 #' data in the db, and 2) export parquet files for python to import. Not
 #' meant to be called manually.
 #' @keywords internal
-#' @exportClass BaseEx
+#'
 #' @export BaseEx
 BaseEx <- R6::R6Class(
   "BaseEx",
@@ -240,7 +240,7 @@ BaseEx <- R6::R6Class(
 #' + update the database with the generated SQL query with `self$export_db()`
 #' + write the parquet with `self$export_parquet()`
 #' @keywords internal
-#' @exportClass TrainDf
+#'
 #' @export TrainDf
 TrainDf <- R6::R6Class(
   "TrainDf",
@@ -376,7 +376,7 @@ TrainDf <- R6::R6Class(
 #' + update the database with the generated SQL query with `self$export_db()`
 #' + write the parquet with `self$export_parquet()`
 #' @keywords internal
-#' @exportClass RGrid
+#'
 #' @export RGrid
 RGrid <- R6::R6Class(
   "RGrid",

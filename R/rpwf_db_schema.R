@@ -6,8 +6,7 @@
 #' Create the "rpwfDb" folder in the provided root path and create a db if
 #' needed. Initialize with `db = DbCon$new(<db_name>, here::here())`.
 #'
-#' @exportClass DbCon
-#' @export
+#' @export DbCon
 DbCon <- R6::R6Class(
   "DbCon",
   public = list(
@@ -64,7 +63,6 @@ DbCon <- R6::R6Class(
 #'
 #' @keywords internal
 #'
-#' @exportClass DbCreate
 #' @export DbCreate
 DbCreate <- R6::R6Class("DbCreate",
   public = list(
