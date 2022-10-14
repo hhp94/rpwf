@@ -17,6 +17,7 @@ db_con = DbCon$new("db.SQLite", tempdir())
 db_con$con
 db_con$proj_root_path
 }
+\keyword{internal}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{

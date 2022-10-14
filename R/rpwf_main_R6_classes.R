@@ -291,7 +291,7 @@ TrainDf <- R6::R6Class(
       self$set_idx_col() # set index column for pandas
       self$set_target_col() # set target column for pandas
       self$set_predictors() # get the predictors
-      self$set_db_folder(glue::glue("df_{self$db_name}")) # Set the root folder
+      self$set_db_folder(glue::glue("{self$db_name}_df")) # Set the root folder
       self$create_folder() # Create the folder if needed
       self$set_df(recipes::juice(self$prepped), "transformed data")
       self$export_prep(
@@ -400,7 +400,7 @@ RGrid <- R6::R6Class(
           .con = self$con
         )
       ))
-      self$set_db_folder(glue::glue("grid_{self$db_name}")) # Set the root folder to "rpwf_grids"
+      self$set_db_folder(glue::glue("{self$db_name}_grid")) # Set the root folder to "rpwf_grids"
       self$create_folder() # Create the folder if needed
       self$set_df(grid_obj, "hyper param grid")
       self$export_prep(

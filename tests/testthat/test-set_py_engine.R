@@ -9,6 +9,22 @@ test_that("test if the python codes folder can be moved to the root path", {
   expect_equal(copied_files, c("rpwf", "setup.cfg", "setup.py"))
 })
 
+test_that("test the overwrite function of rpwf_cp_py_codes()", {
+  tmp_dir <- withr::local_tempdir()
+  db_con <- dummy_con_(tmp_dir)
+
+  rpwf_cp_py_codes(db_con$proj_root_path)
+  to_folder <- paste(db_con$proj_root_path, "rpwf", sep = "/")
+  test_delete <- glue::glue("{to_folder}/setup.py")
+  expect_true(file.exists(test_delete))
+  unlink(test_delete) # Delete a file
+  expect_true(!file.exists(test_delete)) # Make sure file doesnt exists
+  rpwf_cp_py_codes(db_con$proj_root_path, FALSE) # Overwrite is false
+  expect_true(!file.exists(test_delete)) # File would not exists
+  rpwf_cp_py_codes(db_con$proj_root_path, TRUE) # Overwrite is true
+  expect_true(file.exists(test_delete)) # New file copied over
+})
+
 test_that("rpwf_chk_model_avail()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)

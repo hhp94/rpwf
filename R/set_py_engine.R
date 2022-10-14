@@ -89,7 +89,9 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
   if (nrow(query_results) != 1) {
     print(DBI::dbGetQuery(con, "SELECT * FROM model_type_tbl;"))
     cat("\n")
-    stop("Invalid scikit-learn model, select only one model from the above")
+    stop(paste("Invalid scikit-learn model, select only one model",
+               "from the above or add entries to the df_tbl table in the db"),
+         sep = " ")
   }
   message("Valid scikit-learn model")
 }
@@ -111,15 +113,21 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
 #' tmp <- tempdir()
 #' rpwf_cp_py_codes(tmp)
 #' list.files(paste0(tmp, "/rpwf"), recursive = TRUE)
-rpwf_cp_py_codes <- function(proj_root_path) {
+rpwf_cp_py_codes <- function(proj_root_path, overwrite = FALSE) {
   to_folder <- paste(proj_root_path, "rpwf", sep = "/")
+  copy_fns <- function() {
+    from_folder <-
+      system.file("python", "rpwf", package = "rpwf", mustWork = TRUE)
+    file.copy(from_folder, proj_root_path, recursive = TRUE)
+  }
+
   if (!dir.exists(to_folder)) {
     message("creating folder 'rpwf' under provided root path")
-  } else {
+    copy_fns()
+  } else if (overwrite == TRUE) {
     message("folder 'rpwf' found, overwriting python codes in this folder")
+    copy_fns()
+  } else {
+    message("folder 'rpwf' found, not copying codes over")
   }
-  from_folder <- system.file("python", "rpwf", package = "rpwf", mustWork = TRUE)
-  file.copy(from_folder, proj_root_path, recursive = TRUE)
-  message("here are the files in the 'rpwf' folder")
-  print(list.files())
 }

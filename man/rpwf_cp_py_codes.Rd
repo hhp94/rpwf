@@ -4,7 +4,7 @@
 \alias{rpwf_cp_py_codes}
 \title{Copy sklearn Codes into the Project Root Folder}
 \usage{
-rpwf_cp_py_codes(proj_root_path)
+rpwf_cp_py_codes(proj_root_path, overwrite = FALSE)
 }
 \arguments{
 \item{proj_root_path}{root path of the project, generate with \link{DbCon} and

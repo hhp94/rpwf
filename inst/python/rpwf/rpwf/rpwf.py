@@ -243,7 +243,7 @@ class Export(_RpwfSQL):
         """Export the cross validation results, expects pd.DataFrame results"""
         self.desc = desc  # descriptions of the result (sampling schemes)
         self.csv_path = self.base.result_path.joinpath(
-            f"wflow_{self.wflow_id}_{self.desc}_results.csv"
+            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}_results.csv"
         )
         results.to_csv(self.csv_path, index=False)  # res_tblite the csv
         self.csv_path = self._gen_rel_path(self.csv_path)  # To rel path after export
@@ -297,7 +297,7 @@ class Export(_RpwfSQL):
     def export_model(self, model: Any) -> None:
         """Export the fitted model if needed, run before export_db()"""
         self.model_path = self.base.result_path.joinpath(
-            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}.joblib"
+            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}_model.joblib"
         )
         joblib.dump(model, self.model_path)
         self.model_path = self._gen_rel_path(self.model_path)

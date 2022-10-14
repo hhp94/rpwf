@@ -8,7 +8,6 @@ test_that("initialization of the TrainDf class", {
   train_df_obj <- TrainDf$new(dummy_test_rec, db_con)
   expect_equal(class(train_df_obj$prepped), "recipe")
   # these three values are set in the recipe data
-  expect_equal(train_df_obj$db_folder, glue::glue("df_{train_df_obj$db_name}"))
   expect_equal(train_df_obj$idx_col, "id")
   expect_equal(train_df_obj$target, "target")
   expect_equal(

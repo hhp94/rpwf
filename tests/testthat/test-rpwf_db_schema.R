@@ -5,7 +5,7 @@ test_that("Can create a connection and create SQL tables", {
   rpwf_db_init(db_con$con, rpwf_schema())
 
   created_tables <- sort(DBI::dbListTables(db_con$con))
-  required_tables <- sort(names(rpwf_schema))
+  required_tables <- sort(names(rpwf_schema()))
 
   # Folder is created
   expect_true(dir.exists(paste(tmp_dir, "rpwfDb", sep = "/")))
@@ -21,7 +21,7 @@ test_that("Can create a connection and create SQL tables", {
   rpwf_db_init(db_con$con, rpwf_schema())
 
   created_tables <- sort(DBI::dbListTables(db_con$con))
-  required_tables <- sort(names(rpwf_schema))
+  required_tables <- sort(names(rpwf_schema()))
 
   # Folder is created
   expect_true(dir.exists(paste(tmp_dir, "rpwfDb", sep = "/")))
@@ -52,4 +52,20 @@ test_that("Duplicated values of model_type_tbl and cost_tbl are ignored", {
   )
   print(after)
   expect_true(all(before == after))
+})
+
+test_that("Can create a connection and create SQL tables", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+
+  db_con <- rpwf_create_db("db.SQLite", tmp_dir)
+
+  created_tables <- sort(DBI::dbListTables(db_con$con))
+  required_tables <- sort(names(rpwf_schema()))
+
+  # Folder is created
+  expect_true(dir.exists(paste(tmp_dir, "rpwfDb", sep = "/")))
+  # Connection is valid
+  expect_true(DBI::dbIsValid(db_con$con))
+  # All tables are created
+  expect_true(all(created_tables == required_tables))
 })

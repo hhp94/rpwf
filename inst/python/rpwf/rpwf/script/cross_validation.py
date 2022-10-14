@@ -8,7 +8,6 @@ import pandas
 from sklearn.model_selection import (
     RepeatedStratifiedKFold,
     GridSearchCV,
-    StratifiedKFold,
     cross_val_score
 )
 
@@ -33,14 +32,14 @@ if __name__ == "__main__":
     parser.add_argument(
         "project_root",
         type=str,
-        help="path to directory that holds the 'rpwfDb' folder",
+        help="path to directory that holds the 'rpwfDb' folder"
     )
     parser.add_argument(
         "-db",
         "--db-name",
         metavar="db-name",
         type=str,
-        help="name of the database, (e.g. 'db.SQLite')",
+        help="name of the database, (e.g. 'db.SQLite')"
     )
 
     id_group = parser.add_mutually_exclusive_group(required=True)
@@ -75,32 +74,24 @@ if __name__ == "__main__":
         "--cores",
         metavar="cores",
         type=int,
-        default=-1,
+        default=1,
         help="number of cores for parallization"
     )
     parser.add_argument(
-        "-icv",
-        "--inner-n-cv",
-        metavar="inner-n-cv",
+        "-ns",
+        "--n-splits",
+        metavar="n-splits",
         type=int,
         default=5,
-        help="number of splits for the inner loop for hyper param tuning"
+        help="number of splits for the cross-validation"
     )
     parser.add_argument(
-        "-ocv",
-        "--outer-n-cv",
-        metavar="outer-n-cv",
+        "-nr",
+        "--n-repeats",
+        metavar="n-repeats",
         type=int,
-        default=5,
-        help="number of splits for the outer loop for cv with best hyper param"
-    )
-    parser.add_argument(
-        "-ocr",
-        "--outer-n-repeats",
-        metavar="outer-n-repeats",
-        type=int,
-        default=5,
-        help="number of repeats of splits for the outer loop for cv with best hyper param"
+        default=1,
+        help="number of repeats for the cross-validation"
     )
     parser.add_argument(
         "-e",
@@ -108,7 +99,12 @@ if __name__ == "__main__":
         action="store_true",
         help="export results to database or not"
     )
-
+    parser.add_argument(
+        "-j",
+        "--joblib-model",
+        action="store_true",
+        help="export model as a joblib object"
+    )
     args = parser.parse_args()
 
     # Check for valid db name
@@ -116,7 +112,7 @@ if __name__ == "__main__":
         args.db_name is None
         or Path(args.project_root).joinpath(f"rpwfDb/{args.db_name}").exists() is False
     ):
-        print("Invalid db name, the following files are found")
+        print("Invalid db name, the following files are in the 'rpwfDb' folder")
         print([str(x) for x in Path(args.project_root).joinpath("rpwfDb").iterdir()])
         sys.exit()
 
@@ -131,7 +127,10 @@ if __name__ == "__main__":
 
     wflow_list = get_wflow_list(wflow_df)
     if not wflow_list:
-        print("Either invalid wflow or all requested wflow already have results")
+        print(
+            "Either invalid wflow or all requested wflow already have results",
+            "use -f to force the rerun of these wflows"
+            )
         sys.exit()
 
     print(f"running {wflow_list}")
@@ -157,36 +156,34 @@ if __name__ == "__main__":
         base_learner = rpwf.BaseLearner(wflow_obj, model_type_obj).base_learner
         score = rpwf.Cost(db_obj, wflow_obj).get_cost()
 
-        # Nested resampling
-        inner_cv = StratifiedKFold(
-            n_splits=args.inner_n_cv, shuffle=True, random_state=wflow_obj.random_state
-        )
-        outer_cv = RepeatedStratifiedKFold(
-            n_splits=args.outer_n_cv,
-            n_repeats=args.outer_n_repeats,
+        cv = RepeatedStratifiedKFold(
+            n_splits=args.n_splits,
+            n_repeats=args.n_repeats,
             random_state=wflow_obj.random_state,
         )
 
         if p_grid is None:
             print("No tune grid specified, running with default params")
-            nested_score = cross_val_score(
-                base_learner, X=X, y=y, cv=outer_cv, n_jobs=n_cores
+            cv_results = cross_val_score(
+                base_learner, X=X, y=y, cv=cv, n_jobs=n_cores
             )
-
         else:
             print("Performing nested-cv using provided Rgrid")
             param_tuner = GridSearchCV(
                 estimator=base_learner,
                 param_grid=p_grid,
-                cv=inner_cv,
+                cv=cv,
                 n_jobs=n_cores,
                 scoring=score,
             )
-            nested_score = cross_val_score(param_tuner, X=X, y=y, cv=outer_cv)
+            param_tuner.fit(X=X, y=y)
+            tuning_results = pandas.DataFrame(param_tuner.cv_results_)
+            cv_results = tuning_results.loc[tuning_results['rank_test_score'] == 1]
 
         if args.export:
             # Export the results
             exporter = rpwf.Export(db_obj, wflow_obj)
-            nested_score_df = pandas.DataFrame(nested_score, columns=[score])
-            exporter.export_cv(nested_score_df, "nested_cv")
+            exporter.export_cv(pandas.DataFrame(cv_results), "cv")
+            if args.joblib_model and param_tuner:
+                exporter.export_model(param_tuner.best_estimator_)
             exporter.export_db()

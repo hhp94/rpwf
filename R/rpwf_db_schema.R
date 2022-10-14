@@ -6,6 +6,7 @@
 #' Create the "rpwfDb" folder in the provided root path and create a db if
 #' needed. Initialize with `db = DbCon$new(<db_name>, here::here())`.
 #'
+#' @keywords internal
 #' @export DbCon
 DbCon <- R6::R6Class(
   "DbCon",
@@ -284,4 +285,27 @@ rpwf_db_init <- function(con, schema = rpwf_schema()) {
       run(schema$wflow_result_tbl)
   )
   rpwf_db_ini_val(con = con) ### Add some initial values
+}
+
+# Wrapper for the whole process and around the R6 object -----------------------
+#' Create a Database and Return an Object that Stores the Connection and Path
+#'
+#' @description
+#' Create the "rpwfDb" folder in the provided root path and create a db if
+#' needed. Access the connection with `object$con`
+#'
+#' @param db_name name of the database.
+#' @param proj_root_path root path of the project.
+#' @return A new `DbCon` object.
+#'
+#' @export
+#'
+#' @examples
+#' db_con = rpwf_create_db("db.SQLite", tempdir())
+#' db_con$con
+#' db_con$proj_root_path
+rpwf_create_db <- function(db_name, proj_root_path) {
+  db_con <- DbCon$new(db_name = db_name, proj_root_path = proj_root_path)
+  rpwf_db_init(db_con$con, rpwf_schema())
+  return(db_con)
 }
