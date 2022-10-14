@@ -105,6 +105,7 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
 #'
 #' @param proj_root_path root path of the project, generate with [DbCon] and
 #' assess with DbCon$new()$proj_root_path.
+#' @param overwrite overwriting the copied python codes or not. Default to FALSE
 #'
 #' @return a newly copied folder called "rpwf" under the provided project path.
 #' @export

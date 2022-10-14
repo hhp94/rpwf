@@ -9,6 +9,8 @@ rpwf_cp_py_codes(proj_root_path, overwrite = FALSE)
 \arguments{
 \item{proj_root_path}{root path of the project, generate with \link{DbCon} and
 assess with DbCon$new()$proj_root_path.}
+
+\item{overwrite}{overwriting the copied python codes or not. Default to FALSE}
 }
 \value{
 a newly copied folder called "rpwf" under the provided project path.
