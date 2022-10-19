@@ -150,6 +150,7 @@ rpwf_schema <- function() {
     py_module VARCHAR(50) NOT NULL, /* xgboost sklearn.ensemble etc */
     py_base_learner VARCHAR(50) NOT NULL, /* XGB GBM etc */
     r_engine VARCHAR(50) NOT NULL, /* R engine types */
+    hyper_par_rename VARCHAR, /* json to rename the columns of the grid */
     model_mode VARCHAR(14) NOT NULL CHECK(model_mode in ('regression', 'classification')),
     UNIQUE(r_engine, model_mode),
     UNIQUE(r_engine, py_base_learner, py_module),
@@ -234,16 +235,39 @@ rpwf_schema <- function() {
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the db
 #' DBI::dbListTables(db_con$con)
 rpwf_db_ini_val <- function(con) {
+  # Adding xgboost
+  xgboost_rename = as.character(jsonlite::toJSON(
+    list(
+      "mtry" = "colsample_bytree",
+      "trees" = "n_estimators",
+      "min_n" = "min_child_weight",
+      "tree_depth" = "max_depth",
+      "learn_rate" = "learning_rate",
+      "loss_reduction" = "gamma",
+      "sample_size" = "subsample"
+    )
+  ))
+  model_type_tbl_query <-
+    glue::glue_sql(
+      'INSERT INTO model_type_tbl (
+        py_module, py_base_learner, r_engine, hyper_par_rename, model_mode
+      )
+      VALUES
+      ({vals*});',
+      vals = c(
+        "xgboost", "XGBClassifier", "xgboost", xgboost_rename, "classification"
+        ),
+      .con = con
+    )
+
+  # Add some costs
   cost_tbl_query <-
     'INSERT INTO cost_tbl (cost_name, model_mode)
     VALUES
     ("roc_auc", "classification"),
-    ("neg_log_loss", "classification");'
-  model_type_tbl_query <-
-    'INSERT INTO model_type_tbl (py_module, py_base_learner, r_engine, model_mode)
-    VALUES
-    ("xgboost", "XGBClassifier", "xgboost", "classification"),
-    ("lightgbm", "LGBMClassifier", "lightgbm", "classification");'
+    ("neg_log_loss", "classification"),
+    ("mean_squared_error", "regression");'
+  # Add a value for NA grid
   grid_tbl_query <-
     'INSERT INTO r_grid_tbl (grid_hash)
     VALUES
@@ -286,6 +310,102 @@ rpwf_db_init <- function(con, schema = rpwf_schema()) {
   )
   rpwf_db_ini_val(con = con) ### Add some initial values
 }
+
+# Add models to the db ---------------------------------------------------------
+#' Add scikit-learn Models to database
+#'
+#' Use this function to add or update the scikit-learn model using the module (i.e.,
+#' "xgboost"), the base learner in scikit-learn (i.e., "XGBClassifier"),
+#' the corresponding `{parsnip}` engine (i.e., "xgboost"), the equivalent hyper
+#' parameter names (i.e., "mtry" in `{parsnip}` is "colsample_bytree"), and
+#' model mode (i.e., "classification")
+#'
+#' @inheritParams rpwf_dm_obj
+#' @param py_module the module in scikit-learn, i.e., "sklearn.ensemble".
+#' @param py_base_learner the base learner in scikit-learn, i.e.,
+#' "RandomForestClassifier".
+#' @param r_engine the engine in parsnip, i.e., "ranger" or "rpart".
+#' @param hyper_par_rename a named list of equivalent hyper parameters, i.e.,
+#' `list(cost_complexity = "ccp_alpha")`
+#' @param model_mode classification or regression
+#'
+#' @return Use for side effect to update DB, not returning any values
+#' @export
+#'
+#' @examples
+#' # Generate dummy database
+#' db_con = rpwf_create_db("db.SQLite", tempdir())
+#' DBI::dbListTables(db_con$con)
+#' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
+#' rpwf_add_py_model(
+#'   db_con$con,
+#'   "sklearn.ensemble",
+#'   "RandomForestClassifier",
+#'   "rpart",
+#'   list(
+#'     cost_complexity = "ccp_alpha",
+#'     tree_depth = "max_depth",
+#'     min_n = "min_samples_split"
+#'   ),
+#'   "classification"
+#' )
+#' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # after adding
+rpwf_add_py_model = function(con,
+                             py_module,
+                             py_base_learner,
+                             r_engine,
+                             hyper_par_rename,
+                             model_mode) {
+  query_results = DBI::dbGetQuery(
+    con,
+    glue::glue_sql(
+      "SELECT model_type_id
+      FROM model_type_tbl
+      WHERE py_module = ? AND py_base_learner = ? AND r_engine = ? AND model_mode = ?;",
+      .con = con
+    ),
+    params = list(py_module, py_base_learner, r_engine, model_mode)
+  )
+
+  rename_json = as.character(jsonlite::toJSON(hyper_par_rename))
+  if (nrow(query_results) == 0) {
+    DBI::dbExecute(
+      con,
+      glue::glue_sql(
+        'INSERT INTO model_type_tbl (
+          py_module, py_base_learner, r_engine, hyper_par_rename, model_mode
+        )
+        VALUES ({vals*});',
+        vals = c(
+          py_module,
+          py_base_learner,
+          r_engine,
+          rename_json,
+          model_mode
+        ),
+        .con = con
+      )
+    )
+  } else if (nrow(query_results) == 1) {
+    DBI::dbExecute(
+      con,
+      glue::glue_sql(
+        'UPDATE model_type_tbl
+        SET py_module = ?, py_base_learner = ?, r_engine = ?,
+            hyper_par_rename = ?, model_mode = ?
+        WHERE model_type_id = ?;',
+        .con = con
+      ),
+      param = list(
+        py_module, py_base_learner, r_engine, rename_json, model_mode,
+        query_results$model_type_id
+      )
+    )
+  } else {
+    stop("Unexpected error")
+  }
+}
+
 
 # Wrapper for the whole process and around the R6 object -----------------------
 #' Create a Database and Return an Object that Stores the Connection and Path
