@@ -272,6 +272,10 @@ rpwf_add_cost <- function(obj, con) {
     val2 = obj$model_mode
   )
 
+  if (nrow(query_res) == 0) {
+    stop("Requested cost metric not found, add cost to `cost_tbl`?")
+  }
+
   return(dplyr::mutate(obj, cost_id = query_res))
 }
 

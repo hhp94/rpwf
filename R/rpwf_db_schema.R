@@ -235,31 +235,6 @@ rpwf_schema <- function() {
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the db
 #' DBI::dbListTables(db_con$con)
 rpwf_db_ini_val <- function(con) {
-  # Adding xgboost
-  xgboost_rename = as.character(jsonlite::toJSON(
-    list(
-      "mtry" = "colsample_bytree",
-      "trees" = "n_estimators",
-      "min_n" = "min_child_weight",
-      "tree_depth" = "max_depth",
-      "learn_rate" = "learning_rate",
-      "loss_reduction" = "gamma",
-      "sample_size" = "subsample"
-    )
-  ))
-  model_type_tbl_query <-
-    glue::glue_sql(
-      'INSERT INTO model_type_tbl (
-        py_module, py_base_learner, r_engine, hyper_par_rename, model_mode
-      )
-      VALUES
-      ({vals*});',
-      vals = c(
-        "xgboost", "XGBClassifier", "xgboost", xgboost_rename, "classification"
-        ),
-      .con = con
-    )
-
   # Add some costs
   cost_tbl_query <-
     'INSERT INTO cost_tbl (cost_name, model_mode)
@@ -276,7 +251,8 @@ rpwf_db_ini_val <- function(con) {
   ## Add stuff into cost table
   try(DBI::dbExecute(con, cost_tbl_query), silent = TRUE)
   ## Add stuff into the model_type_tbl
-  try(DBI::dbExecute(con, model_type_tbl_query), silent = TRUE)
+  ### 'sup_mod_df' is generated in data-raw/supported_models.R
+  try(DBI::dbAppendTable(con, "model_type_tbl", sup_mod_df), silent = TRUE)
   ## Add the empty values for the r grid
   try(DBI::dbExecute(con, grid_tbl_query), silent = TRUE)
 }
@@ -334,7 +310,7 @@ rpwf_db_init <- function(con, schema = rpwf_schema()) {
 #'
 #' @examples
 #' # Generate dummy database
-#' db_con = rpwf_create_db("db.SQLite", tempdir())
+#' db_con <- rpwf_create_db("db.SQLite", tempdir())
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 #' rpwf_add_py_model(
@@ -350,13 +326,13 @@ rpwf_db_init <- function(con, schema = rpwf_schema()) {
 #'   "classification"
 #' )
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # after adding
-rpwf_add_py_model = function(con,
-                             py_module,
-                             py_base_learner,
-                             r_engine,
-                             hyper_par_rename,
-                             model_mode) {
-  query_results = DBI::dbGetQuery(
+rpwf_add_py_model <- function(con,
+                              py_module,
+                              py_base_learner,
+                              r_engine,
+                              hyper_par_rename,
+                              model_mode) {
+  query_results <- DBI::dbGetQuery(
     con,
     glue::glue_sql(
       "SELECT model_type_id
@@ -367,15 +343,15 @@ rpwf_add_py_model = function(con,
     params = list(py_module, py_base_learner, r_engine, model_mode)
   )
 
-  rename_json = as.character(jsonlite::toJSON(hyper_par_rename))
+  rename_json <- as.character(jsonlite::toJSON(hyper_par_rename))
   if (nrow(query_results) == 0) {
     DBI::dbExecute(
       con,
       glue::glue_sql(
-        'INSERT INTO model_type_tbl (
+        "INSERT INTO model_type_tbl (
           py_module, py_base_learner, r_engine, hyper_par_rename, model_mode
         )
-        VALUES ({vals*});',
+        VALUES ({vals*});",
         vals = c(
           py_module,
           py_base_learner,
@@ -390,10 +366,10 @@ rpwf_add_py_model = function(con,
     DBI::dbExecute(
       con,
       glue::glue_sql(
-        'UPDATE model_type_tbl
+        "UPDATE model_type_tbl
         SET py_module = ?, py_base_learner = ?, r_engine = ?,
             hyper_par_rename = ?, model_mode = ?
-        WHERE model_type_id = ?;',
+        WHERE model_type_id = ?;",
         .con = con
       ),
       param = list(
@@ -421,7 +397,7 @@ rpwf_add_py_model = function(con,
 #' @export
 #'
 #' @examples
-#' db_con = rpwf_create_db("db.SQLite", tempdir())
+#' db_con <- rpwf_create_db("db.SQLite", tempdir())
 #' db_con$con
 #' db_con$proj_root_path
 rpwf_create_db <- function(db_name, proj_root_path) {

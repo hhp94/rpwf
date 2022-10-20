@@ -42,7 +42,6 @@ test_that("Duplicated values of model_type_tbl and cost_tbl are ignored", {
     }
   )
   # Try to add repeated values
-  print(before)
   rpwf_db_ini_val(db_con$con)
   after <- sapply(
     c("cost_tbl", "model_type_tbl", "r_grid_tbl"),
@@ -50,7 +49,6 @@ test_that("Duplicated values of model_type_tbl and cost_tbl are ignored", {
       nrow(DBI::dbGetQuery(db_con$con, glue::glue("SELECT * FROM {x}")))
     }
   )
-  print(after)
   expect_true(all(before == after))
 })
 
@@ -76,7 +74,7 @@ test_that("Add additional models with rpwf_add_py_model()", {
   db_con <- rpwf_create_db("db.SQLite", tmp_dir)
 
   DBI::dbListTables(db_con$con)
-  before = DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
+  before <- DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
   rpwf_add_py_model(
     db_con$con,
     "sklearn.ensemble",
@@ -89,7 +87,7 @@ test_that("Add additional models with rpwf_add_py_model()", {
     ),
     "classification"
   )
-  after = DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
+  after <- DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
   expect_true(nrow(after) == 2)
 
   # Try updating
@@ -104,7 +102,7 @@ test_that("Add additional models with rpwf_add_py_model()", {
     ),
     "classification"
   )
-  updated = DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
+  updated <- DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
 
   expect_true(after$hyper_par_rename[2] == jsonlite::toJSON(
     list(
@@ -121,5 +119,3 @@ test_that("Add additional models with rpwf_add_py_model()", {
     )
   ))
 })
-
-
