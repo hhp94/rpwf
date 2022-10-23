@@ -116,13 +116,26 @@ test_that("pandas index adding", {
 # Rgrid generation --------------------------------------------------------
 test_that("renaming function", {
   # Check if individual value works
-  expect_equal(rpwf_grid_rename("mtry"), "colsample_bytree")
-  expect_equal(rpwf_grid_rename("trees"), "n_estimators")
+  hyper_par_rename <-
+    jsonlite::toJSON(list(
+      "mtry" = "colsample_bytree",
+      "trees" = "n_estimators",
+      "min_n" = "min_child_weight",
+      "tree_depth" = "max_depth",
+      "learn_rate" = "learning_rate",
+      "loss_reduction" = "gamma",
+      "sample_size" = "subsample"
+    ), auto_unbox = TRUE)
+
+  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+
+  expect_equal(rename_fns("mtry"), "colsample_bytree")
+  expect_equal(rename_fns("trees"), "n_estimators")
   # Check if invalid values are returned as is
-  expect_equal(rpwf_grid_rename("dummy"), "dummy")
+  expect_equal(rename_fns("dummy"), "dummy")
   # Check if a vector value are accepted
   expect_equal(
-    rpwf_grid_rename(c("tree_depth", "dummy")),
+    rename_fns(c("tree_depth", "dummy")),
     c("max_depth", "dummy")
   )
 })
@@ -136,9 +149,24 @@ test_that("rpwf_grid_gen() with tune()", {
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
     )
+
+  hyper_par_rename <-
+    jsonlite::toJSON(list(
+      "mtry" = "colsample_bytree",
+      "trees" = "n_estimators",
+      "min_n" = "min_child_weight",
+      "tree_depth" = "max_depth",
+      "learn_rate" = "learning_rate",
+      "loss_reduction" = "gamma",
+      "sample_size" = "subsample"
+    ), auto_unbox = TRUE)
+
+  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+
   grid_size <- 10
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+    rename_fns,
     size = grid_size
   )
 
@@ -206,8 +234,23 @@ test_that("initialization of the RGrid class", {
       args = list(eval_metric = "logloss", silent = TRUE)
     )
   grid_size <- 10
+
+  hyper_par_rename <-
+    jsonlite::toJSON(list(
+      "mtry" = "colsample_bytree",
+      "trees" = "n_estimators",
+      "min_n" = "min_child_weight",
+      "tree_depth" = "max_depth",
+      "learn_rate" = "learning_rate",
+      "loss_reduction" = "gamma",
+      "sample_size" = "subsample"
+    ), auto_unbox = TRUE)
+
+  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+    rename_fns,
     size = grid_size
   )
 
@@ -258,8 +301,22 @@ test_that("export() method of the RGrid class", {
     )
   grid_size <- 10
 
+  hyper_par_rename <-
+    jsonlite::toJSON(list(
+      "mtry" = "colsample_bytree",
+      "trees" = "n_estimators",
+      "min_n" = "min_child_weight",
+      "tree_depth" = "max_depth",
+      "learn_rate" = "learning_rate",
+      "loss_reduction" = "gamma",
+      "sample_size" = "subsample"
+    ), auto_unbox = TRUE)
+
+  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+    rename_fns,
     size = grid_size
   )
 
@@ -298,8 +355,23 @@ test_that("export() method won't add repeated rows class", {
       args = list(eval_metric = "logloss", silent = TRUE)
     )
   grid_size <- 10
+
+  hyper_par_rename <-
+    jsonlite::toJSON(list(
+      "mtry" = "colsample_bytree",
+      "trees" = "n_estimators",
+      "min_n" = "min_child_weight",
+      "tree_depth" = "max_depth",
+      "learn_rate" = "learning_rate",
+      "loss_reduction" = "gamma",
+      "sample_size" = "subsample"
+    ), auto_unbox = TRUE)
+
+  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+    rename_fns,
     size = grid_size
   )
   c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)

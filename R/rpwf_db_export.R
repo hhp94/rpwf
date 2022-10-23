@@ -8,7 +8,7 @@
 #' [set_py_engine()] to a model, e.g. [parsnip::boost_tree()] and
 #' [parsnip::set_engine()].
 #' @param costs list or vector of sklearn cost optimization metrics such as
-#' "neg_log_loss" and "roc_auc", add more by adding rows to the SQL `cost_tbl`.
+#' "neg_log_loss" and "roc_auc".
 #'
 #' @return tibble that contains a combination of list of recipes, models,
 #' and costs.
@@ -28,11 +28,50 @@
 #' wf
 rpwf_workflow_set <- function(preprocs, models, costs) {
   stopifnot(is.vector(preprocs) & is.vector(models) & is.vector(costs))
-  return(
-    tidyr::crossing(
-      preprocs = unique(preprocs), models = unique(models), costs = unique(costs)
-    )
+  df <- tidyr::crossing(
+    preprocs = unique(preprocs), models = unique(models), costs = unique(costs)
   )
+  df$costs <- as.character(costs)
+  return(df)
+}
+
+
+#' Helper Function for Running Query to Add ids to the `workflow_set`
+#'
+#' This function is a wrapper for [DBI::dbGetQuery()] that also perform some
+#' cleaning. Should only return one column and <= 1 row for every query.
+#'
+#' @param query SQL query.
+#' @inheritParams rpwf_dm_obj
+#' @param val1 value vector to search the tables by.
+#' @param val2 value vector to search the tables by.
+#'
+#' @return a vector of query values.
+#' @keywords internal
+#' @export
+rpwf_query_ <- function(query, con, ...) {
+  val_vecs <- list(...)
+  query_res_list <- purrr::pmap(
+    .l = val_vecs,
+    \(val1, val2 = NULL, val3 = NULL) {
+      val <- as.list(c(val1, val2, val3))
+      DBI::dbGetQuery(con, glue::glue_sql(query, .con = con), val)
+    }
+  )
+
+  stopifnot(
+    "Query should only return 1 column and <= 1 row" =
+      all(sapply(query_res_list, \(query) {
+        ncol(query) == 1L & nrow(query) <= 1L
+      }))
+  )
+  # Number of rows for each query
+  empty_res <- sapply(query_res_list, \(query) {
+    nrow(query)
+  })
+  # If any query finds nothing (nrow(query) == 0) then replace with NA
+  query_res_list[which(empty_res == 0L)] <- NA
+  return(as.vector(unlist(query_res_list))) # return an unlisted vector for mutate
 }
 
 #' Add `py_base_learner`, `py_base_learner_args`, `model_mode` to the `workflow_set`
@@ -44,16 +83,12 @@ rpwf_workflow_set <- function(preprocs, models, costs) {
 #' "py_base_learner_args", "model_mode".
 #' @keywords internal
 #' @export
-rpwf_add_model_info <- function(obj, con) {
+rpwf_add_model_info_ <- function(obj, con) {
   stopifnot(
     "Run rpwf_workflow_set() first!" =
       all(c("preprocs", "models", "costs") %in% names(obj))
   )
   rpwf <- obj
-  # Add the r engine column
-  rpwf$engine <- vapply(rpwf$models, \(x) {
-    x$engine
-  }, "character")
   # Add the py module column
   rpwf$py_module <- vapply(rpwf$models, \(x) {
     x$py_module
@@ -62,6 +97,10 @@ rpwf_add_model_info <- function(obj, con) {
   rpwf$py_base_learner <- vapply(rpwf$models, \(x) {
     x$py_base_learner
   }, "character")
+  # Add the r engine column
+  rpwf$engine <- vapply(rpwf$models, \(x) {
+    x$engine
+  }, "character")
 
   # Check for invalid models
   purrr::pwalk(
@@ -69,9 +108,19 @@ rpwf_add_model_info <- function(obj, con) {
       x = rpwf$py_module, y = rpwf$py_base_learner, z = rpwf$engine
     ),
     .f = \(x, y, z) {
-      rpwf_chk_model_avail(con, x, y, z)
+      rpwf_chk_model_avail_(con, x, y, z)
     }
   )
+  # Add the rename fns
+  hyper_par_rename <- rpwf_query_(
+    query = "SELECT hyper_par_rename FROM model_type_tbl WHERE
+    py_module = ? AND py_base_learner = ? AND r_engine = ?; ",
+    con = con,
+    val1 = rpwf$py_module,
+    val2 = rpwf$py_base_learner,
+    val3 = rpwf$engine
+  )
+  rpwf$rename_fns <- lapply(hyper_par_rename, rpwf_grid_rename)
 
   # Add the base learner related args if presented
   rpwf$py_base_learner_args <- vapply(rpwf$models, \(x) {
@@ -89,59 +138,15 @@ rpwf_add_model_info <- function(obj, con) {
   return(rpwf)
 }
 
-#' Helper Function for Running Query to Add ids to the `workflow_set`
-#'
-#' This function is a wrapper for [DBI::dbGetQuery()] that also perform some
-#' cleaning. Should only return one column and <= 1 row for every query.
-#'
-#' @param query SQL query.
-#' @inheritParams rpwf_dm_obj
-#' @param val1 value vector to search the tables by.
-#' @param val2 value vector to search the tables by.
-#'
-#' @return a vector of query values.
-#' @keywords internal
-#' @export
-rpwf_query <- function(query, con, val1, val2 = NULL) {
-  if (is.null(val2)) {
-    query_res_list <- lapply(
-      val1,
-      \(x) {
-        DBI::dbGetQuery(con, glue::glue_sql(query, .con = con), list(x))
-      }
-    )
-  } else {
-    query_res_list <- purrr::map2(
-      val1, val2,
-      \(x, y) {
-        DBI::dbGetQuery(con, glue::glue_sql(query, .con = con), list(x, y))
-      }
-    )
-  }
-  stopifnot(
-    "Query should only return 1 column and <= 1 row" =
-      all(sapply(query_res_list, \(query) {
-        ncol(query) == 1L & nrow(query) <= 1L
-      }))
-  )
-  # Number of rows for each query
-  empty_res <- sapply(query_res_list, \(query) {
-    nrow(query)
-  })
-  # If any query finds nothing (nrow(query) == 0) then replace with NA
-  query_res_list[which(empty_res == 0L)] <- NA
-  return(as.vector(unlist(query_res_list))) # return an unlisted vector for mutate
-}
-
 #' Adds a Short Description of Each Workflow to the `workflow_set`
 #'
-#' @param obj object generated by [rpwf_add_model_info()].
+#' @param obj object generated by [rpwf_add_model_info_()].
 #' @return tibble that contains the additional column "wflow_desc".
 #' @importFrom rlang .data
 #' @keywords internal
 #' @export
-rpwf_add_desc <- function(obj) {
-  stopifnot("Run rpwf_add_model_info first!" = "py_base_learner" %in% names(obj))
+rpwf_add_desc_ <- function(obj) {
+  stopifnot("Run rpwf_add_model_info_ first!" = "py_base_learner" %in% names(obj))
   # by pasting together preprocs, models and costs cols
   return(dplyr::mutate(obj, wflow_desc = paste(
     names(.data$preprocs), .data$py_base_learner, .data$costs,
@@ -151,7 +156,7 @@ rpwf_add_desc <- function(obj) {
 
 #' Add Relevant Parameters to the `dials::grid_<functions>`
 #'
-#' @param obj object generated by [rpwf_add_model_info()].
+#' @param obj object generated by [rpwf_add_model_info_()].
 #' @param seed random seed.
 #' @inheritParams rpwf_grid_gen
 #'
@@ -165,16 +170,23 @@ rpwf_add_desc <- function(obj) {
 #' @return tibble with the additional column "grids".
 #' @keywords internal
 #' @export
-rpwf_add_grid_param <- function(obj, .grid_fun = NULL, seed, ...) {
+rpwf_add_grid_param_ <- function(obj, .grid_fun = NULL, seed, ...) {
   # These are columns from rpwf_workflow_set()
   stopifnot(
     "Run rpwf_workflow_set() first!" =
       all(c("preprocs", "models", "costs") %in% names(obj))
   )
-  dplyr::mutate(obj, grids = purrr::map2(
-    .data$models, .data$preprocs, \(x, y) {
+  dplyr::mutate(obj, grids = purrr::pmap(
+    .l = list(.data$models, .data$preprocs, .data$rename_fns),
+    .f = \(x, y, z) {
       set.seed(seed)
-      rpwf_grid_gen(model = x, preproc = y, .grid_fun = .grid_fun, ...)
+      rpwf_grid_gen(
+        model = x,
+        preproc = y,
+        rename_fns = z,
+        .grid_fun = .grid_fun,
+        ...
+      )
     }
   ))
 }
@@ -186,7 +198,7 @@ rpwf_add_grid_param <- function(obj, .grid_fun = NULL, seed, ...) {
 #' function is reading from the database and only generating data as needed,
 #' running this function in parallel is not recommended.
 #'
-#' @param obj obj generated by [rpwf_add_model_info()].
+#' @param obj obj generated by [rpwf_add_model_info_()].
 #' @param db_con a [DbCon] object.
 #'
 #' @details
@@ -200,13 +212,13 @@ rpwf_add_grid_param <- function(obj, .grid_fun = NULL, seed, ...) {
 #' @return tibble with the added "grid_id" column
 #' @keywords internal
 #' @export
-rpwf_export_grid <- function(obj, db_con) {
-  stopifnot("run rpwf_add_grid_param() first" = "grids" %in% names(obj))
+rpwf_export_grid_ <- function(obj, db_con) {
+  stopifnot("run rpwf_add_grid_param_() first" = "grids" %in% names(obj))
   RGrid_obj <- lapply(obj$grids, \(x) {
     return(RGrid$new(x, db_con)$export())
   })
 
-  query_res <- rpwf_query( # Use the hash to find the grid_id
+  query_res <- rpwf_query_( # Use the hash to find the grid_id
     query = "SELECT grid_id FROM r_grid_tbl WHERE grid_hash = ?",
     con = db_con$con,
     val1 = sapply(RGrid_obj, \(x) {
@@ -220,14 +232,14 @@ rpwf_export_grid <- function(obj, db_con) {
 
 #' Process the train/test Data
 #'
-#' Add the [TrainDf] R6 objects using provided recipes. Similar to [rpwf_export_grid()],
+#' Add the [TrainDf] R6 objects using provided recipes. Similar to [rpwf_export_grid_()],
 #' this object does the heavy lifting of generating the path, parquet, and
 #' updating the database of the recipe transformed data. Since the function is
 #' reading from the database and only generating data as needed, running this
 #' function in parallel is not recommended.
 #'
-#' @param obj obj generated by [rpwf_add_model_info()].
-#' @inheritParams rpwf_export_grid
+#' @param obj obj generated by [rpwf_add_model_info_()].
+#' @inheritParams rpwf_export_grid_
 #' @param seed random seed. To control for recipes such as down sampling.
 #'
 #' @details
@@ -238,13 +250,13 @@ rpwf_export_grid <- function(obj, db_con) {
 #' @return tibble with the added column "df_id".
 #' @keywords internal
 #' @export
-rpwf_export_df <- function(obj, db_con, seed = 1234) {
+rpwf_export_df_ <- function(obj, db_con, seed = 1234) {
   TrainDf_obj <- lapply(obj$preprocs, \(x) {
     set.seed(seed)
     return(TrainDf$new(x, db_con)$export())
   })
 
-  query_res <- rpwf_query(
+  query_res <- rpwf_query_(
     con = db_con$con,
     query = "SELECT df_id FROM df_tbl WHERE df_hash = ?",
     val1 = sapply(TrainDf_obj, \(x) {
@@ -255,46 +267,21 @@ rpwf_export_df <- function(obj, db_con, seed = 1234) {
   return(dplyr::mutate(obj, df_id = query_res))
 }
 
-
-#' Query the `cost_id` Associated with the Requested Cost Function
-#'
-#' @param obj object generated by [rpwf_add_model_info()].
-#' @inheritParams rpwf_dm_obj
-#'
-#' @return tibble with the "cost_id" column added.
-#' @keywords internal
-#' @export
-rpwf_add_cost <- function(obj, con) {
-  query_res <- rpwf_query(
-    query = "SELECT cost_id FROM cost_tbl WHERE cost_name = ? AND model_mode = ?;",
-    con = con,
-    val1 = obj$costs,
-    val2 = obj$model_mode
-  )
-
-  if(anyNA(query_res)){
-    stop("Requested cost function not found")
-    }
-
-  return(dplyr::mutate(obj, cost_id = query_res))
-}
-
-
 #' Query the `model_type` id for the Requested Model
 #'
-#' @param obj an object generated by [rpwf_add_model_info()].
+#' @param obj an object generated by [rpwf_add_model_info_()].
 #' @inheritParams rpwf_dm_obj
 #'
 #' @return tibble with the "model_type_id" column added.
 #' @keywords internal
 #' @export
-rpwf_add_model_type <- function(obj, con) {
+rpwf_add_model_type_ <- function(obj, con) {
   stopifnot(
     "add set_py_engine() to your {parsnip} model_spec object" =
       all(c("py_module", "py_base_learner") %in% names(obj))
   )
 
-  query_res <- rpwf_query(
+  query_res <- rpwf_query_(
     query =
       "SELECT model_type_id FROM model_type_tbl
       WHERE py_module = ? AND py_base_learner = ?",
@@ -309,14 +296,14 @@ rpwf_add_model_type <- function(obj, con) {
 
 #' Add the Random State Seeds for Python `random_state`
 #'
-#' @param obj an object generated by [rpwf_add_model_info()].
+#' @param obj an object generated by [rpwf_add_model_info_()].
 #' @param range range of seed to sample from.
 #' @param seed random seed to sample the `random_state`.
 #'
 #' @return tibble with "random_state" column added.
 #' @keywords internal
 #' @export
-rpwf_add_random_state <- function(obj, range, seed) {
+rpwf_add_random_state_ <- function(obj, range, seed) {
   set.seed(seed)
   stopifnot("range of random_state should be of length 2" = length(range) == 2L)
   sorted_range <- as.integer(sort(range))
@@ -329,9 +316,9 @@ rpwf_add_random_state <- function(obj, range, seed) {
 #' Wrapper to Generate the Object to be Exported to the Database
 #'
 #' @param wflow_obj object created by the [rpwf_workflow_set()] function.
-#' @inheritParams rpwf_export_grid
+#' @inheritParams rpwf_export_grid_
 #' @inheritParams rpwf_grid_gen
-#' @inheritParams rpwf_add_random_state
+#' @inheritParams rpwf_add_random_state_
 #'
 #' @return tibble with the columns necessary for exporting to db.
 #' @export
@@ -361,14 +348,13 @@ rpwf_augment <- function(wflow_obj, db_con, .grid_fun = NULL,
                          ..., range = c(1L, 5000L), seed = 1234L) {
   set.seed(seed)
   wflow_obj |>
-    rpwf_add_model_info(db_con$con) |>
-    rpwf_add_desc() |>
-    rpwf_add_grid_param(.grid_fun, seed, ...) |>
-    # rpwf_export_grid(db_con) |>
-    # rpwf_export_df(db_con, seed) |>
-    rpwf_add_cost(db_con$con) |>
-    rpwf_add_model_type(db_con$con) |>
-    rpwf_add_random_state(range, seed)
+    rpwf_add_model_info_(db_con$con) |>
+    rpwf_add_desc_() |>
+    rpwf_add_grid_param_(.grid_fun, seed, ...) |>
+    # rpwf_export_grid_(db_con) |>
+    # rpwf_export_df_(db_con, seed) |>
+    rpwf_add_model_type_(db_con$con) |>
+    rpwf_add_random_state_(range, seed)
 }
 
 
@@ -413,8 +399,8 @@ rpwf_wflow_hash_ <- function(df) {
 #'
 #' to_export <- wf |>
 #'   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10) |>
-#'   rpwf_export_grid(db_con) |>
-#'   rpwf_export_df(db_con)
+#'   rpwf_export_grid_(db_con) |>
+#'   rpwf_export_df_(db_con)
 #'
 #' # Before exporting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
@@ -424,14 +410,14 @@ rpwf_wflow_hash_ <- function(df) {
 rpwf_export_db <- function(obj, con) {
   # These columns must be present in the data
   required <- c(
-    "df_id", "grid_id", "wflow_desc", "cost_id", "model_type_id",
+    "df_id", "grid_id", "wflow_desc", "costs", "model_type_id",
     "random_state", "py_base_learner_args"
   )
   hash_chk <- setdiff(required, "wflow_desc") # columns for hash checking
   # which mandatory column is not in the processed data?
   missing_cols <- required[which(!required %in% names(obj))]
   if (any(c("df_id", "grid_id") %in% missing_cols)) {
-    stop("Run `rpwf_export_grid()` and `rpwf_export_df()` to write parquet files first")
+    stop("Run `rpwf_export_grid_()` and `rpwf_export_df_()` to write parquet files first")
   }
 
   if (length(missing_cols) != 0L) {

@@ -40,7 +40,7 @@ set_py_engine <- function(obj, py_module, py_base_learner, ...,
   )
   if (!is.null(con)) {
     message("Connection provided, checking if the python module is in the db")
-    rpwf_chk_model_avail(con, py_module, py_base_learner, obj$engine)
+    rpwf_chk_model_avail_(con, py_module, py_base_learner, obj$engine)
   }
   # Augment the model spec object with these attributes
   obj$py_module <- py_module
@@ -72,8 +72,8 @@ set_py_engine <- function(obj, py_module, py_base_learner, ...,
 #' @examples
 #' db_con <- DbCon$new("db.SQLite", tempdir())
 #' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
-#' rpwf_chk_model_avail(db_con$con, "xgboost", "XGBClassifier", "xgboost")
-rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
+#' rpwf_chk_model_avail_(db_con$con, "xgboost", "XGBClassifier", "xgboost")
+rpwf_chk_model_avail_ <- function(con, py_module, py_base_learner, r_engine) {
   stopifnot("only accept vector of length 1 as arguments" = all(
     c(length(py_module), length(py_base_learner), length(r_engine)) == 1
   ))
@@ -91,7 +91,7 @@ rpwf_chk_model_avail <- function(con, py_module, py_base_learner, r_engine) {
     cat("\n")
     stop(paste(
       "Invalid scikit-learn model, select only one model",
-      "from the above or add entries to the df_tbl table in the db"
+      "from the above or add models with rpwf_add_py_model()"
     ),
     sep = " "
     )

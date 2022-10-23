@@ -120,7 +120,6 @@ DbCreate <- R6::R6Class("DbCreate",
 #' Here are the tables available in the database. Print out the raw SQL code
 #' with `rpwf_schema()$<table name>` to see constraints and variable names.
 #'
-#' * __cost_tbl__: contains the cost functions.
 #' * __model_type_tbl__: defines comparable models in R and python.
 #' * __df_tbl__: holds the transformed data (train and test) to pass to python.
 #' * __r_grid_tbl__: holds hyper param grids created in R.
@@ -135,14 +134,6 @@ DbCreate <- R6::R6Class("DbCreate",
 #' names(definitions)
 rpwf_schema <- function() {
   tbl <- list()
-  # cost_tbl-----------------------------------------------
-  tbl$cost_tbl <-
-    "CREATE TABLE IF NOT EXISTS cost_tbl(
-    cost_id INTEGER PRIMARY KEY,
-    cost_name VARCHAR(50) NOT NULL, /* neg_log_lost or roc_auc and etc. */
-    model_mode VARCHAR(14) NOT NULL CHECK(model_mode in ('regression', 'classification')),
-    UNIQUE(cost_name, model_mode)
-  );"
   # model_type_tbl-----------------------------------------------
   tbl$model_type_tbl <-
     "CREATE TABLE IF NOT EXISTS model_type_tbl(
@@ -178,15 +169,12 @@ rpwf_schema <- function() {
     "CREATE TABLE IF NOT EXISTS wflow_tbl(
     wflow_id INTEGER PRIMARY KEY,
     wflow_desc VARCHAR NOT NULL, /* description of the wflow */
-    cost_id INTEGER NOT NULL, /* cost function */
+    costs VARCHAR NOT NULL, /* cost function */
     model_type_id INTEGER NOT NULL, /* model function */
     py_base_learner_args VARCHAR, /* args passed to base learner in python */
     grid_id INTEGER NOT NULL, /* id of the grid for grid search */
     df_id INTEGER NOT NULL, /* id of the train df */
     random_state INTEGER NOT NULL,  /* Experiment seed, not yet implemented */
-    CONSTRAINT cost_id_fk
-      FOREIGN KEY (cost_id)
-      REFERENCES cost_tbl (cost_id),
     CONSTRAINT model_type_id_fk
       FOREIGN KEY (model_type_id)
       REFERENCES model_type_tbl (model_type_id),
@@ -197,7 +185,7 @@ rpwf_schema <- function() {
       FOREIGN KEY (df_id)
       REFERENCES df_tbl (df_id)
       ON DELETE CASCADE,  /* Allows cascade deletion by removing df id */
-    UNIQUE(df_id, grid_id, cost_id, model_type_id, random_state, py_base_learner_args)
+    UNIQUE(df_id, grid_id, model_type_id, random_state, py_base_learner_args)
   );"
   # wflow_result_tbl-----------------------------------------------
   tbl$wflow_result_tbl <-
@@ -218,7 +206,7 @@ rpwf_schema <- function() {
 }
 
 # Add initial values to new db -------------------------------------------------
-#' Add Initial Values to `r_grid_tbl`, `cost_tbl` and `model_type_tbl`
+#' Add Initial Values to `r_grid_tbl` and `model_type_tbl`
 #'
 #' Add some initial values such as the cost functions and the XGBoost model as
 #' defined in R and Python. Won't update duplicated rows. Expand compatibility
@@ -236,20 +224,12 @@ rpwf_schema <- function() {
 #' DBI::dbListTables(db_con$con)
 rpwf_db_ini_val <- function(con) {
   # Add some costs
-  cost_tbl_query <-
-    'INSERT INTO cost_tbl (cost_name, model_mode)
-    VALUES
-    ("roc_auc", "classification"),
-    ("neg_log_loss", "classification"),
-    ("mean_squared_error", "regression");'
   # Add a value for NA grid
   grid_tbl_query <-
     'INSERT INTO r_grid_tbl (grid_hash)
     VALUES
     ("5963bac0ddd4b0c3af914e1d4375ed4e");' # rlang::hash for NA
   message("Adding initial values to the database")
-  ## Add stuff into cost table
-  try(DBI::dbExecute(con, cost_tbl_query), silent = TRUE)
   ## Add stuff into the model_type_tbl
   ### 'sup_mod_df' is generated in data-raw/supported_models.R
   try(DBI::dbAppendTable(con, "model_type_tbl", sup_mod_df), silent = TRUE)
@@ -277,7 +257,6 @@ rpwf_db_ini_val <- function(con) {
 rpwf_db_init <- function(con, schema = rpwf_schema()) {
   invisible( ### Create the data base
     DbCreate$new(con = con, query = NULL)$
-      run(schema$cost_tbl)$
       run(schema$model_type_tbl)$
       run(schema$r_grid_tbl)$
       run(schema$df_tbl)$

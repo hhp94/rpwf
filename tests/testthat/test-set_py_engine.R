@@ -25,28 +25,28 @@ test_that("test the overwrite function of rpwf_cp_py_codes()", {
   expect_true(file.exists(test_delete)) # New file copied over
 })
 
-test_that("rpwf_chk_model_avail()", {
+test_that("rpwf_chk_model_avail_()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
-  expect_message(rpwf_chk_model_avail(
+  expect_message(rpwf_chk_model_avail_(
     db_con$con,
     "xgboost", "XGBClassifier", "xgboost"
   ),
   regexp = "Valid scikit-learn model"
   )
-  expect_error(rpwf_chk_model_avail(
+  expect_error(rpwf_chk_model_avail_(
     db_con$con,
     "INVALID", "XGBClassifier", "xgboost"
   ),
   regexp = "Invalid scikit-learn model"
   )
-  expect_error(rpwf_chk_model_avail(
+  expect_error(rpwf_chk_model_avail_(
     db_con$con,
     "xgboost", "INVALID", "xgboost"
   ),
   regexp = "Invalid scikit-learn model"
   )
-  expect_error(rpwf_chk_model_avail(
+  expect_error(rpwf_chk_model_avail_(
     db_con$con,
     "xgboost", "XGBClassifier", "INVALID"
   ),
