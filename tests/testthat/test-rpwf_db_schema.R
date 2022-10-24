@@ -2,7 +2,7 @@ test_that("Can create a connection and create SQL tables", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
 
   db_con <- DbCon$new("db.SQLite", tmp_dir)
-  rpwf_db_init(db_con$con, rpwf_schema())
+  rpwf_db_init_(db_con$con, rpwf_schema())
 
   created_tables <- sort(DBI::dbListTables(db_con$con))
   required_tables <- sort(names(rpwf_schema()))
@@ -18,7 +18,7 @@ test_that("Can create a connection and create SQL tables", {
 test_that("Can create a connection and create SQL tables", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- DbCon$new("db.SQLite", tmp_dir)
-  rpwf_db_init(db_con$con, rpwf_schema())
+  rpwf_db_init_(db_con$con, rpwf_schema())
 
   created_tables <- sort(DBI::dbListTables(db_con$con))
   required_tables <- sort(names(rpwf_schema()))
@@ -42,7 +42,7 @@ test_that("Duplicated values of model_type_tbl are ignored", {
     }
   )
   # Try to add repeated values
-  rpwf_db_ini_val(db_con$con)
+  rpwf_db_init_values_(db_con$con)
   after <- sapply(
     c("model_type_tbl", "r_grid_tbl"),
     \(x){

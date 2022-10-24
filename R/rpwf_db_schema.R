@@ -212,7 +212,7 @@ rpwf_schema <- function() {
 #' defined in R and Python. Won't update duplicated rows. Expand compatibility
 #' by adding values to this function.
 #'
-#' @inheritParams rpwf_dm_obj
+#' @inheritParams rpwf_dm
 #'
 #' @return Used for side effects.
 #' @keywords internal
@@ -220,10 +220,9 @@ rpwf_schema <- function() {
 #'
 #' @examples
 #' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init(db_con$con, rpwf_schema()) # Create the db
+#' rpwf_db_init_(db_con$con, rpwf_schema()) # Create the db
 #' DBI::dbListTables(db_con$con)
-rpwf_db_ini_val <- function(con) {
-  # Add some costs
+rpwf_db_init_values_ <- function(con) {
   # Add a value for NA grid
   grid_tbl_query <-
     'INSERT INTO r_grid_tbl (grid_hash)
@@ -240,21 +239,21 @@ rpwf_db_ini_val <- function(con) {
 # Wrapper for db creation -------------------------------------------------
 #' Create the Database and Add Initial Values
 #'
-#' A wrapper around [DbCreate] and [rpwf_db_ini_val()]. This function
+#' A wrapper around [DbCreate] and [rpwf_db_init_values_()]. This function
 #' iteratively runs through the table creation queries in the schema
 #' object and create the tables after creating a new `rpwfDb` folder and
 #' database specified by the `DbCon$new()` object.
 #'
-#' @inheritParams rpwf_dm_obj
+#' @inheritParams rpwf_dm
 #' @param schema output of [rpwf_schema()].
 #' @return Used for side effects.
 #' @export
 #'
 #' @examples
 #' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
+#' rpwf_db_init_(db_con$con, rpwf_schema()) # Create the database
 #' DBI::dbListTables(db_con$con)
-rpwf_db_init <- function(con, schema = rpwf_schema()) {
+rpwf_db_init_ <- function(con, schema = rpwf_schema()) {
   invisible( ### Create the data base
     DbCreate$new(con = con, query = NULL)$
       run(schema$model_type_tbl)$
@@ -263,7 +262,7 @@ rpwf_db_init <- function(con, schema = rpwf_schema()) {
       run(schema$wflow_tbl)$
       run(schema$wflow_result_tbl)
   )
-  rpwf_db_ini_val(con = con) ### Add some initial values
+  rpwf_db_init_values_(con = con) ### Add some initial values
 }
 
 # Add models to the db ---------------------------------------------------------
@@ -275,7 +274,7 @@ rpwf_db_init <- function(con, schema = rpwf_schema()) {
 #' parameter names (i.e., "mtry" in `{parsnip}` is "colsample_bytree"), and
 #' model mode (i.e., "classification")
 #'
-#' @inheritParams rpwf_dm_obj
+#' @inheritParams rpwf_dm
 #' @param py_module the module in scikit-learn, i.e., "sklearn.ensemble".
 #' @param py_base_learner the base learner in scikit-learn, i.e.,
 #' "RandomForestClassifier".
@@ -381,6 +380,6 @@ rpwf_add_py_model <- function(con,
 #' db_con$proj_root_path
 rpwf_create_db <- function(db_name, proj_root_path) {
   db_con <- DbCon$new(db_name = db_name, proj_root_path = proj_root_path)
-  rpwf_db_init(db_con$con, rpwf_schema())
+  rpwf_db_init_(db_con$con, rpwf_schema())
   return(db_con)
 }

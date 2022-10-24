@@ -10,10 +10,10 @@
 #'
 #' @examples
 #' db_con <- DbCon$new("db.SQLite", tempdir())
-#' dm_obj <- rpwf_dm_obj(db_con$con)
+#' dm_obj <- rpwf_dm(db_con$con)
 #' dm_obj
 #' # dm_obj |> dm::dm_draw()
-rpwf_dm_obj <- function(con) {
+rpwf_dm <- function(con) {
   model_type_tbl <- model_type_id <- r_grid_tbl <- grid_id <- df_tbl <- NULL
   df_id <- wflow_tbl <- wflow_id <- wflow_result_tbl <- NULL
 

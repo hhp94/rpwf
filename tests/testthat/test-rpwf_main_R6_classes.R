@@ -127,7 +127,7 @@ test_that("renaming function", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
 
   expect_equal(rename_fns("mtry"), "colsample_bytree")
   expect_equal(rename_fns("trees"), "n_estimators")
@@ -140,7 +140,7 @@ test_that("renaming function", {
   )
 })
 
-test_that("rpwf_grid_gen() with tune()", {
+test_that("rpwf_grid_gen_() with tune()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
 
@@ -161,11 +161,11 @@ test_that("rpwf_grid_gen() with tune()", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
 
   grid_size <- 10
   # generation of the grids
-  partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+  partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
     rename_fns,
     size = grid_size
   )
@@ -182,7 +182,7 @@ test_that("rpwf_grid_gen() with tune()", {
   expect_true(is.na(partial_fns(.grid_fun = NULL)))
 })
 
-test_that("rpwf_grid_gen() no tuning param", {
+test_that("rpwf_grid_gen_() no tuning param", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
 
@@ -193,7 +193,7 @@ test_that("rpwf_grid_gen() no tuning param", {
     )
   grid_size <- 10
   # generation of the grids
-  partial_fns <- purrr::partial(rpwf_grid_gen, no_tune_spec, dummy_test_rec,
+  partial_fns <- purrr::partial(rpwf_grid_gen_, no_tune_spec, dummy_test_rec,
     size = grid_size
   )
 
@@ -204,7 +204,7 @@ test_that("rpwf_grid_gen() no tuning param", {
   expect_true(is.na(c_grid_rand))
 })
 
-test_that("rpwf_finalize_params()", {
+test_that("rpwf_finalize_params_()", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
@@ -214,9 +214,9 @@ test_that("rpwf_finalize_params()", {
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
     )
-  expect_equal(nrow(rpwf_finalize_params(dummy_mod_spec, dummy_test_rec)$par), 6)
+  expect_equal(nrow(rpwf_finalize_params_(dummy_mod_spec, dummy_test_rec)$par), 6)
   # returning no params so r_grid_gen() would return an NA
-  expect_equal(nrow(rpwf_finalize_params(
+  expect_equal(nrow(rpwf_finalize_params_(
     dummy_mod_spec_no_tune_,
     dummy_test_rec
   )$par), 0)
@@ -246,10 +246,10 @@ test_that("initialization of the RGrid class", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
 
   # generation of the grids
-  partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+  partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
     rename_fns,
     size = grid_size
   )
@@ -312,10 +312,10 @@ test_that("export() method of the RGrid class", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
 
   # generation of the grids
-  partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+  partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
     rename_fns,
     size = grid_size
   )
@@ -367,10 +367,10 @@ test_that("export() method won't add repeated rows class", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename(hyper_par_rename)
+  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
 
   # generation of the grids
-  partial_fns <- purrr::partial(rpwf_grid_gen, dummy_mod_spec, dummy_test_rec,
+  partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
     rename_fns,
     size = grid_size
   )

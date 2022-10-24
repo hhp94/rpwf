@@ -140,21 +140,21 @@ class TrainDf(_RpwfSQL):
         return self.df.loc[:, self.df.columns == self._target]
 
 
-class Cost(_RpwfSQL):
-    """Get the cost metrics (RMSE, neg_log_loss etc.)"""
+# class Cost(_RpwfSQL):
+#     """Get the cost metrics (RMSE, neg_log_loss etc.)"""
 
-    def __init__(self, base: Base, wflow: Wflow) -> None:
-        """Get the cost metric associated with the wflow"""
-        super().__init__(base)
-        self.cost_id: int = wflow._get_par("cost_id")
-        self.query = sqlalchemy.select(
-            self.base.meta_dat.tables["cost_tbl"].c.cost_name
-        ).where(self.base.meta_dat.tables["cost_tbl"].c.cost_id == self.cost_id)
-        self._exec_query()
+#     def __init__(self, base: Base, wflow: Wflow) -> None:
+#         """Get the cost metric associated with the wflow"""
+#         super().__init__(base)
+#         self.cost_id: int = wflow._get_par("cost_id")
+#         self.query = sqlalchemy.select(
+#             self.base.meta_dat.tables["cost_tbl"].c.cost_name
+#         ).where(self.base.meta_dat.tables["cost_tbl"].c.cost_id == self.cost_id)
+#         self._exec_query()
 
-    def get_cost(self) -> str:
-        """Cost metric for optimization e.g. log_loss"""
-        return self.query_results["cost_name"]
+#     def get_cost(self) -> str:
+#         """Cost metric for optimization e.g. log_loss"""
+#         return self.query_results["cost_name"]
 
 
 class Model(_RpwfSQL):

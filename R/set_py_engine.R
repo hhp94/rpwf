@@ -58,7 +58,7 @@ set_py_engine <- function(obj, py_module, py_base_learner, ...,
 
 #' Internal Function to check if the Specified Model is Available in the Database
 #'
-#' @inheritParams rpwf_dm_obj
+#' @inheritParams rpwf_dm
 #' @param py_module string of what the py module is e.g., `xgboost`,
 #' `sklearn.ensemble`.
 #' @param py_base_learner string of what the base learner is e.g.,
@@ -71,7 +71,7 @@ set_py_engine <- function(obj, py_module, py_base_learner, ...,
 #'
 #' @examples
 #' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
+#' rpwf_db_init_(db_con$con, rpwf_schema()) # Create the database
 #' rpwf_chk_model_avail_(db_con$con, "xgboost", "XGBClassifier", "xgboost")
 rpwf_chk_model_avail_ <- function(con, py_module, py_base_learner, r_engine) {
   stopifnot("only accept vector of length 1 as arguments" = all(

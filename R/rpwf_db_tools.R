@@ -2,7 +2,7 @@
 #'
 #' This function specifically just deletes the workflows from the `wflow_tbl`.
 #'
-#' @inheritParams rpwf_dm_obj
+#' @inheritParams rpwf_dm
 #' @param id numeric vector of workflow ids to be removed.
 #'
 #' @return Called for the side effect.
@@ -54,14 +54,14 @@ id_col_switch_ <- function(tbl) {
 #' @param tbls vector of character of table names, i.e., "df_tbl",
 #' "model_type_tbl", "r_grid_tbl", "r_grid_tbl", "wflow_result_tbl".
 #' @param id vector of ids to be deleted from a particular table.
-#' @inheritParams rpwf_dm_obj
+#' @inheritParams rpwf_dm
 #'
 #' @return Called for the side effect.
 #' @export
 #'
 #' @examples
 #' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init(db_con$con, rpwf_schema()) # Create the database
+#' rpwf_db_init_(db_con$con, rpwf_schema()) # Create the database
 #' # Before deleting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
 #' rpwf_db_del_entry("model_type_tbl", 1, db_con$con)

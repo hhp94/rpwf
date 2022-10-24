@@ -93,12 +93,12 @@ if __name__ == "__main__":
         default=1,
         help="number of repeats for the cross-validation"
     )
-    parser.add_argument(
-        "-e",
-        "--export",
-        action="store_true",
-        help="export results to database or not"
-    )
+    # parser.add_argument(
+    #     "-e",
+    #     "--export",
+    #     action="store_true",
+    #     help="export results to database or not"
+    # )
     parser.add_argument(
         "-j",
         "--joblib-model",
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
         model_type_obj = rpwf.Model(db_obj, wflow_obj)
         base_learner = rpwf.BaseLearner(wflow_obj, model_type_obj).base_learner
-        score = rpwf.Cost(db_obj, wflow_obj).get_cost()
+        score = wflow_obj._get_par("costs")
 
         cv = RepeatedStratifiedKFold(
             n_splits=args.n_splits,
@@ -165,7 +165,7 @@ if __name__ == "__main__":
         if p_grid is None:
             print("No tune grid specified, running with default params")
             cv_results = cross_val_score(
-                base_learner, X=X, y=y, cv=cv, n_jobs=n_cores
+                base_learner, X=X, y=y, cv=cv, n_jobs=n_cores, scoring=score
             )
         else:
             print("Performing nested-cv using provided Rgrid")
@@ -174,16 +174,16 @@ if __name__ == "__main__":
                 param_grid=p_grid,
                 cv=cv,
                 n_jobs=n_cores,
-                scoring=score,
+                scoring=score
             )
             param_tuner.fit(X=X, y=y)
             tuning_results = pandas.DataFrame(param_tuner.cv_results_)
             cv_results = tuning_results.loc[tuning_results['rank_test_score'] == 1]
 
-        if args.export:
+        # if args.export:
             # Export the results
-            exporter = rpwf.Export(db_obj, wflow_obj)
-            exporter.export_cv(pandas.DataFrame(cv_results), "cv")
-            if args.joblib_model and param_tuner:
-                exporter.export_model(param_tuner.best_estimator_)
-            exporter.export_db()
+        exporter = rpwf.Export(db_obj, wflow_obj)
+        exporter.export_cv(pandas.DataFrame(cv_results), "cv")
+        if args.joblib_model and param_tuner:
+            exporter.export_model(param_tuner.best_estimator_)
+        exporter.export_db()
