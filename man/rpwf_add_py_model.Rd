@@ -41,7 +41,7 @@ model mode (i.e., "classification")
 }
 \examples{
 # Generate dummy database
-db_con <- rpwf_create_db("db.SQLite", tempdir())
+db_con <- rpwf_connect_db("db.SQLite", tempdir())
 DBI::dbListTables(db_con$con)
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 rpwf_add_py_model(

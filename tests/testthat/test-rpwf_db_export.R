@@ -117,10 +117,11 @@ test_that("rpwf_export_grid()", {
   )
   expect_equal(t4a$grid_id, 2)
   expect_equal(t4b$grid_id, 1)
-  expect_message(rpwf_export_grid(
-    rpwf_add_grid_param_(t2, NULL, seed = 1234), db_con
-  ), # Not use grid
-  regex = "No hyper param tuning"
+  expect_message(
+    rpwf_export_grid(
+      rpwf_add_grid_param_(t2, NULL, seed = 1234), db_con
+    ), # Not use grid
+    regex = "No hyper param tuning"
   )
 })
 

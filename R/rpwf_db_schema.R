@@ -288,7 +288,7 @@ rpwf_db_init_ <- function(con, schema = rpwf_schema()) {
 #'
 #' @examples
 #' # Generate dummy database
-#' db_con <- rpwf_create_db("db.SQLite", tempdir())
+#' db_con <- rpwf_connect_db("db.SQLite", tempdir())
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 #' rpwf_add_py_model(
@@ -375,10 +375,10 @@ rpwf_add_py_model <- function(con,
 #' @export
 #'
 #' @examples
-#' db_con <- rpwf_create_db("db.SQLite", tempdir())
+#' db_con <- rpwf_connect_db("db.SQLite", tempdir())
 #' db_con$con
 #' db_con$proj_root_path
-rpwf_create_db <- function(db_name, proj_root_path) {
+rpwf_connect_db <- function(db_name, proj_root_path) {
   db_con <- DbCon$new(db_name = db_name, proj_root_path = proj_root_path)
   rpwf_db_init_(db_con$con, rpwf_schema())
   return(db_con)

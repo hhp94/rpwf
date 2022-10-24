@@ -443,10 +443,10 @@ RGrid <- R6::R6Class(
 #' @keywords internal
 #' @export
 rpwf_grid_gen_ <- function(model,
-                          preproc,
-                          rename_fns,
-                          .grid_fun = NULL,
-                          ...) {
+                           preproc,
+                           rename_fns,
+                           .grid_fun = NULL,
+                           ...) {
   params <- rpwf_finalize_params_(model = model, preproc = preproc)
 
   if (nrow(params$pars) == 0 | (!is.function(.grid_fun) & is.null(.grid_fun))) {

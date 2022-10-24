@@ -1,0 +1,136 @@
+---
+title: "rpwf"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{rpwf}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+```{r, echo = FALSE}
+tmp_dir <- withr::local_tempdir(pattern = "vignette")
+setwd(tmp_dir)
+```
+
+```{r setup}
+library(rpwf)
+library(dplyr)
+library(parsnip)
+```
+
+# Setting up
+## R
+* Install the package from github
+```{r, eval = FALSE}
+# install.packages("devtools")
+devtools::install_github("hhp94/rpwf", branch = "master")
+```
+
+## Python
+* First, setup a python environment with conda.
+```{bash, eval = FALSE}
+conda create -n py39 python=3.9.13 anaconda
+```
+
+* You'll need the the following python packages installed in your python 
+environment. `pandas` and `scikit-learn` should already be installed with the 
+above command.  
+  + sqlalchemy  
+  + pandas  
+  + pandas-downcast  
+  + pyarrow  
+  + scikit-learn  
+  + xgboost  
+  + any other machine learning library such as lightgbm and etc.  
+
+```{bash, eval = FALSE}
+conda activate py39
+conda install pyarrow sqlalchemy xgboost
+pip install pandas-downcast
+```
+
+* Next, we copy the python codes into any folder with `rpwf_cp_py_codes()`. Here
+I'm just copying the codes to my home folder.  
+
+```{r}
+list.files("~/opt")
+rpwf_cp_py_codes("~/opt")
+list.files("~/opt")
+```
+
+* Install the copied python codes as a local package for maximal flexibility.
+*Remember the -e flag*, this allows you to modify the python codes without 
+re-installation.  
+
+```{bash, eval = FALSE}
+python -m pip install -e ~/opt/rpwf
+```
+
+* Remove the package if needed with
+```{bash, eval = FALSE}
+pip uninstall local-rpwf
+```
+
+# Iris
+* Let's use the iris data without virginica to demonstrate classification
+prediction.  
+
+```{r}
+set.seed(1234)
+# Remove "virginica"
+df <- iris[which(!iris$Species == "virginica"), ]
+
+# Clean the names
+names(df) <- gsub("\\.", "_", names(df)) |>
+  tolower()
+
+# Add an index column
+df$index <- seq_len(nrow(df))
+
+# Recode setosa as 1, else as 0
+df$species <- ifelse(df$species == "setosa", 1L, 0L)
+
+# Get 80% of the data as a train data
+train_idx <- sample(seq_len(nrow(df)), floor(nrow(df) * 0.80))
+df_train <- df[train_idx, ]
+```
+
+```{r, echo = FALSE}
+head(df_train)
+```
+
+## Initialize a database
+* Create a database with `rpwf_connect_db()`
+```{r}
+# rpwf_connect_db
+```
+
+## Set up model specs
+* This step is identical to the steps in parsnips, with the addition of the 
+function `set_py_engine()` after `set_engine()` and `set_mode()`.
+* `set_py_engine()` has 3 important arguments
+
+```{r}
+xgb_model <- boost_tree() |>
+  set_engine("xgboost") |>
+  set_mode("classification") |>
+  set_py_engine(
+    "xgboost", "XGBClassifier",
+    args = list(
+      eval_metric = "logloss",
+      use_label_encoder = FALSE,
+      verbosity = 0,
+      silent = TRUE
+    )
+  )
+```
+
