@@ -26,35 +26,72 @@ The combination of automated handling of paths and files with SQLite and
 provided python CLI templates aims to make feature engineering on HPCs a
 smoother experience.
 
-## Installation
+# Installation
 
-You can install the development version of `{rpwf}` from
-[GitHub](https://github.com/) with:
+## R
+
+- Install the package from github
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("hhp94/rpwf")
+devtools::install_github("hhp94/rpwf", branch = "master")
 ```
 
-After installing the package, make sure to either download the python
-codes at [this
-link](https://github.com/hhp94/rpwf/tree/master/inst/python/rpwf) or run
-the function:
+## Python
+
+- First, setup a python environment with conda.
+
+``` bash
+conda create -n py39 python=3.9.13 anaconda
+```
+
+- You’ll need the the following python packages installed in your python
+  environment. `pandas` and `scikit-learn` should already be installed
+  with the above command.
+  - sqlalchemy  
+  - pandas  
+  - pandas-downcast  
+  - pyarrow  
+  - scikit-learn  
+  - xgboost  
+  - any other machine learning library such as `lightgbm` and etc.
+
+``` bash
+conda activate py39
+conda install pyarrow sqlalchemy xgboost
+pip install pandas-downcast
+```
+
+- Next, we copy the python codes into any folder with
+  `rpwf_cp_py_codes()`. Here I’m just copying the codes to my home
+  folder.
 
 ``` r
-rpwf::rpwf_cp_py_codes(<project root path here>)
+list.files("~") # Coping python codes to this folder
+rpwf_cp_py_codes("~")
+list.files("~") # A folder called "rpwf" is created
 ```
 
-Then, install the package as a local package with pip with
-`python -m pip install -e <path to the downloaded folder>` so that the
-imports works.
+- Install the copied python codes as a local package for maximum
+  flexibility. **Remember the -e flag**, this allows you to modify the
+  python codes without re-installation.
 
-### linux installation
+``` bash
+python -m pip install -e ~/rpwf
+```
+
+- Remove the package if needed with
+
+``` bash
+pip uninstall local-rpwf
+```
+
+## Linux installation
 
 [`{arrow}`](https://arrow.apache.org/) installation on linux might fail.
 In which case, use this
 [instruction](https://cran.r-project.org/web/packages/arrow/vignettes/install.html).
-The following codes worked for me:
+The following codes worked for me
 
 ``` r
 Sys.setenv(NOT_CRAN = TRUE)

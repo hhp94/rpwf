@@ -8,7 +8,8 @@ rpwf_chk_model_avail_(con, py_module, py_base_learner, r_engine)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 
 \item{py_module}{string of what the py module is e.g., \code{xgboost},
 \code{sklearn.ensemble}.}
@@ -25,7 +26,8 @@ either an error or "Model found in db".
 Internal Function to check if the Specified Model is Available in the Database
 }
 \examples{
-db_con <- DbCon$new("db.SQLite", tempdir())
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 rpwf_db_init_(db_con$con, rpwf_schema()) # Create the database
 rpwf_chk_model_avail_(db_con$con, "xgboost", "XGBClassifier", "xgboost")
 }

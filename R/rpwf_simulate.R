@@ -7,6 +7,7 @@
 #' @param seed random seed.
 #'
 #' @return a list of train and test df and the id and target column names.
+#'
 #' @export
 #'
 #' @examples
@@ -34,7 +35,7 @@ rpwf_sim <- function(n_train = 100, n_test = 10, seed = 1234) {
 #' For testing, not meant to be called, add [set_py_engine()] to this object.
 #'
 #' @return a model spec objection.
-#' @keywords internal
+#' @noRd
 xgb_model_spec_ <- function() {
   parsnip::boost_tree(
     tree_depth = hardhat::tune(),
@@ -54,7 +55,7 @@ xgb_model_spec_ <- function() {
 #' test edge case of grid generation. Add [set_py_engine()] to this object.
 #'
 #' @return a model spec objection.
-#' @keywords internal
+#' @noRd
 xgb_model_spec_no_tune_ <- function() {
   parsnip::boost_tree() |>
     parsnip::set_engine("xgboost") |>
@@ -70,7 +71,7 @@ xgb_model_spec_no_tune_ <- function() {
 #'
 #' @return a [recipes::recipe()] object.
 #' @importFrom rlang .data
-#' @keywords internal
+#' @noRd
 dummy_recipe_ <- function(sim_dat, type = "train") {
   id <- X3 <- NULL
   if (type == "train") {
@@ -99,7 +100,7 @@ dummy_recipe_ <- function(sim_dat, type = "train") {
 #' @param tmp_dir tmp_dir path.
 #'
 #' @return a [DBI::dbConnect()] object.
-#' @keywords internal
+#' @noRd
 dummy_con_ <- function(tmp_dir) {
   DbCon_obj <- DbCon$new("db.SQLite", tmp_dir)
   rpwf_db_init_(DbCon_obj$con, rpwf_schema())

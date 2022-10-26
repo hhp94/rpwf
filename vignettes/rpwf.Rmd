@@ -27,62 +27,35 @@ library(dplyr)
 library(parsnip)
 ```
 
-# Setting up
-## R
-* Install the package from github
-```{r, eval = FALSE}
-# install.packages("devtools")
-devtools::install_github("hhp94/rpwf", branch = "master")
-```
+## Introduction
+* I created this package because I love data wrangling in R, i.e. `{data.table}`,
+`{tidyverse}`, spline basis functions generations with `{mgcv}` and `{gratia}`, 
+and visualization with `{ggplot2}` to name a few...  
+  + Many new methods of performing dimension reduction are first implemented
+  in R because they are developed by statisticians.  
+* Meanwhile, the ML and DL packages in python are usually more mature, more 
+flexible, and a lot of the latest updates and ML research papers have python 
+implementations.  
+  + I find that fitting model in python is usually faster and consume less 
+  memory for the equivalent model in R.  
+  + Importantly, ML acceleration with GPU can be more straight-forward to setup
+  by less experienced people (like myself) in python.  
+* With {rpwf}, I can wrangle my data in R while having access to the latest and 
+greatest ML packages in python.  
+* In Kaggle competitions, it is usually feature engineering, rather than testing
+different ML models, that gives a competitor an edge. {rpwf} helps by  
+  + Enabling the use of the `{workflowset}` framework that sets up multiple 
+  test experiments and sequentially, or in parallel on different compute nodes, 
+  evaluate them to test if an engineered feature helps with the prediction
+  performance.  
+  + Allowing the seamless deployment on HPC clusters or cloud computers because 
+  you only have to upload the original train data and recipes to run the 
+  experiments. All the pathing and uploading of results is handled by (a) SQLite 
+  database(s).  
 
-## Python
-* First, setup a python environment with conda.
-```{bash, eval = FALSE}
-conda create -n py39 python=3.9.13 anaconda
-```
-
-* You'll need the the following python packages installed in your python 
-environment. `pandas` and `scikit-learn` should already be installed with the 
-above command.  
-  + sqlalchemy  
-  + pandas  
-  + pandas-downcast  
-  + pyarrow  
-  + scikit-learn  
-  + xgboost  
-  + any other machine learning library such as lightgbm and etc.  
-
-```{bash, eval = FALSE}
-conda activate py39
-conda install pyarrow sqlalchemy xgboost
-pip install pandas-downcast
-```
-
-* Next, we copy the python codes into any folder with `rpwf_cp_py_codes()`. Here
-I'm just copying the codes to my home folder.  
-
-```{r}
-list.files("~/opt")
-rpwf_cp_py_codes("~/opt")
-list.files("~/opt")
-```
-
-* Install the copied python codes as a local package for maximal flexibility.
-*Remember the -e flag*, this allows you to modify the python codes without 
-re-installation.  
-
-```{bash, eval = FALSE}
-python -m pip install -e ~/opt/rpwf
-```
-
-* Remove the package if needed with
-```{bash, eval = FALSE}
-pip uninstall local-rpwf
-```
-
-# Iris
-* Let's use the iris data without virginica to demonstrate classification
-prediction.  
+## Demonstration
+* Let's use the `iris` data without `virginica` to demonstrate a classification
+prediction task.  
 
 ```{r}
 set.seed(1234)
@@ -104,33 +77,143 @@ train_idx <- sample(seq_len(nrow(df)), floor(nrow(df) * 0.80))
 df_train <- df[train_idx, ]
 ```
 
-```{r, echo = FALSE}
+```{r}
 head(df_train)
 ```
 
 ## Initialize a database
-* Create a database with `rpwf_connect_db()`
+* Create a database with `rpwf_connect_db()`  
 ```{r}
-# rpwf_connect_db
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 ```
 
-## Set up model specs
-* This step is identical to the steps in parsnips, with the addition of the 
-function `set_py_engine()` after `set_engine()` and `set_mode()`.
-* `set_py_engine()` has 3 important arguments
+* `db_con` is an object that holds a `{DBI}` connection to the SQLite database. 
+Access it with the `$con` method  
+```{r}
+db_con$con
+```
+
+## Define models with `{parsnip}`
+* Identical to the steps in parsnips, first choose a model, i.e.,
+`boost_tree()`, then choose the R engine with `set_engine()` and classification 
+or regression with `set_mode()`.  
+* Then, just pipe the object into the `set_py_engine()` function.  
+* `set_py_engine()` has 3 important arguments  
+  + `py_module` and `py_base_learner` defines how to import a base learner in 
+  a python script.  
+  + `args` defines the arguments that can be passed to the base learner in python.  
+    + **Make sure to pass booleans as R booleans**, i.e. `TRUE` and `FALSE`.  
+    + This is a powerful feature. It allows us to fit models using the latest 
+    python implementation from R. For example, the `xgboost` module allows 
+    you to set some exotic arguments such as monotonicity contraints and different
+    base learners such as linear learners and random forest learners instead 
+    of the default learner.  
+  + `tag` is an optional argument that's helpful for keeping track of 
+  models in complicated `workflowsets`.  
+* Tip: Unless you are expecting bugs or testing, try to pass arguments that
+make the learner as silent as possible. Some ML packages in python generate a 
+lot of messages that can actually slows down the modeling process. For example, 
+even with the `verbosity = 0` and `silent = TRUE` from the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), 
+the output from the python script still has a lot of repeated messages and 
+deprecation warnings.  
+
+### `{xgboost}`
+* These are the available models
+```{r}
+rpwf_avail_models(db_con$con)
+```
+
+* From the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), I decided to fix the `n_estimators`
+at 50 and tune the learning rate. Optimize with logloss.  
+* To do this, i pass the parameter `n_estimators = 50` to the `args` argument
+of set_py_engine().  
+* I am going to tune 6 hyper parameters by passing them the `tune()` functions 
+just like in parsnips.  
 
 ```{r}
-xgb_model <- boost_tree() |>
+# This model is equivalent to the following python codes:
+
+# from xgboost import XGBClassifier
+#
+# base_learner = XGBClassifier(
+#   eval_metric = "logloss",
+#   use_label_encoder = False,
+#   verbosity = 0,
+#   silent = True
+# )
+
+xgb_model <- boost_tree(
+  mtry = tune(),
+  min_n = tune(),
+  tree_depth = tune(),
+  learn_rate = tune(),
+  loss_reduction = tune(),
+  sample_size = tune()
+) |>
   set_engine("xgboost") |>
   set_mode("classification") |>
   set_py_engine(
-    "xgboost", "XGBClassifier",
+    "xgboost",
+    "XGBClassifier",
     args = list(
       eval_metric = "logloss",
+      n_estimators = 50,
       use_label_encoder = FALSE,
       verbosity = 0,
       silent = TRUE
     )
   )
 ```
+
+### `svm`
+* From the [sklearn.svm.SCV docs](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC), the argument `cache_size` can help speed up the fit for users if RAM
+space is available. I will increase this from the default. This is an example
+of how fitting models in python can have some very useful settings.  
+  + In this example, `cache_size` wouldn't reduce fit time because `iris` is 
+  small.  
+* Let's set up one model for *polynomial kernel*, one for *radial basis kernel*.  
+  + I fixed the `kernel` argument in `args` to explicitly separate the models 
+  into poly and rbf.  
+  + This is an artifact of `{tidymodels}` defining `svm_poly()` and `svm_rbf()` 
+  separately while sci-kit learn define them both in one class 
+  `sklearn.svm.SVC`.  
+
+```{r}
+svm_poly_model <- svm_poly(
+  cost = tune(),
+  degree = tune(),
+  scale_factor = tune()
+) |>
+  set_engine("kernlab") |>
+  set_mode("classification") |>
+  set_py_engine("sklearn.svm",
+    "SVC",
+    "svm_poly",
+    args = list(
+      kernel = "poly",
+      cache_size = 500
+    )
+  )
+
+svm_rbf_model <- svm_rbf(
+  cost = tune(),
+  rbf_sigma = tune()
+) |>
+  set_engine("kernlab") |>
+  set_mode("classification") |>
+  set_py_engine("sklearn.svm",
+    "SVC",
+    "svm_rbf",
+    args = list(
+      kernel = "rbf",
+      cache_size = 500
+    )
+  )
+```
+
+```{r, eval = FALSE}
+# withr::deferred_clear()
+```
+
+# Define recipe with `{recipes}`
 

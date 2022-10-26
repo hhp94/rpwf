@@ -19,7 +19,8 @@ Create the "rpwfDb" folder in the provided root path and create a db if
 needed. Access the connection with \code{object$con}
 }
 \examples{
-db_con <- rpwf_connect_db("db.SQLite", tempdir())
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 db_con$con
 db_con$proj_root_path
 }

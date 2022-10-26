@@ -219,8 +219,8 @@ rpwf_schema <- function() {
 #' @export
 #'
 #' @examples
-#' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init_(db_con$con, rpwf_schema()) # Create the db
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' DBI::dbListTables(db_con$con)
 rpwf_db_init_values_ <- function(con) {
   # Add a value for NA grid
@@ -230,8 +230,8 @@ rpwf_db_init_values_ <- function(con) {
     ("5963bac0ddd4b0c3af914e1d4375ed4e");' # rlang::hash for NA
   message("Adding initial values to the database")
   ## Add stuff into the model_type_tbl
-  ### 'sup_mod_df' is generated in data-raw/supported_models.R
-  try(DBI::dbAppendTable(con, "model_type_tbl", sup_mod_df), silent = TRUE)
+  ### 'sup_mod_df__' is generated in data-raw/supported_models.R
+  try(DBI::dbAppendTable(con, "model_type_tbl", sup_mod_df__), silent = TRUE)
   ## Add the empty values for the r grid
   try(DBI::dbExecute(con, grid_tbl_query), silent = TRUE)
 }
@@ -250,8 +250,8 @@ rpwf_db_init_values_ <- function(con) {
 #' @export
 #'
 #' @examples
-#' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init_(db_con$con, rpwf_schema()) # Create the database
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' DBI::dbListTables(db_con$con)
 rpwf_db_init_ <- function(con, schema = rpwf_schema()) {
   invisible( ### Create the data base
@@ -288,7 +288,8 @@ rpwf_db_init_ <- function(con, schema = rpwf_schema()) {
 #'
 #' @examples
 #' # Generate dummy database
-#' db_con <- rpwf_connect_db("db.SQLite", tempdir())
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 #' rpwf_add_py_model(
@@ -375,7 +376,8 @@ rpwf_add_py_model <- function(con,
 #' @export
 #'
 #' @examples
-#' db_con <- rpwf_connect_db("db.SQLite", tempdir())
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' db_con$con
 #' db_con$proj_root_path
 rpwf_connect_db <- function(db_name, proj_root_path) {

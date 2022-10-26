@@ -36,9 +36,8 @@ Wrapper to Generate the Object to be Exported to the Database
 }
 \examples{
 # Create the database
-tmp <- tempdir()
-db_con <- DbCon$new("db.SQLite", tmp)
-rpwf_db_init_(db_con$con, rpwf_schema())
+temp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", temp_dir)
 
 # Create a `workflow_set`
 d <- rpwf_sim()$train
@@ -55,5 +54,5 @@ wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 
 to_export <- wf |>
   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10)
-list.files(paste0(tmp, "/rpwfDb"), recursive = TRUE) # Files are created
+list.files(paste0(temp_dir, "/rpwfDb"), recursive = TRUE) # Files are created
 }

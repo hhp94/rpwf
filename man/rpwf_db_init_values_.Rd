@@ -8,7 +8,8 @@ rpwf_db_init_values_(con)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 }
 \value{
 Used for side effects.
@@ -19,8 +20,8 @@ defined in R and Python. Won't update duplicated rows. Expand compatibility
 by adding values to this function.
 }
 \examples{
-db_con <- DbCon$new("db.SQLite", tempdir())
-rpwf_db_init_(db_con$con, rpwf_schema()) # Create the db
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 DBI::dbListTables(db_con$con)
 }
 \keyword{internal}

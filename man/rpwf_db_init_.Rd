@@ -8,7 +8,8 @@ rpwf_db_init_(con, schema = rpwf_schema())
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 
 \item{schema}{output of \code{\link[=rpwf_schema]{rpwf_schema()}}.}
 }
@@ -22,7 +23,7 @@ object and create the tables after creating a new \code{rpwfDb} folder and
 database specified by the \code{DbCon$new()} object.
 }
 \examples{
-db_con <- DbCon$new("db.SQLite", tempdir())
-rpwf_db_init_(db_con$con, rpwf_schema()) # Create the database
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 DBI::dbListTables(db_con$con)
 }

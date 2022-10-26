@@ -31,10 +31,10 @@ source("./data-raw/xgboost.R")
 source("./data-raw/svm.R")
 
 # add and export object --------------------------------------------------------
-sup_mod_df <- purrr::reduce(
+sup_mod_df__ <- purrr::reduce(
   mod_list,
   rbind
 )
 
-sup_mod_df <- unique(sup_mod_df)
-usethis::use_data(sup_mod_df, overwrite = TRUE, internal = TRUE, version = 3)
+sup_mod_df__ <- unique(sup_mod_df__)
+usethis::use_data(sup_mod_df__, overwrite = TRUE, internal = TRUE, version = 3)

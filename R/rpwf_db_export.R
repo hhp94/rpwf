@@ -93,9 +93,17 @@ rpwf_add_model_info_ <- function(obj, con) {
   rpwf$py_module <- vapply(rpwf$models, \(x) {
     x$py_module
   }, "character")
-  # Add the py base learner column
+  # Add the py_base_learner column
   rpwf$py_base_learner <- vapply(rpwf$models, \(x) {
     x$py_base_learner
+  }, "character")
+  # Add the tag column
+  rpwf$tag <- vapply(rpwf$models, \(x) {
+    if (is.null(x$model_tag)) {
+      return(NA_character_)
+    } else {
+      return(x$model_tag)
+    }
   }, "character")
   # Add the r engine column
   rpwf$engine <- vapply(rpwf$models, \(x) {
@@ -111,7 +119,7 @@ rpwf_add_model_info_ <- function(obj, con) {
       rpwf_chk_model_avail_(con, x, y, z)
     }
   )
-  # Add the rename fns
+  # Query the rename dictionary json
   hyper_par_rename <- rpwf_query_(
     query = "SELECT hyper_par_rename FROM model_type_tbl WHERE
     py_module = ? AND py_base_learner = ? AND r_engine = ?; ",
@@ -120,6 +128,7 @@ rpwf_add_model_info_ <- function(obj, con) {
     val2 = rpwf$py_base_learner,
     val3 = rpwf$engine
   )
+  # Add the rename fns by passing the dictionary to rpwf_grid_rename_()
   rpwf$rename_fns <- lapply(hyper_par_rename, rpwf_grid_rename_)
 
   # Add the base learner related args if presented
@@ -148,10 +157,22 @@ rpwf_add_model_info_ <- function(obj, con) {
 rpwf_add_desc_ <- function(obj) {
   stopifnot("Run rpwf_add_model_info_ first!" = "py_base_learner" %in% names(obj))
   # by pasting together preprocs, models and costs cols
-  return(dplyr::mutate(obj, wflow_desc = paste(
-    names(.data$preprocs), .data$py_base_learner, .data$costs,
-    sep = "-"
-  )))
+  return(dplyr::mutate(
+    obj,
+    wflow_desc = dplyr::if_else(
+      is.na(.data$tag),
+      paste(names(.data$preprocs),
+        .data$py_base_learner,
+        .data$costs,
+        sep = "-"
+      ),
+      paste(names(.data$preprocs),
+        .data$tag,
+        .data$costs,
+        sep = "-"
+      )
+    )
+  ))
 }
 
 #' Add Relevant Parameters to the `dials::grid_<functions>`
@@ -249,9 +270,8 @@ rpwf_add_random_state_ <- function(obj, range, seed) {
 #' @export
 #' @examples
 #' # Create the database
-#' tmp <- tempdir()
-#' db_con <- DbCon$new("db.SQLite", tmp)
-#' rpwf_db_init_(db_con$con, rpwf_schema())
+#' temp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", temp_dir)
 #'
 #' # Create a `workflow_set`
 #' d <- rpwf_sim()$train
@@ -268,7 +288,7 @@ rpwf_add_random_state_ <- function(obj, range, seed) {
 #'
 #' to_export <- wf |>
 #'   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10)
-#' list.files(paste0(tmp, "/rpwfDb"), recursive = TRUE) # Files are created
+#' list.files(paste0(temp_dir, "/rpwfDb"), recursive = TRUE) # Files are created
 rpwf_augment <- function(wflow_obj, db_con, .grid_fun = NULL,
                          ..., range = c(1L, 5000L), seed = 1234L) {
   set.seed(seed)
@@ -379,19 +399,19 @@ rpwf_wflow_hash_ <- function(df) {
 #' @export
 #' @examples
 #' # Create the database
-#' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init_(db_con$con, rpwf_schema())
+#' temp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", temp_dir)
 #'
 #' # Create a `workflow_set`
 #' d <- rpwf_sim()$train
 #' m1 <- parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
-#'   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
+#'   set_py_engine("xgboost", "XGBClassifier", "my_xgboost_model")
 #' r1 <- d |>
 #'   recipes::recipe(target ~ .) |>
 #'   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
-#'   # "pd.index" is the special column that used for indexing in pandas
+#'   # "pd.index" is a special column that used for indexing in pandas
 #'   recipes::update_role(.data$id, new_role = "pd.index")
 #' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 #'

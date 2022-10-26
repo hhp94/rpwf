@@ -10,7 +10,8 @@ rpwf_query_(query, con, ...)
 \item{query}{SQL query.}
 
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 
 \item{val1}{value vector to search the tables by.}
 

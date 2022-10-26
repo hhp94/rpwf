@@ -15,7 +15,8 @@ rpwf_add_py_model(
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 
 \item{py_module}{the module in scikit-learn, i.e., "sklearn.ensemble".}
 
@@ -41,7 +42,8 @@ model mode (i.e., "classification")
 }
 \examples{
 # Generate dummy database
-db_con <- rpwf_connect_db("db.SQLite", tempdir())
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 DBI::dbListTables(db_con$con)
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 rpwf_add_py_model(

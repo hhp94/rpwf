@@ -8,7 +8,8 @@ rpwf_dm(con)
 }
 \arguments{
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 }
 \value{
 \code{{dm}} object of the created schema.
@@ -17,7 +18,8 @@ a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}.
 Working with a \code{{dm}} object can make life easier than writing manual queries
 }
 \examples{
-db_con <- DbCon$new("db.SQLite", tempdir())
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 dm_obj <- rpwf_dm(db_con$con)
 dm_obj
 # dm_obj |> dm::dm_draw()

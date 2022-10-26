@@ -10,7 +10,8 @@
 #'
 #' @examples
 #' # Delete workflows with id from 1 to 99 of the database defined by `con`
-#' db_con <- DbCon$new("db.SQLite", tempdir())
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' rpwf_db_del_wflow(1:99, db_con$con)
 rpwf_db_del_wflow <- function(id, con) {
   try(DBI::dbExecute(
@@ -60,8 +61,8 @@ id_col_switch_ <- function(tbl) {
 #' @export
 #'
 #' @examples
-#' db_con <- DbCon$new("db.SQLite", tempdir())
-#' rpwf_db_init_(db_con$con, rpwf_schema()) # Create the database
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' # Before deleting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
 #' rpwf_db_del_entry("model_type_tbl", 1, db_con$con)
@@ -76,4 +77,26 @@ rpwf_db_del_entry <- function(tbls, id, con) {
     message(query)
     try(DBI::dbExecute(conn = con, query))
   }
+}
+
+#' Show Available Models
+#'
+#' Models have to be pre-defined and added to the database. Some models are
+#' already added. Other models can be added with [rpwf_add_py_model()]. This
+#' functions shows the models currently in the database.
+#'
+#' @inheritParams rpwf_dm
+#'
+#' @return a data.frame of models available in the database.
+#' @export
+#'
+#' @examples
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' rpwf_avail_models(db_con$con)
+rpwf_avail_models <- function(con) {
+  DBI::dbGetQuery(
+    con,
+    "SELECT py_module, py_base_learner, r_engine, model_mode FROM model_type_tbl"
+  )
 }

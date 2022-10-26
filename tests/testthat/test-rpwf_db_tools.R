@@ -61,3 +61,12 @@ test_that("rpwf_db_del_entry()", {
   expect_true(nrow(query_wflow_tbl("model_type_tbl")) > 0)
   rpwf_db_del_entry("model_type_tbl", 1:99, db_con$con)
 })
+
+test_that("rpwf_avail_models()", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
+
+  models <- rpwf_avail_models(db_con$con)
+
+  expect_equal(nrow(models), nrow(sup_mod_df__))
+})

@@ -88,7 +88,10 @@ test_that("Add additional models with rpwf_add_py_model()", {
     "classification"
   )
   after <- DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
-  expect_true(nrow(after) == 2)
+
+  # sup_mod_df__ add the required models. So the after would be the models plus
+  # a new model
+  expect_true(nrow(after) == 1 + nrow(sup_mod_df__))
 
   # Try updating
   rpwf_add_py_model(
@@ -104,7 +107,7 @@ test_that("Add additional models with rpwf_add_py_model()", {
   )
   updated <- DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
 
-  expect_true(after$hyper_par_rename[2] == jsonlite::toJSON(
+  expect_true(after$hyper_par_rename[1 + nrow(sup_mod_df__)] == jsonlite::toJSON(
     list(
       cost_complexity = "ccp_alpha",
       tree_depth = "max_depth",
@@ -112,7 +115,7 @@ test_that("Add additional models with rpwf_add_py_model()", {
     )
   ))
 
-  expect_true(updated$hyper_par_rename[2] == jsonlite::toJSON(
+  expect_true(updated$hyper_par_rename[1 + nrow(sup_mod_df__)] == jsonlite::toJSON(
     list(
       cost_complexity = "ccp_alpha",
       tree_depth = "max_depth"

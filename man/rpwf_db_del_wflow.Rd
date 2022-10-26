@@ -10,7 +10,8 @@ rpwf_db_del_wflow(id, con)
 \item{id}{numeric vector of workflow ids to be removed.}
 
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 }
 \value{
 Called for the side effect.
@@ -20,6 +21,7 @@ This function specifically just deletes the workflows from the \code{wflow_tbl}.
 }
 \examples{
 # Delete workflows with id from 1 to 99 of the database defined by `con`
-db_con <- DbCon$new("db.SQLite", tempdir())
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 rpwf_db_del_wflow(1:99, db_con$con)
 }

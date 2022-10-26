@@ -79,6 +79,18 @@ test_that("set_py_engine() added py_base_learner_args attributes", {
   )
 })
 
+test_that("set_py_engine() tag works", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
+
+  mod_spec <- xgb_model_spec_()
+  py_mod_spec <- xgb_model_spec_() |>
+    set_py_engine("xgboost", "XGBClassifier", "my_xgboost_model",
+      args = list(eval_metric = "logloss", silent = TRUE)
+    )
+  expect_equal(py_mod_spec$model_tag, "my_xgboost_model")
+})
+
 test_that("set_py_engine() check is working", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)

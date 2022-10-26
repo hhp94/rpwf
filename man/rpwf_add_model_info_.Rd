@@ -10,7 +10,8 @@ rpwf_add_model_info_(obj, con)
 \item{obj}{output of \code{\link[=rpwf_workflow_set]{rpwf_workflow_set()}}.}
 
 \item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}. Access with \code{DbCon$new()$con}.}
+a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
+See examples.}
 }
 \value{
 tibble that contains 3 additional columns "py_base_learner",

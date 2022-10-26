@@ -41,14 +41,16 @@ test_that("rpwf_add_desc_()", {
     list(dummy_recipe_(rpwf_sim(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
-      "xgboost", "XGBClassifier"
+      "xgboost", "XGBClassifier", "my_xgboost_tag"
     )),
     list("neg_log_loss")
   )
 
   t1 <- rpwf_add_model_info_(t, db_con$con)
-  t2 <- rpwf_add_desc_(t1)
+  expect_true("tag" %in% names(t1))
   expect_true(!"wflow_desc" %in% names(t1))
+  t2 <- rpwf_add_desc_(t1)
+  print(t2$wflow_desc)
   expect_true("wflow_desc" %in% names(t2))
 })
 
