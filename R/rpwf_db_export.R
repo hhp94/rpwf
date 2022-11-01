@@ -109,7 +109,6 @@ rpwf_add_model_info_ <- function(obj, con) {
   rpwf$engine <- vapply(rpwf$models, \(x) {
     x$engine
   }, "character")
-
   # Check for invalid models
   purrr::pwalk(
     .l = list(

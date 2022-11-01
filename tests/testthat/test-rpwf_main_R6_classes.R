@@ -141,9 +141,6 @@ test_that("renaming function", {
 })
 
 test_that("rpwf_grid_gen_() with tune()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
-
   dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
@@ -182,10 +179,30 @@ test_that("rpwf_grid_gen_() with tune()", {
   expect_true(is.na(partial_fns(.grid_fun = NULL)))
 })
 
-test_that("rpwf_grid_gen_() no tuning param", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+test_that("rpwf_grid_gen_() with fun from set_r_grid", {
+  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_mod_spec <- xgb_model_spec_() |>
+    set_py_engine("xgboost", "XGBClassifier",
+      args = list(eval_metric = "logloss", silent = TRUE)
+    ) |>
+    set_r_grid(dials::grid_latin_hypercube, size = 10)
 
+  hyper_par_rename <-
+    jsonlite::toJSON(list("mtry" = "colsample_bytree"), auto_unbox = TRUE)
+
+  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
+
+  # generation of the grids
+  c_grid_lhcube <- rpwf_grid_gen_(
+    dummy_mod_spec, dummy_test_rec, rename_fns
+  )
+
+  expect_equal(nrow(c_grid_lhcube), 10L)
+  expect_true("colsample_bytree" %in% names(c_grid_lhcube))
+})
+
+
+test_that("rpwf_grid_gen_() no tuning param", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
   no_tune_spec <- xgb_model_spec_no_tune_() |>
     set_py_engine("xgboost", "XGBClassifier",
@@ -223,6 +240,21 @@ test_that("rpwf_finalize_params_()", {
 })
 
 # RGrid R6 class --------------------------------------------------------
+test_that("set_r_grid()", {
+  m <- parsnip::boost_tree() |>
+    parsnip::set_engine("xgboost") |>
+    parsnip::set_mode("classification")
+  expect_true(is.null(m$.model_grid_fun))
+
+  expect_error(set_r_grid(m, mtcars), regexp = "to be function")
+  m <- m |>
+    set_r_grid(dials::grid_random, size = 5, original = TRUE)
+
+  expect_false(is.null(m$.model_grid_fun))
+  expect_equal(m$.model_grid_fun, dials::grid_random)
+  expect_equal(m$.model_grid_fun_args, list(size = 5, original = TRUE))
+})
+
 test_that("initialization of the RGrid class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)

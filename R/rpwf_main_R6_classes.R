@@ -421,6 +421,33 @@ RGrid <- R6::R6Class(
 
 # Functions related to hyper param grids ---------------------------------------
 
+#' Create a Tune Grid Specific to the Provided Model Spec
+#'
+#' The hyper parameter grid can either be provided with this function or all at
+#' once later on with [rpwf_augment()]
+#'
+#' @inheritParams set_py_engine
+#' @param .model_grid_fun a `dials::grid_<functions>`, e.g., `grid_random()`,
+#' `grid_latin_hypercube()`.
+#' @param ... arguments to pass to `.model_grid_fun`.
+#'
+#' @return Add the `{dials}` function and associated arguments to the model spec
+#' @export
+#'
+#' @examples
+#' m <- parsnip::boost_tree() |>
+#'   parsnip::set_engine("xgboost") |>
+#'   parsnip::set_mode("classification") |>
+#'   set_r_grid(dials::grid_random, size = 5)
+#' m$.model_grid_fun
+#' m$.model_grid_fun_args
+set_r_grid <- function(obj, .model_grid_fun, ...) {
+  stopifnot(".model_grid_fun needs to be function" = is.function(.model_grid_fun))
+  obj$.model_grid_fun <- .model_grid_fun
+  obj$.model_grid_fun_args <- list(...)
+  return(obj)
+}
+
 #' A wrapper around `dials::grid_<functions>` to create a sklearn suitable grid
 #'
 #' This function takes whatever grid functions that are available in `{dials}`,
@@ -449,12 +476,22 @@ rpwf_grid_gen_ <- function(model,
                            ...) {
   params <- rpwf_finalize_params_(model = model, preproc = preproc)
 
-  if (nrow(params$pars) == 0 | (!is.function(.grid_fun) & is.null(.grid_fun))) {
-    message("No hyper param tuning is requested or .grid_fun is NULL")
+  if (nrow(params$pars) == 0 |
+    (!is.function(.grid_fun) & is.null(.grid_fun) & is.null(model$.model_grid_fun))
+  ) {
+    message("No hyper param tuning specified")
     return(NA) # If hash of NA is changed, has to update rpwf_db_init_values_()
   }
-  stopifnot(".grid_fun needs to be function" = is.function(.grid_fun))
-  r_grid <- .grid_fun(x = params$pars, ...)
+
+  if (!is.null(model$.model_grid_fun)) {
+    r_grid <- do.call(
+      model$.model_grid_fun,
+      c(list(x = params$pars), model$.model_grid_fun_args)
+    )
+  } else {
+    stopifnot(".grid_fun needs to be function" = is.function(.grid_fun))
+    r_grid <- .grid_fun(x = params$pars, ...)
+  }
 
   message("Generating hyper param tune grid")
   if ("mtry" %in% colnames(r_grid)) {
@@ -544,6 +581,5 @@ rpwf_finalize_params_ <- function(model, preproc) {
       stop(c)
     }
   )
-
   return(list(pars = finalized_params, n_predictors = length(preds)))
 }
