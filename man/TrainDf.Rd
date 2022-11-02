@@ -5,7 +5,10 @@
 \title{Internal R6 Object that Process the Data Transformation}
 \description{
 A R6 object that manage the export of metadata and parquet file of the
-transformed data defined by the recipe for data transformation.
+transformed data defined by the recipe for data transformation. Accept a
+special role \code{"pd.index"} from the \code{\link[recipes:roles]{recipes::update_role()}} as an index for
+a pandas DataFrame. If no outcome is provided, then the \code{data.frame} is
+considered a "test" \code{data.frame.}
 }
 \details{
 This object works by:
@@ -96,9 +99,11 @@ python into a python list.}
 \if{html}{\out{<a id="method-TrainDf-new"></a>}}
 \if{latex}{\out{\hypertarget{method-TrainDf-new}{}}}
 \subsection{Method \code{new()}}{
-Create a new instance of the TrainDf class. Also process TestDf if a
-target column is not provided in the recipe. See \code{?rprw::BaseEx} for
-details about the attributes.
+Create a new instance of the TrainDf class. Accept a
+special role \code{"pd.index"} from the \code{\link[recipes:roles]{recipes::update_role()}} as an index for
+a pandas DataFrame. If no outcome is provided, then the \code{data.frame} is
+considered a "test" \code{data.frame.}. See \code{?rprw::BaseEx} for
+details about the attributes and methods.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{TrainDf$new(recipe, db_con)}\if{html}{\out{</div>}}
 }

@@ -25,6 +25,8 @@ setwd(tmp_dir)
 library(rpwf)
 library(dplyr)
 library(parsnip)
+library(recipes)
+library(kernlab)
 ```
 
 ## Introduction
@@ -54,31 +56,78 @@ different ML models, that gives a competitor an edge. {rpwf} helps by
   database(s).  
 
 ## Demonstration
-* Let's use the `iris` data without `virginica` to demonstrate a classification
-prediction task.  
+* Let's demonstrate using the [Wisconsin Diagnostic Breast Cancer (WDBC)](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29)
+data by Wolberg et. al. 1994 hosted by the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php).  
+
+* Here's a description of the data
+> Features are computed from a digitized image of a fine needle
+> aspirate (FNA) of a breast mass.  They describe
+> characteristics of the cell nuclei present in the image. 
+
+* Using these features, the task is to classify each image into malignant or 
+benign cells, recorded in the `diagnosis` column.  
 
 ```{r}
-set.seed(1234)
-# Remove "virginica"
-df <- iris[which(!iris$Species == "virginica"), ]
+if (!file.exists("./wdbc.data")) {
+  download.file(
+    url = paste(
+      "https://archive.ics.uci.edu/ml",
+      "machine-learning-databases/breast-cancer-wisconsin/wdbc.data",
+      sep = "/"
+    ),
+    destfile = "./wdbc.data"
+  )
+}
+```
 
-# Clean the names
-names(df) <- gsub("\\.", "_", names(df)) |>
-  tolower()
+* Here are the feature descriptions, each have 3 statistics, mean, standard error, 
+and "largest" (mean of three largest values).  
+	a) radius (mean of distances from center to points on the perimeter)
+	b) texture (standard deviation of gray-scale values)
+	c) perimeter
+	d) area
+	e) smoothness (local variation in radius lengths)radius
+	f) compactness (perimeter^2 / area - 1.0)
+	g) concavity (severity of concave portions of the contour)
+	h) concave points (number of concave portions of the contour)
+	i) symmetry 
+	j) fractal dimension ("coastline approximation" - 1)
 
-# Add an index column
-df$index <- seq_len(nrow(df))
+```{r}
+names_df <- expand.grid(
+  variable = c(
+    "radius", "texture", "perimeter", "area", "smoothness", "compactness",
+    "concavity", "concave_points", "symmetry", "fractal_dimension"
+  ),
+  stat = c("mean", "se", "worst")
+) |>
+  dplyr::arrange(variable, stat)
+names_df$names <- paste0(names_df$variable, "_", names_df$stat)
 
-# Recode setosa as 1, else as 0
-df$species <- ifelse(df$species == "setosa", 1L, 0L)
-
-# Get 80% of the data as a train data
-train_idx <- sample(seq_len(nrow(df)), floor(nrow(df) * 0.80))
-df_train <- df[train_idx, ]
+df <- read.csv("./wdbc.data", header = FALSE)
+names(df) <- c("id", "diagnosis", names_df$names)
 ```
 
 ```{r}
-head(df_train)
+df[1:6, 1:6]
+```
+
+* Data is balanced. 
+```{r}
+table(df$diagnosis)
+```
+
+* And although there's no missing data, the use of packages such as [{missForest}](https://cran.r-project.org/web/packages/missForest/) 
+and [{mice}](https://cran.r-project.org/web/packages/mice/) to perform multiple 
+imputation and factor that uncertainty into the predictive performance 
+estimation is a strong point of R.  
+```{r}
+sum(is.na(df))
+```
+
+* Recode malignant as 1 and benign as 0.  
+```{r}
+df$diagnosis <- ifelse(df$diagnosis == "M", 1L, 0L)
 ```
 
 ## Initialize a database
@@ -105,28 +154,26 @@ or regression with `set_mode()`.
     + **Make sure to pass booleans as R booleans**, i.e. `TRUE` and `FALSE`.  
     + This is a powerful feature. It allows us to fit models using the latest 
     python implementation from R. For example, the `xgboost` module allows 
-    you to set some exotic arguments such as monotonicity contraints and different
-    base learners such as linear learners and random forest learners instead 
-    of the default learner.  
-  + `tag` is an optional argument that's helpful for keeping track of 
-  models in complicated `workflowsets`.  
+    setting monotonicity contraints and different base learners such as linear 
+    learners and random forest learners instead of the default learner.  
+  + `tag` is an optional argument that's helpful for keeping track of models in 
+  complicated `workflowsets`.  
 * Tip: Unless you are expecting bugs or testing, try to pass arguments that
 make the learner as silent as possible. Some ML packages in python generate a 
-lot of messages that can actually slows down the modeling process. For example, 
-even with the `verbosity = 0` and `silent = TRUE` from the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), 
-the output from the python script still has a lot of repeated messages and 
-deprecation warnings.  
+lot of messages. For example, even with the `verbosity = 0` and `silent = TRUE` 
+from the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), the output from the python script still has a lot of 
+repeated messages and deprecation warnings.  
 
 ### `{xgboost}`
-* These are the available models
+* These are the available models  
 ```{r}
 rpwf_avail_models(db_con$con)
 ```
 
 * From the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), I decided to fix the `n_estimators`
-at 50 and tune the learning rate. Optimize with logloss.  
-* To do this, i pass the parameter `n_estimators = 50` to the `args` argument
-of set_py_engine().  
+at 50 and tune the learning rate.  
+* To do this, I pass the parameter `n_estimators = 50` to the `args` argument
+of `set_py_engine()`.  
 * I am going to tune 6 hyper parameters by passing them the `tune()` functions 
 just like in parsnips.  
 
@@ -169,7 +216,7 @@ xgb_model <- boost_tree(
 * From the [sklearn.svm.SCV docs](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC), the argument `cache_size` can help speed up the fit for users if RAM
 space is available. I will increase this from the default. This is an example
 of how fitting models in python can have some very useful settings.  
-  + In this example, `cache_size` wouldn't reduce fit time because `iris` is 
+  + In this example, `cache_size` wouldn't reduce fit time because the data is 
   small.  
 * Let's set up one model for *polynomial kernel*, one for *radial basis kernel*.  
   + I fixed the `kernel` argument in `args` to explicitly separate the models 
@@ -189,6 +236,7 @@ svm_poly_model <- svm_poly(
   set_py_engine("sklearn.svm",
     "SVC",
     "svm_poly",
+    tag = "svm_poly",
     args = list(
       kernel = "poly",
       cache_size = 500
@@ -204,6 +252,7 @@ svm_rbf_model <- svm_rbf(
   set_py_engine("sklearn.svm",
     "SVC",
     "svm_rbf",
+    tag = "svm_rbf",
     args = list(
       kernel = "rbf",
       cache_size = 500
@@ -211,9 +260,92 @@ svm_rbf_model <- svm_rbf(
   )
 ```
 
-```{r, eval = FALSE}
-# withr::deferred_clear()
+## Hyper parameter tuning
+* The `{dials}` package provides 1) sensible hyper parameters ranges, and 2) 
+functions that go beyond the random grid and regular grids such as 
+`dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
+* The `dials::grid_latin_hypercube` will be helpful for models with a lot of 
+hyper parameters such as `xgboost_model`. But for `svm_rbf_model`, tuning just 2 
+parameters on a 2-D grid with regular grid would work best.  
+* I can add **model specific tuning grid** at this step with `set_r_grid()`. But 
+if I want just one type of grid for all my models I can do this step later on.  
+  + For the `xgboost_model`, I add used a `dials::grid_latin_hypercube`.  
+```{r}
+xgb_model <- xgb_model |>
+  set_r_grid(dials::grid_latin_hypercube, size = 100)
+```
+  + For `svm_poly_model`, I use a grid regular with 100 levels, but only 2 
+  polynomial degrees of 2 and 3.  
+```{r}
+svm_poly_model <- svm_poly_model |>
+  set_r_grid(dials::grid_regular, levels = 9, filter = degree %in% c(2, 3))
+```
+  + For `svm_rbf_model`, I just use a 2D regular grid with 100 levels.  
+```{r}
+svm_rbf_model <- svm_rbf_model |>
+  set_r_grid(dials::grid_regular, levels = 10)
 ```
 
-# Define recipe with `{recipes}`
+# Define recipe with `{recipes}`  
+* Recipes are defined just as a normal `tidymodels` workflow.  
+  + The base recipe is used to gauge the baseline performance of each model.  
+  + The pca recipe is used to de-correlate the variables. `step_pca()` conveniently
+  provides an argument to keep an arbitrary threshold of the variance explained. 
+  I choose 95%.  
+* `recipes` are data transformation pipelines. 
+* I added one special role that can be used with the `update_role()` function:
+  + `pd.index`
+```{r}
+common <- recipe(diagnosis ~ ., data = df) |>
+  update_role(id, new_role = "pd.index")
+
+xgb_base_rec <- common
+svm_base_rec <- common |>
+  step_normalize()
+xgb_pca_rec <- xgb_base_rec |>
+  step_pca(threshold = .95)
+svm_pca_rec <- svm_base_rec |>
+  step_pca(threshold = .95)
+```
+
+## Create workflowset and export the into parquets and database.  
+* The function `rpwf_workflow_set()` mimics [`workflowsets::workflow_set()`](https://workflowsets.tidymodels.org/). It 
+create a combination of all the provided recipes and models. Then, one can 
+work with the resulting data.frame just like any data.frame by filtering 
+out redundant workflows and etc. I can also create a `workflow_set` for xgboost
+and one for svm and `rbind()` them.   
+* The cost argument is to specify which cost function to optimize by. Look up
+the values in the [scikit-learn docs](https://scikit-learn.org/stable/modules/model_evaluation.html). 
+Custom functions are possible but would require coding on the python side.    
+
+```{r}
+xgb_wfs <- rpwf_workflow_set(
+  list(xgb_base = xgb_base_rec, xgb_pca = xgb_pca_rec),
+  list(xgb = xgb_model),
+  cost = "roc_auc"
+)
+
+svm_wfs <- rpwf_workflow_set(
+  list(svm_base = svm_base_rec, svm_pca = svm_pca_rec),
+  list(svm_poly = svm_poly_model, svm_rbf = svm_rbf_model),
+  cost = "roc_auc"
+)
+
+all_wfs <- rbind(xgb_wfs, svm_wfs)
+```
+
+* Then, add necessary information with `rpwf_augment()`
+```{r}
+all_wfs <- rpwf_augment(all_wfs, db_con)
+all_wfs$wflow_desc
+```
+
+* Checking the generated grids, we can see that the names of the hyper 
+parameters have been renamed to conform to the scikit-learn API.  
+```{r}
+unique(all_wfs$grids)
+```
+
+```{r}
+```
 

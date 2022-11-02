@@ -215,7 +215,10 @@ BaseEx <- R6::R6Class(
 #'
 #' @description
 #' A R6 object that manage the export of metadata and parquet file of the
-#' transformed data defined by the recipe for data transformation.
+#' transformed data defined by the recipe for data transformation. Accept a
+#' special role `"pd.index"` from the [recipes::update_role()] as an index for
+#' a pandas DataFrame. If no outcome is provided, then the `data.frame` is
+#' considered a "test" `data.frame.`
 #'
 #' @details
 #' This object works by:
@@ -268,9 +271,11 @@ TrainDf <- R6::R6Class(
     # Holds the recipe to transform the data.
 
     #' @description
-    #' Create a new instance of the TrainDf class. Also process TestDf if a
-    #' target column is not provided in the recipe. See `?rprw::BaseEx` for
-    #' details about the attributes.
+    #' Create a new instance of the TrainDf class. Accept a
+    #' special role `"pd.index"` from the [recipes::update_role()] as an index for
+    #' a pandas DataFrame. If no outcome is provided, then the `data.frame` is
+    #' considered a "test" `data.frame.`. See `?rprw::BaseEx` for
+    #' details about the attributes and methods.
     #' @param recipe (`recipes::recipe()`)\cr
     #' provided recipe that defines how the data is transformed.
     #' @param db_con (`DbCon`)\cr
@@ -444,7 +449,7 @@ RGrid <- R6::R6Class(
 set_r_grid <- function(obj, .model_grid_fun, ...) {
   stopifnot(".model_grid_fun needs to be function" = is.function(.model_grid_fun))
   obj$.model_grid_fun <- .model_grid_fun
-  obj$.model_grid_fun_args <- list(...)
+  obj$.model_grid_fun_args <- rlang::exprs(...)
   return(obj)
 }
 

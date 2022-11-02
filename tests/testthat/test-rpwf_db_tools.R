@@ -12,7 +12,7 @@ test_that("rpwf_db_del_wflow()", {
   }
   # Add a train df
   t <- rpwf_workflow_set(
-    list(dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -39,7 +39,7 @@ test_that("rpwf_db_del_entry()", {
   }
   # Add a train df
   t <- rpwf_workflow_set(
-    list(dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"

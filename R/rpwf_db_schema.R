@@ -169,7 +169,7 @@ rpwf_schema <- function() {
     "CREATE TABLE IF NOT EXISTS wflow_tbl(
     wflow_id INTEGER PRIMARY KEY,
     wflow_desc VARCHAR NOT NULL, /* description of the wflow */
-    costs VARCHAR NOT NULL, /* cost function */
+    costs VARCHAR, /* cost function */
     model_type_id INTEGER NOT NULL, /* model function */
     py_base_learner_args VARCHAR, /* args passed to base learner in python */
     grid_id INTEGER NOT NULL, /* id of the grid for grid search */

@@ -18,6 +18,7 @@ Imports:
     glue,
     hardhat,
     jsonlite,
+    kernlab,
     parsnip,
     purrr,
     R6,

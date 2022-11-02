@@ -28,10 +28,37 @@
 #' wf
 rpwf_workflow_set <- function(preprocs, models, costs) {
   stopifnot(is.vector(preprocs) & is.vector(models) & is.vector(costs))
+  list_class_fns <- function(list) {
+    c <- unique(sapply(list, class))
+    return(c)
+  }
+
+  stopifnot("preproc accept list of recipes" = "recipe" == list_class_fns(preprocs))
+  stopifnot("models accept list of models" = "model_spec" %in% list_class_fns(models) &
+    !"recipe" %in% list_class_fns(models))
+  stopifnot("costs accept list of characters" = "character" %in% list_class_fns(costs))
+
+  quoted <- list(quote(preprocs), quote(models), quote(costs))
+  for (i in quoted) {
+    if (do.call(length, list(i)) > do.call(dplyr::n_distinct, list(i))) {
+      warning(glue::glue("Duplicated {as.character(i)} detected"))
+    }
+  }
+
+  if (length(preprocs) > length(setdiff(names(preprocs), ""))) {
+    warning("Adding preproc as a named list is recommended to easily keep track of work flows")
+  }
+
+  if (length(names(preprocs)) > dplyr::n_distinct(names(preprocs))) {
+    warning("Names of preproc list are not unique")
+  }
+
   df <- tidyr::crossing(
-    preprocs = unique(preprocs), models = unique(models), costs = unique(costs)
+    preprocs = preprocs, models = models, costs = costs
   )
-  df$costs <- as.character(costs)
+
+  df$costs <- as.character(costs) # results is a list, this unlist that
+
   return(df)
 }
 
@@ -160,12 +187,14 @@ rpwf_add_desc_ <- function(obj) {
     obj,
     wflow_desc = dplyr::if_else(
       is.na(.data$tag),
-      paste(names(.data$preprocs),
+      paste(
+        names(obj$preprocs),
         .data$py_base_learner,
         .data$costs,
         sep = "-"
       ),
-      paste(names(.data$preprocs),
+      paste(
+        names(obj$preprocs),
         .data$tag,
         .data$costs,
         sep = "-"
@@ -290,15 +319,15 @@ rpwf_add_random_state_ <- function(obj, range, seed) {
 #' list.files(paste0(temp_dir, "/rpwfDb"), recursive = TRUE) # Files are created
 rpwf_augment <- function(wflow_obj, db_con, .grid_fun = NULL,
                          ..., range = c(1L, 5000L), seed = 1234L) {
+  py_module <- py_base_learner <- tag <- engine <- rename_fns <- model_mode <- NULL
   set.seed(seed)
   wflow_obj |>
     rpwf_add_model_info_(db_con$con) |>
     rpwf_add_desc_() |>
     rpwf_add_grid_param_(.grid_fun, seed, ...) |>
-    # rpwf_export_grid(db_con) |>
-    # rpwf_export_df(db_con, seed) |>
     rpwf_add_model_type_(db_con$con) |>
-    rpwf_add_random_state_(range, seed)
+    rpwf_add_random_state_(range, seed) |>
+    dplyr::select(-c(py_module, py_base_learner, tag, engine, rename_fns, model_mode))
 }
 
 
@@ -432,6 +461,7 @@ rpwf_export_db <- function(obj, con) {
   )
   hash_chk <- setdiff(required, "wflow_desc") # columns for hash checking
   # which mandatory column is not in the processed data?
+
   missing_cols <- required[which(!required %in% names(obj))]
   if (any(c("df_id", "grid_id") %in% missing_cols)) {
     stop("Run `rpwf_export_grid()` and `rpwf_export_df()` to write parquet files first")
@@ -452,6 +482,7 @@ rpwf_export_db <- function(obj, con) {
 
   to_export_hash <- rpwf_wflow_hash_(dplyr::select(obj, dplyr::all_of(hash_chk)))
   matched_wflow <- to_export_hash %in% db_wflow_hash
+
   if (any(matched_wflow)) {
     message("the following workflows are already in the database\n")
     print(obj[matched_wflow, which(names(obj) %in% required)])

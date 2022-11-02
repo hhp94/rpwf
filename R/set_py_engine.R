@@ -108,12 +108,10 @@ rpwf_chk_model_avail_ <- function(con, py_module, py_base_learner, r_engine) {
     list(py_module, py_base_learner, r_engine)
   )
   if (nrow(query_results) != 1) {
-    print(DBI::dbGetQuery(con, "SELECT * FROM model_type_tbl;"))
-    cat("\n")
     stop(
       paste(
         "Invalid scikit-learn model, select only one model",
-        "from the above or add models with rpwf_add_py_model()"
+        "from `rpwf_avail_models()` or add models with `rpwf_add_py_model()`"
       ),
       sep = " "
     )
