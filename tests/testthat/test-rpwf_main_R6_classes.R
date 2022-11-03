@@ -142,6 +142,36 @@ test_that("renaming function", {
 
 test_that("rpwf_grid_gen_() with tune()", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  #### Linear model
+  glm_spec <- parsnip::logistic_reg(penalty = hardhat::tune()) |>
+    parsnip::set_engine("glmnet") |>
+    parsnip::set_mode("classification") |>
+    set_py_engine("sklearn.linear_model", "LogisticRegression",
+      args = list(penalty = "elasticnet")
+    )
+
+  glm_rename <-
+    jsonlite::toJSON(list(
+      "penalty" = "C"
+    ), auto_unbox = TRUE) |>
+    rpwf_grid_rename_()
+
+  glm_grid_1 <- rpwf_grid_gen_(
+    glm_spec, dummy_test_rec, glm_rename, dials::grid_regular,
+    levels = 3
+  )
+
+  glm_grid_2 <- rpwf_grid_gen_(
+    glm_spec, dummy_test_rec, glm_rename, dials::grid_regular,
+    update_params = list(penalty = dials::penalty(range = c(-5, 0.5))),
+    levels = 3
+  )
+
+  expect_true(all(range(glm_grid_1$C) != range(glm_grid_2$C)))
+})
+
+test_that("rpwf_grid_gen_() with tune()", {
+  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -319,6 +349,59 @@ test_that("passing NA to RGrid class", {
   expect_true(is.na(r_grid_obj$path)) # path is NA because its NULL in the db
   expect_null(r_grid_obj$export_query) # since a query is found, export_q is NULL
   expect_null(r_grid_obj$df) # since a query is found, df is NULL
+})
+
+test_that("transformation of hyper param", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir)
+
+  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  grid_size <- 10
+
+  #### XGB model
+  xgb_spec <- parsnip::boost_tree(mtry = hardhat::tune()) |>
+    parsnip::set_engine("xgboost") |>
+    parsnip::set_mode("classification") |>
+    set_py_engine("xgboost", "XGBClassifier",
+      args = list(eval_metric = "logloss", silent = TRUE)
+    )
+
+  xgb_rename <-
+    jsonlite::toJSON(list(
+      "mtry" = "colsample_bytree"
+    ), auto_unbox = TRUE) |>
+    rpwf_grid_rename_()
+
+  expect_message(rpwf_grid_gen_(
+    xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random, size = grid_size
+    ),
+    regexp = "colsample"
+  )
+
+  xgb_grid <- rpwf_grid_gen_(
+    xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random, size = grid_size
+  )
+
+  expect_true(all(dplyr::between(range(xgb_grid$colsample_bytree), 0, 1)))
+
+  #### Linear model
+  glm_spec <- parsnip::logistic_reg(penalty = hardhat::tune()) |>
+    parsnip::set_engine("glmnet") |>
+    parsnip::set_mode("classification") |>
+    set_py_engine("sklearn.linear_model", "LogisticRegression",
+      args = list(penalty = "elasticnet")
+    )
+
+  glm_rename <-
+    jsonlite::toJSON(list(
+      "penalty" = "C"
+    ), auto_unbox = TRUE) |>
+    rpwf_grid_rename_()
+
+  glm_param <- rpwf_finalize_params_(glm_spec, dummy_test_rec)
+  glm_grid_1 <- dials::grid_regular(glm_param$pars, levels = 10)
+  glm_grid_2 <- rpwf_transform_grid_(glm_grid_1, glm_rename, glm_param$n_predictors)
+  expect_equal(glm_grid_1$penalty, 1/(glm_grid_2$C))
 })
 
 test_that("export() method of the RGrid class", {

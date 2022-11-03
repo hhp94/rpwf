@@ -15,10 +15,6 @@ rpwf_finalize_params_(model, preproc)
 finalized parameter object.
 }
 \description{
-\code{mtry} is the number of columns in R, whereas in sklearn it's the proportion
-of columns (randomly chosen for a base learner). This function creates the
-finalized parameter object in R and pass the number of predictors to
-\code{\link[=rpwf_grid_gen_]{rpwf_grid_gen_()}} to convert from \code{mtry} count to \code{col_by_sample} proportion
-for sklearn.
+This function creates the finalized parameter object in R
 }
 \keyword{internal}

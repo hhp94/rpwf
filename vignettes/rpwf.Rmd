@@ -27,7 +27,6 @@ library(rpwf)
 library(dplyr)
 library(parsnip)
 library(recipes)
-library(kernlab)
 ```
 
 ## Introduction

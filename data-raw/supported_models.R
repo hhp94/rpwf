@@ -27,14 +27,17 @@ rpwf_m.gen <- function(py_module,
 
 # add the models ---------------------------------------------------------------
 mod_list <- list()
-source("./data-raw/xgboost.R")
-source("./data-raw/svm.R")
+for (s in list.files("./data-raw/models", full.names = TRUE)) {
+  source(s)
+}
 
 # add and export object --------------------------------------------------------
-sup_mod_df__ <- purrr::reduce(
-  mod_list,
-  rbind
-)
+sup_mod_df__ <- purrr::reduce(mod_list, rbind)
 
 sup_mod_df__ <- unique(sup_mod_df__)
-usethis::use_data(sup_mod_df__, overwrite = TRUE, internal = TRUE, version = 3)
+usethis::use_data(
+  sup_mod_df__,
+  overwrite = TRUE,
+  internal = TRUE,
+  version = 3
+)

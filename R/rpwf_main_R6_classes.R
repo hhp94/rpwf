@@ -474,6 +474,7 @@ rpwf_grid_gen_ <- function(model,
                            preproc,
                            rename_fns,
                            .grid_fun = NULL,
+                           update_params = NULL,
                            ...) {
   params <- rpwf_finalize_params_(model = model, preproc = preproc)
 
@@ -482,6 +483,10 @@ rpwf_grid_gen_ <- function(model,
   ) {
     message("No hyper param tuning specified")
     return(NA) # If hash of NA is changed, has to update rpwf_db_init_values_()
+  }
+
+  if (!is.null(update_params)) {
+    params$pars <- do.call(update, c(list(params$pars), update_params))
   }
 
   if (!is.null(model$.model_grid_fun)) {
@@ -494,15 +499,46 @@ rpwf_grid_gen_ <- function(model,
     r_grid <- .grid_fun(x = params$pars, ...)
   }
 
-  message("Generating hyper param tune grid")
-  if ("mtry" %in% colnames(r_grid)) {
-    # `colby_sample` is mtry converted into proportion so we need a denominator.
-    #  Denominator is number is number of predictors
-    r_grid$mtry <- round(r_grid$mtry / params$n_predictors, 2)
+  return(
+    rpwf_transform_grid_(r_grid, rename_fns = rename_fns, n_predictors = params$n_predictors)
+  )
+}
+
+#' Transform the Hyper Parameter Grid
+#'
+#' Some hyper parameters between R and Python are transformed differently. This
+#' function is a temporary solution for transformation before a more scalable
+#' solution specific to each model is needed.
+#'
+#' @param grid the generated R grid
+#' @inheritParams rpwf_grid_gen_
+#' @param ... other parameters needed for transformation
+#'
+#' @return a transformed and renamed grid
+#' @keywords internal
+#' @export
+rpwf_transform_grid_ <- function(grid, rename_fns, n_predictors) {
+  r_grid <- dplyr::rename_with(grid, rename_fns)
+
+  if ("max_depth" %in% colnames(r_grid) ) {
+    message("high value of 'max_depth' can cause memory error")
   }
 
-  return(dplyr::rename_with(r_grid, rename_fns))
+  if ("colsample_bytree" %in% colnames(r_grid)) {
+    message("'colsample_bytree' is detected. Converting to proportions")
+    # `colsample_bytree` is mtry converted into proportion so we need a denominator.
+    #  Denominator is number is number of predictors
+    r_grid$colsample_bytree <- round(r_grid$colsample_bytree / n_predictors, 3)
+  }
+
+  if ("C" %in% colnames(r_grid)) {
+    message("'C' is detected. Reciprocating")
+    r_grid$C <- 1/r_grid$C
+  }
+
+  return(r_grid)
 }
+
 
 #' Generate Functions to Rename Hyper Params to sklearn API Suitable Names
 #'
@@ -531,6 +567,7 @@ rpwf_grid_rename_ <- function(json) {
       return(value)
     }
   }
+  # This function is returned to be used with rename_with()
   fns <- function(x) {
     res <- vapply(x, get_name, "character")
     names(res) <- NULL
@@ -538,14 +575,9 @@ rpwf_grid_rename_ <- function(json) {
   }
 }
 
-
 #' Internal Function to Finalize the Parameters that Requires Train Data
 #'
-#' `mtry` is the number of columns in R, whereas in sklearn it's the proportion
-#' of columns (randomly chosen for a base learner). This function creates the
-#' finalized parameter object in R and pass the number of predictors to
-#' [rpwf_grid_gen_()] to convert from `mtry` count to `col_by_sample` proportion
-#' for sklearn.
+#' This function creates the finalized parameter object in R
 #'
 #' @inheritParams rpwf_grid_gen_
 #'
