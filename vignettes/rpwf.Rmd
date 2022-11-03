@@ -18,6 +18,7 @@ knitr::opts_chunk$set(
 
 ```{r, echo = FALSE}
 tmp_dir <- withr::local_tempdir(pattern = "vignette")
+# setwd("~/project/rpwf")
 setwd(tmp_dir)
 ```
 
@@ -119,7 +120,7 @@ table(df$diagnosis)
 
 * And although there's no missing data, the use of packages such as [{missForest}](https://cran.r-project.org/web/packages/missForest/) 
 and [{mice}](https://cran.r-project.org/web/packages/mice/) to perform multiple 
-imputation and factor that uncertainty into the predictive performance 
+imputation and propagate that uncertainty into the predictive performance 
 estimation is a strong point of R.  
 ```{r}
 sum(is.na(df))
@@ -131,7 +132,7 @@ df$diagnosis <- ifelse(df$diagnosis == "M", 1L, 0L)
 ```
 
 ## Initialize a database
-* Create a database with `rpwf_connect_db()`  
+* Create a database with `rpwf_connect_db()`. We name this database `"db.SQLite"`.
 ```{r}
 db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 ```
@@ -151,10 +152,10 @@ or regression with `set_mode()`.
   + `py_module` and `py_base_learner` defines how to import a base learner in 
   a python script.  
   + `args` defines the arguments that can be passed to the base learner in python.  
-    + **Make sure to pass booleans as R booleans**, i.e. `TRUE` and `FALSE`.  
+    + **Make sure to pass Boolean as R Boolean**, i.e. `TRUE` and `FALSE`.  
     + This is a powerful feature. It allows us to fit models using the latest 
     python implementation from R. For example, the `xgboost` module allows 
-    setting monotonicity contraints and different base learners such as linear 
+    setting monotonicity constraints and different base learners such as linear 
     learners and random forest learners instead of the default learner.  
   + `tag` is an optional argument that's helpful for keeping track of models in 
   complicated `workflowsets`.  
@@ -274,41 +275,55 @@ if I want just one type of grid for all my models I can do this step later on.
 xgb_model <- xgb_model |>
   set_r_grid(dials::grid_latin_hypercube, size = 100)
 ```
-  + For `svm_poly_model`, I use a grid regular with 100 levels, but only 2 
-  polynomial degrees of 2 and 3.  
+  + For `svm_poly_model`, I use a grid regular, but only 2 polynomial degrees of 
+  2 and 3.  
 ```{r}
 svm_poly_model <- svm_poly_model |>
-  set_r_grid(dials::grid_regular, levels = 9, filter = degree %in% c(2, 3))
+  set_r_grid(dials::grid_regular, levels = 10, filter = degree %in% c(2, 3))
 ```
-  + For `svm_rbf_model`, I just use a 2D regular grid with 100 levels.  
+  + For `svm_rbf_model`, I just use a 2D regular grid.    
 ```{r}
 svm_rbf_model <- svm_rbf_model |>
-  set_r_grid(dials::grid_regular, levels = 10)
+  set_r_grid(dials::grid_regular, levels = 12)
 ```
 
 # Define recipe with `{recipes}`  
 * Recipes are defined just as a normal `tidymodels` workflow.  
+  + Use formula or the role interface to indicate the response and predictors.  
   + The base recipe is used to gauge the baseline performance of each model.  
   + The pca recipe is used to de-correlate the variables. `step_pca()` conveniently
   provides an argument to keep an arbitrary threshold of the variance explained. 
   I choose 95%.  
 * `recipes` are data transformation pipelines. 
-* I added one special role that can be used with the `update_role()` function:
-  + `pd.index`
+* `rpwf` reserves one special role that can be used with the `update_role()` 
+function:  
+  + `pd.index` is a special role. It will mark a column for conversion into
+  pandas index in python.  
+  + Below, the column `df$id` will become the `pandas.DataFrame` Index and not 
+  a predictor.  
+* Complicated workflow sets can get complicated quickly. Add `rpwf_tag_recipe()`  
+to recipe to add a description to the recipe.  
 ```{r}
 common <- recipe(diagnosis ~ ., data = df) |>
   update_role(id, new_role = "pd.index")
 
-xgb_base_rec <- common
+xgb_base_rec <- common |> 
+  rpwf_tag_recipe("xgb_base")
+
 svm_base_rec <- common |>
-  step_normalize()
+  step_normalize() |> 
+  rpwf_tag_recipe("svm_base")
+
 xgb_pca_rec <- xgb_base_rec |>
-  step_pca(threshold = .95)
+  step_pca(threshold = .95) |> 
+  rpwf_tag_recipe("xgb_pca")
+
 svm_pca_rec <- svm_base_rec |>
-  step_pca(threshold = .95)
+  step_pca(threshold = .95) |> 
+  rpwf_tag_recipe("svm_pca")
 ```
 
-## Create workflowset and export the into parquets and database.  
+## Create workflowset  
 * The function `rpwf_workflow_set()` mimics [`workflowsets::workflow_set()`](https://workflowsets.tidymodels.org/). It 
 create a combination of all the provided recipes and models. Then, one can 
 work with the resulting data.frame just like any data.frame by filtering 
@@ -316,36 +331,108 @@ out redundant workflows and etc. I can also create a `workflow_set` for xgboost
 and one for svm and `rbind()` them.   
 * The cost argument is to specify which cost function to optimize by. Look up
 the values in the [scikit-learn docs](https://scikit-learn.org/stable/modules/model_evaluation.html). 
-Custom functions are possible but would require coding on the python side.    
+Custom cost functions are possible but would require coding on the python side.    
 
 ```{r}
 xgb_wfs <- rpwf_workflow_set(
-  list(xgb_base = xgb_base_rec, xgb_pca = xgb_pca_rec),
-  list(xgb = xgb_model),
+  preprocs = list(xgb_base_rec, xgb_pca_rec),
+  models = list(xgb_model),
   cost = "roc_auc"
 )
 
 svm_wfs <- rpwf_workflow_set(
-  list(svm_base = svm_base_rec, svm_pca = svm_pca_rec),
-  list(svm_poly = svm_poly_model, svm_rbf = svm_rbf_model),
+  preprocs = list(svm_base_rec, svm_pca_rec),
+  models = list(svm_poly_model, svm_rbf_model),
   cost = "roc_auc"
 )
 
 all_wfs <- rbind(xgb_wfs, svm_wfs)
 ```
 
-* Then, add necessary information with `rpwf_augment()`
+* Then, add necessary information with `rpwf_augment()`  
 ```{r}
 all_wfs <- rpwf_augment(all_wfs, db_con)
-all_wfs$wflow_desc
+all_wfs |> 
+  dplyr::select(model_tag, recipe_tag, costs)
 ```
 
 * Checking the generated grids, we can see that the names of the hyper 
 parameters have been renamed to conform to the scikit-learn API.  
 ```{r}
-unique(all_wfs$grids)
+sapply(unique(all_wfs$grids), head)
 ```
 
+## Export data as parquets and add to database.
+* There are two types of parquets files 1) hyper param grids, and 2) train data
+frame.  
+* `rpwf_export_grid()` and `rpwf_export_df()` write the parquets and returns
+id columns that track where the parquets are to the workflow set.  
+* Because this function only generate a data.frame if its not already written, 
+running each of these functions in parallel is not recommended.  
+  + To get around this, one can either work with a manageable number of 
+  workflow at a time, or split the work into multiple different databases and 
+  run the export functions for each database in parallel.    
 ```{r}
+exported_wfs <- all_wfs |>
+  rpwf_export_grid(db_con) |>
+  rpwf_export_df(db_con)
+```
+
+* Then finally, export the meta data into the database with `rpwf_export_db()`.  
+```{r}
+rpwf_export_db(exported_wfs, db_con$con)
+```
+
+## Run the workflow in python
+* Navigate to the local installation of the `rpwf` python codes from the 
+instructions in the [README.md](https://github.com/hhp94/rpwf/blob/master/README.md) 
+file.  
+* `rpwf` python codes contains scripts that performs model fitting. These are 
+also templates to experiment further using the data generated in R.   
+* For example, to use the `nested_resampling.py` script, in the terminal, run 
+the following command to get the list of arguments  
+```{bash, eval = FALSE}
+python -m rpwf.script.nested_resampling -h
+```
+
+* Or the following in a Jupyter notebook cell
+```{jupyter, eval = FALSE}
+%run -m rpwf.script.nested_resampling -h
+```
+
+* This following command display the workflows we exported.  
+  + The positional argument is the path to the database. In this case, my temp 
+  folder.  
+  + The `-db` flag is to specify which database are we connecting to.  
+  + The `-s` flag shows the workflows.  
+* The other important flags are  
+  + The `-a` flag runs all the workflow that hasn't been run.    
+  + The `-w` flag accept a list of ids (i.e., 1 2 3 4) to specify which workflow
+  to run.  
+  + The `-f` flag force a run and overwrite the results of a workflow that has
+  already been run.  
+  + The `-c` flag indicates the number of CPU cores dedicated to the model fitting
+  task.  
+```{bash, eval = FALSE}
+python -m rpwf.script.nested_resampling "/tmp/RtmpNMsSNR/vignette44bb4c7d4218" \
+   -db "db.SQLite" -s
+
+# db is at /tmp/RtmpNMsSNR/vignette44bb4c7d4218/rpwfDb/db.SQLite
+# Creating the db.SQLite_results folder
+# Connecting to sqlite:////tmp/RtmpNMsSNR/vignette44bb4c7d4218/rpwfDb/db.SQLite
+#    wflow_id      model_tag recipe_tag                               py_base_learner_args result_path
+# 0         1  XGBClassifier   xgb_base  {"eval_metric":"logloss","n_estimators":50,"us...        None
+# 1         2  XGBClassifier    xgb_pca  {"eval_metric":"logloss","n_estimators":50,"us...        None
+# 2         3       svm_poly   svm_base                 {"kernel":"poly","cache_size":500}        None
+# 3         4        svm_rbf   svm_base                  {"kernel":"rbf","cache_size":500}        None
+# 4         5       svm_poly    svm_pca                 {"kernel":"poly","cache_size":500}        None
+# 5         6        svm_rbf    svm_pca                  {"kernel":"rbf","cache_size":500}        None  
+```
+
+* Let's run the nested CV with 5 CV for the inner loop for hyper param tuning,
+5 CV * 5 Repeats on the outer loop for performance validation.  
+```{bash, eval = FALSE}
+python -m rpwf.script.nested_resampling "/tmp/RtmpNMsSNR/vignette44bb4c7d4218" \
+   -db "db.SQLite" -a -c 7 -icv 5 -ocv 5 - ocr 5
 ```
 

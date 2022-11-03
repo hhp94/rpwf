@@ -168,7 +168,8 @@ rpwf_schema <- function() {
   tbl$wflow_tbl <-
     "CREATE TABLE IF NOT EXISTS wflow_tbl(
     wflow_id INTEGER PRIMARY KEY,
-    wflow_desc VARCHAR NOT NULL, /* description of the wflow */
+    model_tag VARCHAR, /* tag of the model */
+    recipe_tag VARCHAR, /* tag of the recipe */
     costs VARCHAR, /* cost function */
     model_type_id INTEGER NOT NULL, /* model function */
     py_base_learner_args VARCHAR, /* args passed to base learner in python */

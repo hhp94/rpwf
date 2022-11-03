@@ -5,11 +5,11 @@ test_that("rpwf_workflow_set()", {
       args = list(eval_metric = "logloss", silent = TRUE)
     )
   expect_equal(
-    suppressWarnings(nrow(rpwf_workflow_set(
+    nrow(rpwf_workflow_set(
       list(dummy_test_rec, dummy_test_rec),
       list(dummy_mod_spec, dummy_mod_spec),
       list("neg_log_loss")
-    ))),
+    )),
     1L
   )
 
@@ -40,21 +40,17 @@ test_that("rpwf_workflow_set()", {
     list(dummy_mod_spec, dummy_test_rec),
     "neg_log_loss"
   ), regexp = "models")
+})
 
-  # warning for duplicated preproc
-  expect_warning(rpwf_workflow_set(
-    list(dummy_test_rec, dummy_test_rec),
-    list(dummy_mod_spec),
-    list("neg_log_loss")
-  ), regexp = "Duplicated preprocs")
+test_that("rpwf_tag_recipe()", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
 
-  names(dummy_test_rec) <- NULL
-  # warning for name less preproc
-  expect_warning(rpwf_workflow_set(
-    list(dummy_test_rec),
-    list(dummy_mod_spec),
-    list("neg_log_loss")
-  ), regexp = "named list")
+  r <- dummy_recipe_(rpwf_sim(), type = "train")
+  expect_true(is.null(r$recipe_tag))
+  r <- r |>
+    rpwf_tag_recipe("test tag")
+  expect_equal(r$recipe_tag, "test tag")
 })
 
 test_that("rpwf_add_model_info_()", {
@@ -90,11 +86,10 @@ test_that("rpwf_add_desc_()", {
   )
 
   t1 <- rpwf_add_model_info_(t, db_con$con)
-  expect_true("tag" %in% names(t1))
-  expect_true(!"wflow_desc" %in% names(t1))
+  expect_true(all(!c("model_tag", "recipe_tag") %in% names(t1)))
   t2 <- rpwf_add_desc_(t1)
 
-  expect_true("wflow_desc" %in% names(t2))
+  expect_true(all(c("model_tag", "recipe_tag") %in% names(t2)))
 })
 
 test_that("rpwf_add_grid_param_()", {
@@ -300,17 +295,17 @@ test_that("rpwf_export_db()", {
 
   expect_equal(nrow(before), 0) # before export, there would be no wflow
   rpwf_export_db(t1, db_con$con)
-  # after <- query_wflow_tbl() # after export, there would be 1 wflow
-  # expect_equal(nrow(after), 1)
-  # rpwf_export_db(t1, db_con$con)
-  # after1 <- query_wflow_tbl() # exporting the same wflow would not work
-  # expect_equal(nrow(after1), 1)
-  #
-  # # Check if rwpf_export_grid or export_df hasn't been run
-  # expect_error(rpwf_export_db(rpwf_export_grid(t, db_con), db_con$con),
-  #   regexp = "to write parquet files first"
-  # )
-  # expect_error(rpwf_export_db(rpwf_export_df(t, db_con, 1234), db_con$con),
-  #   regexp = "to write parquet files first"
-  # )
+  after <- query_wflow_tbl() # after export, there would be 1 wflow
+  expect_equal(nrow(after), 1)
+  rpwf_export_db(t1, db_con$con)
+  after1 <- query_wflow_tbl() # exporting the same wflow would not work
+  expect_equal(nrow(after1), 1)
+
+  # Check if rwpf_export_grid or export_df hasn't been run
+  expect_error(rpwf_export_db(rpwf_export_grid(t, db_con), db_con$con),
+    regexp = "to write parquet files first"
+  )
+  expect_error(rpwf_export_db(rpwf_export_df(t, db_con, 1234), db_con$con),
+    regexp = "to write parquet files first"
+  )
 })

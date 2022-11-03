@@ -28,12 +28,11 @@ test_that("test the overwrite function of rpwf_cp_py_codes()", {
 test_that("rpwf_chk_model_avail_()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
-  expect_message(
+  expect_invisible(
     rpwf_chk_model_avail_(
       db_con$con,
       "xgboost", "XGBClassifier", "xgboost"
-    ),
-    regexp = "Valid scikit-learn model"
+    )
   )
   expect_error(
     rpwf_chk_model_avail_(
@@ -107,9 +106,8 @@ test_that("set_py_engine() check is working", {
     set_py_engine("INVALID", "LGBMClassifier", con = db_con$con))
   expect_error(mod_spec |>
     set_py_engine("lightgbm", "LGBMClassifier", con = db_con$con))
-  expect_message(
-    mod_spec |>
-      set_py_engine("xgboost", "XGBClassifier", con = db_con$con),
-    regexp = "Valid scikit-learn model"
+  expect_invisible(
+    m <- mod_spec |>
+      set_py_engine("xgboost", "XGBClassifier", con = db_con$con)
   )
 })

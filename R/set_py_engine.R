@@ -116,7 +116,6 @@ rpwf_chk_model_avail_ <- function(con, py_module, py_base_learner, r_engine) {
       sep = " "
     )
   }
-  message("Valid scikit-learn model")
 }
 
 #' Copy sklearn Codes into the Project Root Folder

@@ -123,16 +123,16 @@ BaseEx <- R6::R6Class(
       # find_path_in_db must be run first
       if (nrow(self$queried_path) == 0L) {
         # If query yields 0 rows, then create df
-        message(glue::glue("Preparing new {type}..."))
+        # message(glue::glue("Preparing new {type}..."))
         self$df <- val
       } else if (!is.na(self$queried_path$path) &
         !file.exists(self$queried_path$path)) {
         # If parquet file not found but is in found in database
-        message(glue::glue("Metadata found, but new {type} is needed..."))
+        # message(glue::glue("Metadata found, but new {type} is needed..."))
         self$df <- val
       } # Otherwise no transformation needed, leave `self$df` as NULL
       else {
-        message(glue::glue("{type} parquet found in {self$db_folder}"))
+        # message(glue::glue("{type} parquet found in {self$db_folder}"))
       }
     },
 
@@ -142,11 +142,9 @@ BaseEx <- R6::R6Class(
     #' Otherwise return NULL.
     export_db = function() {
       if (!is.null(self$export_query)) {
-        message("Exporting to db")
+        # message("Exporting to db")
         DBI::dbExecute(self$con, self$export_query) # if an export query is created
         self$set_export_query(NULL) # then run the query and reset to NULL
-      } else {
-        message("Found entry in db")
       }
       invisible(self)
     },
@@ -159,10 +157,10 @@ BaseEx <- R6::R6Class(
       if (is.na(self$path)) {
         message("No grid provided\n")
       } else if (!file.exists(self$path)) {
-        message("Writing parquet file\n")
+        # message("Writing parquet file\n")
         arrow::write_parquet(self$df, self$path)
       } else {
-        message("Parquet file found\n")
+        # message("Parquet file found\n")
       }
       invisible(self)
     },
@@ -200,10 +198,8 @@ BaseEx <- R6::R6Class(
       withr::local_dir(self$proj_root_path)
       folder <- paste("rpwfDb", self$db_folder, sep = "/")
       if (!dir.exists(folder)) {
-        message(glue::glue("Creating {folder} folder..."))
+        # message(glue::glue("Creating {folder} folder..."))
         dir.create(folder)
-      } else {
-        message("Folder already created")
       }
     }
   )
