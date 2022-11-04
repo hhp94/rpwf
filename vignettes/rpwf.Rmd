@@ -27,6 +27,7 @@ library(rpwf)
 library(dplyr)
 library(parsnip)
 library(recipes)
+library(modeldata)
 ```
 
 ## Introduction
@@ -56,65 +57,17 @@ different ML models, that gives a competitor an edge. {rpwf} helps by
   database(s).  
 
 ## Demonstration
-* Let's demonstrate using the [Wisconsin Diagnostic Breast Cancer (WDBC)](https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29)
-data by Wolberg et. al. 1994 hosted by the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php).  
-
-* Here's a description of the data
-> Features are computed from a digitized image of a fine needle
-> aspirate (FNA) of a breast mass.  They describe
-> characteristics of the cell nuclei present in the image. 
-
-* Using these features, the task is to classify each image into malignant or 
-benign cells, recorded in the `diagnosis` column.  
-
+* Let's demonstrate using the `sim_classification()` function from the package 
+`{modeldata}`.  
 ```{r}
-if (!file.exists("./wdbc.data")) {
-  download.file(
-    url = paste(
-      "https://archive.ics.uci.edu/ml",
-      "machine-learning-databases/breast-cancer-wisconsin/wdbc.data",
-      sep = "/"
-    ),
-    destfile = "./wdbc.data"
-  )
-}
-```
-
-* Here are the feature descriptions, each have 3 statistics, mean, standard error, 
-and "largest" (mean of three largest values).  
-	a) radius (mean of distances from center to points on the perimeter)
-	b) texture (standard deviation of gray-scale values)
-	c) perimeter
-	d) area
-	e) smoothness (local variation in radius lengths)radius
-	f) compactness (perimeter^2 / area - 1.0)
-	g) concavity (severity of concave portions of the contour)
-	h) concave points (number of concave portions of the contour)
-	i) symmetry 
-	j) fractal dimension ("coastline approximation" - 1)
-
-```{r}
-names_df <- expand.grid(
-  variable = c(
-    "radius", "texture", "perimeter", "area", "smoothness", "compactness",
-    "concavity", "concave_points", "symmetry", "fractal_dimension"
-  ),
-  stat = c("mean", "se", "worst")
-) |>
-  dplyr::arrange(variable, stat)
-names_df$names <- paste0(names_df$variable, "_", names_df$stat)
-
-df <- read.csv("./wdbc.data", header = FALSE)
-names(df) <- c("id", "diagnosis", names_df$names)
-```
-
-```{r}
+set.seed(123)
+df <- modeldata::sim_classification(num_samples = 500, num_linear = 20)
 df[1:6, 1:6]
 ```
 
 * Data is balanced. 
 ```{r}
-table(df$diagnosis)
+table(df$class)
 ```
 
 * And although there's no missing data, the use of packages such as [{missForest}](https://cran.r-project.org/web/packages/missForest/) 
@@ -125,9 +78,14 @@ estimation is a strong point of R.
 sum(is.na(df))
 ```
 
-* Recode malignant as 1 and benign as 0.  
+* Recode classes as integers.  
 ```{r}
-df$diagnosis <- ifelse(df$diagnosis == "M", 1L, 0L)
+df$class <- as.numeric(df$class) - 1
+```
+
+* Add an id column
+```{r}
+df$id <- seq_len(nrow(df))
 ```
 
 ## Initialize a database
@@ -324,7 +282,7 @@ function:
 * Complicated workflow sets can get complicated quickly. Add `rpwf_tag_recipe()`  
 to recipe to add a description to the recipe.  
 ```{r}
-common <- recipe(diagnosis ~ ., data = df) |>
+common <- recipe(class ~ ., data = df) |>
   update_role(id, new_role = "pd.index")
 
 ### xgb recipes
@@ -393,7 +351,7 @@ sapply(unique(all_wfs$grids), head)
 ```
 
 * Here are the dimensions of the grids. This is always good to check to make
-sure we didn't accidently make a grid that's too big.  
+sure we didn't accidentally make a grid that's too big.  
 ```{r}
 sapply(unique(all_wfs$grids), nrow)
 ```
@@ -417,6 +375,11 @@ exported_wfs <- all_wfs |>
 * Then finally, export the meta data into the database with `rpwf_export_db()`.  
 ```{r}
 rpwf_export_db(exported_wfs, db_con$con)
+```
+
+```{r}
+dm_obj <- rpwf_dm(db_con$con)
+dm_obj$wflow_tbl
 ```
 
 ## Run the workflow in python

@@ -130,14 +130,14 @@ class TrainDf(_RpwfSQL):
 
     def get_df_X(self) -> pandas.DataFrame:
         """Return the predictor DataFrame"""
-        return self.df.loc[:, json.loads(self.query_results["predictors"])]
+        return self.df.loc[:, json.loads(self.query_results["predictors"])].to_numpy()
 
     def get_df_y(self) -> Union[None, pandas.Series]:
         """Return the response Series"""
         if self._target is None:
             print("no target column provided")
             return None
-        return self.df.loc[:, self.df.columns == self._target]
+        return self.df.loc[:, self.df.columns == self._target].to_numpy()
 
 
 # class Cost(_RpwfSQL):
