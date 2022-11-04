@@ -138,8 +138,12 @@ db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
 * `db_con` is an object that holds a `{DBI}` connection to the SQLite database. 
 Access it with the `$con` method  
-```{r}
+```{r, eval = FALSE}
 db_con$con
+
+# <SQLiteConnection>
+#   Path: <path>\rpwfDb\db.SQLite
+#   Extensions: TRUE
 ```
 
 ## Define models with `{parsnip}`
@@ -164,12 +168,12 @@ lot of messages. For example, even with the `verbosity = 0` and `silent = TRUE`
 from the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), the output from the python script still has a lot of 
 repeated messages and deprecation warnings.  
 
-### `{xgboost}`
 * These are the available models  
 ```{r}
 rpwf_avail_models(db_con$con)
 ```
 
+### `xgboost`
 * From the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), I decided to fix the `n_estimators`
 at 50 and tune the learning rate.  
 * To do this, I pass the parameter `n_estimators = 50` to the `args` argument
@@ -218,47 +222,47 @@ space is available. I will increase this from the default. This is an example
 of how fitting models in python can have some very useful settings.  
   + In this example, `cache_size` wouldn't reduce fit time because the data is 
   small.  
-* Let's set up one model for *polynomial kernel*, one for *radial basis kernel*.  
-  + I fixed the `kernel` argument in `args` to explicitly separate the models 
-  into poly and rbf.  
-  + This is an artifact of `{tidymodels}` defining `svm_poly()` and `svm_rbf()` 
-  separately while sci-kit learn define them both in one class 
-  `sklearn.svm.SVC`.  
+* Let's set up one a *radial basis kernel* svm model.  
+  + I fixed the `kernel` argument in `args` to `rbf` to avoid confusion. 
+  + This is because `{tidymodels}` defines `svm_poly()` and `svm_rbf()`  
+  separately while sci-kit learn define them both in one class `sklearn.svm.SVC`.  
 
 ```{r}
-svm_poly_model <- svm_poly(
-  cost = tune(),
-  degree = tune(),
-  scale_factor = tune()
-) |>
+svm_rbf_model <- svm_rbf(cost = tune(),
+                         rbf_sigma = tune()) |>
   set_engine("kernlab") |>
   set_mode("classification") |>
-  set_py_engine("sklearn.svm",
-    "SVC",
-    "svm_poly",
-    tag = "svm_poly",
-    args = list(
-      kernel = "poly",
-      cache_size = 500
-    )
-  )
-
-svm_rbf_model <- svm_rbf(
-  cost = tune(),
-  rbf_sigma = tune()
-) |>
-  set_engine("kernlab") |>
-  set_mode("classification") |>
-  set_py_engine("sklearn.svm",
+  set_py_engine(
+    "sklearn.svm",
     "SVC",
     "svm_rbf",
     tag = "svm_rbf",
+    args = list(kernel = "rbf", # fix kernel parameter = "rbf"
+                cache_size = 500)
+  )
+```
+
+### `glm`
+* We also fit an elastic net model.
+
+```{r}
+enet_model <- logistic_reg(penalty = tune(),
+                           mixture = tune()) |>
+  set_engine("glmnet") |>
+  set_mode("classification") |>
+  set_py_engine(
+    "sklearn.linear_model",
+    "LogisticRegression",
+    "glmnet",
+    tag = "enet",
     args = list(
-      kernel = "rbf",
-      cache_size = 500
+      solver = "saga",
+      penalty = "elasticnet",
+      warm_start = TRUE
     )
   )
 ```
+
 
 ## Hyper parameter tuning
 * The `{dials}` package provides 1) sensible hyper parameters ranges, and 2) 
@@ -266,34 +270,51 @@ functions that go beyond the random grid and regular grids such as
 `dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
 * The `dials::grid_latin_hypercube` will be helpful for models with a lot of 
 hyper parameters such as `xgboost_model`. But for `svm_rbf_model`, tuning just 2 
-parameters on a 2-D grid with regular grid would work best.  
+parameters on a 2-D grid with `dials::grid_regular` would provide sufficient
+coverage of the hyper parameter space at an acceptable speed.  
+* Updating the range of the hyper parameter space is similar to how it works in
+{dials}. Just provide the tuning function to the `.model_update_params` argument.  
 * I can add **model specific tuning grid** at this step with `set_r_grid()`. But 
 if I want just one type of grid for all my models I can do this step later on.  
-  + For the `xgboost_model`, I add used a `dials::grid_latin_hypercube`.  
+
+### `xgboost`
+* For the `xgboost_model`, I am using a `dials::grid_latin_hypercube`.  
+* I want to limit the `max_depth` argument because this can cause memory issues.
+To do this, I add a named list to the `.model_update_params` argument.  
 ```{r}
 xgb_model <- xgb_model |>
-  set_r_grid(dials::grid_latin_hypercube, size = 100)
+  set_r_grid(
+    .model_grid_fun = dials::grid_latin_hypercube, 
+    .model_update_params = list(tree_depth = dials::tree_depth(range(2, 5))),
+    size = 100
+  )
 ```
-  + For `svm_poly_model`, I use a grid regular, but only 2 polynomial degrees of 
-  2 and 3.  
-```{r}
-svm_poly_model <- svm_poly_model |>
-  set_r_grid(dials::grid_regular, levels = 10, filter = degree %in% c(2, 3))
-```
-  + For `svm_rbf_model`, I just use a 2D regular grid.    
+
+### `svm`
+* For `svm_rbf_model`, I just use a 2D regular grid.  
 ```{r}
 svm_rbf_model <- svm_rbf_model |>
-  set_r_grid(dials::grid_regular, levels = 12)
+  set_r_grid(dials::grid_regular, levels = 10)
+```
+
+### `glm`
+* I also use a 2D regular grid for our enet. However, I change the range of 
+penalty to allows for a greater regularization strength.  
+```{r}
+enet_model <- enet_model |> 
+  set_r_grid(dials::grid_regular,
+             list(penalty = dials::penalty(range = c(-8, 0.5))),
+             levels = 10)
 ```
 
 # Define recipe with `{recipes}`  
 * Recipes are defined just as a normal `tidymodels` workflow.  
-  + Use formula or the role interface to indicate the response and predictors.  
+  + Use formula or the role interface to specify the response and predictors.  
   + The base recipe is used to gauge the baseline performance of each model.  
   + The pca recipe is used to de-correlate the variables. `step_pca()` conveniently
   provides an argument to keep an arbitrary threshold of the variance explained. 
   I choose 95%.  
-* `recipes` are data transformation pipelines. 
+* `recipes` are data transformation pipelines.  
 * `rpwf` reserves one special role that can be used with the `update_role()` 
 function:  
   + `pd.index` is a special role. It will mark a column for conversion into
@@ -306,28 +327,32 @@ to recipe to add a description to the recipe.
 common <- recipe(diagnosis ~ ., data = df) |>
   update_role(id, new_role = "pd.index")
 
+### xgb recipes
 xgb_base_rec <- common |>
   rpwf_tag_recipe("xgb_base")
 
-svm_base_rec <- common |>
-  step_normalize() |>
-  rpwf_tag_recipe("svm_base")
-
 xgb_pca_rec <- xgb_base_rec |>
+  step_normalize(all_numeric_predictors()) |>
   step_pca(threshold = .95) |>
   rpwf_tag_recipe("xgb_pca")
 
-svm_pca_rec <- svm_base_rec |>
+### glm and svm recipes
+scaled_base_rec <- common |>
+  step_normalize(all_numeric_predictors()) |>
+  rpwf_tag_recipe("scaled_base")
+
+scaled_pca_rec <- scaled_base_rec |>
   step_pca(threshold = .95) |>
-  rpwf_tag_recipe("svm_pca")
+  rpwf_tag_recipe("scaled_pca")
 ```
 
 ## Create workflowset  
+### `rpwf_workflow_set()`
 * The function `rpwf_workflow_set()` mimics [`workflowsets::workflow_set()`](https://workflowsets.tidymodels.org/). It 
 create a combination of all the provided recipes and models. Then, one can 
 work with the resulting data.frame just like any data.frame by filtering 
-out redundant workflows and etc. I can also create a `workflow_set` for xgboost
-and one for svm and `rbind()` them.   
+out redundant workflows and etc. I can also create a `workflow_set` for `xgboost`
+and one for `svm` and `glm` and `rbind()` them.   
 * The cost argument is to specify which cost function to optimize by. Look up
 the values in the [scikit-learn docs](https://scikit-learn.org/stable/modules/model_evaluation.html). 
 Custom cost functions are possible but would require coding on the python side.    
@@ -339,16 +364,22 @@ xgb_wfs <- rpwf_workflow_set(
   cost = "roc_auc"
 )
 
-svm_wfs <- rpwf_workflow_set(
-  preprocs = list(svm_base_rec, svm_pca_rec),
-  models = list(svm_poly_model, svm_rbf_model),
+svm_glm_wfs <- rpwf_workflow_set(
+  preprocs = list(scaled_base_rec, scaled_pca_rec),
+  models = list(svm_rbf_model, enet_model),
   cost = "roc_auc"
 )
 
-all_wfs <- rbind(xgb_wfs, svm_wfs)
+all_wfs <- rbind(xgb_wfs, svm_glm_wfs)
 ```
 
-* Then, add necessary information with `rpwf_augment()`  
+### `rpwf_augment()`
+* Add necessary information with `rpwf_augment()`  
+* The `mtry` positive integer in R is sklearn's `colsample_bytree` positive 
+proportions.  
+* The `penalty` proportions in R is reciprocated in sklearn. This is why in 
+order to have the l1 penalty > 1 (which is too large most of the time), I have 
+to change the range upper bound to be smaller than 1.  
 ```{r}
 all_wfs <- rpwf_augment(all_wfs, db_con)
 all_wfs |>
@@ -361,9 +392,15 @@ parameters have been renamed to conform to the scikit-learn API.
 sapply(unique(all_wfs$grids), head)
 ```
 
+* Here are the dimensions of the grids. This is always good to check to make
+sure we didn't accidently make a grid that's too big.  
+```{r}
+sapply(unique(all_wfs$grids), nrow)
+```
+
 ## Export data as parquets and add to database.
-* There are two types of parquets files 1) hyper param grids, and 2) train data
-frame.  
+* There are two types of parquets files 1) hyper param grids, and 2) train/test
+data frames.  
 * `rpwf_export_grid()` and `rpwf_export_df()` write the parquets and returns
 id columns that track where the parquets are to the workflow set.  
 * Because this function only generate a data.frame if its not already written, 
