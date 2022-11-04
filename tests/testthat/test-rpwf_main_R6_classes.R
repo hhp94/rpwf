@@ -372,14 +372,17 @@ test_that("transformation of hyper param", {
     ), auto_unbox = TRUE) |>
     rpwf_grid_rename_()
 
-  expect_message(rpwf_grid_gen_(
-    xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random, size = grid_size
+  expect_message(
+    rpwf_grid_gen_(
+      xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random,
+      size = grid_size
     ),
     regexp = "colsample"
   )
 
   xgb_grid <- rpwf_grid_gen_(
-    xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random, size = grid_size
+    xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random,
+    size = grid_size
   )
 
   expect_true(all(dplyr::between(range(xgb_grid$colsample_bytree), 0, 1)))
@@ -401,7 +404,7 @@ test_that("transformation of hyper param", {
   glm_param <- rpwf_finalize_params_(glm_spec, dummy_test_rec)
   glm_grid_1 <- dials::grid_regular(glm_param$pars, levels = 10)
   glm_grid_2 <- rpwf_transform_grid_(glm_grid_1, glm_rename, glm_param$n_predictors)
-  expect_equal(glm_grid_1$penalty, 1/(glm_grid_2$C))
+  expect_equal(glm_grid_1$penalty, 1 / (glm_grid_2$C))
 })
 
 test_that("export() method of the RGrid class", {

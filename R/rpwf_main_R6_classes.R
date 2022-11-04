@@ -430,6 +430,8 @@ RGrid <- R6::R6Class(
 #' @inheritParams set_py_engine
 #' @param .model_grid_fun a `dials::grid_<functions>`, e.g., `grid_random()`,
 #' `grid_latin_hypercube()`.
+#' @param .model_update_params update {dials} functions such as [dials::penalty()]
+#' and [dials::cost()] with a named list. See examples.
 #' @param ... arguments to pass to `.model_grid_fun`.
 #'
 #' @return Add the `{dials}` function and associated arguments to the model spec
@@ -439,12 +441,13 @@ RGrid <- R6::R6Class(
 #' m <- parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
-#'   set_r_grid(dials::grid_random, size = 5)
+#'   set_r_grid(dials::grid_random, list(trees = dials::trees(range = c(2, 3))), size = 5)
 #' m$.model_grid_fun
 #' m$.model_grid_fun_args
-set_r_grid <- function(obj, .model_grid_fun, ...) {
+set_r_grid <- function(obj, .model_grid_fun, .model_update_params = NULL, ...) {
   stopifnot(".model_grid_fun needs to be function" = is.function(.model_grid_fun))
   obj$.model_grid_fun <- .model_grid_fun
+  obj$.model_update_params <- .model_update_params
   obj$.model_grid_fun_args <- rlang::exprs(...)
   return(obj)
 }
@@ -477,26 +480,44 @@ rpwf_grid_gen_ <- function(model,
                            update_params = NULL,
                            ...) {
   params <- rpwf_finalize_params_(model = model, preproc = preproc)
+  fun <- NULL
+  update_list <- NULL
 
-  if (nrow(params$pars) == 0 |
-    (!is.function(.grid_fun) & is.null(.grid_fun) & is.null(model$.model_grid_fun))
-  ) {
+  # Assign these two variables. Make sure the engine specific argument overide
+  # the arguements here.
+  if (!is.null(model$.model_grid_fun)) {
+    fun <- model$.model_grid_fun
+  } else {
+    fun <- .grid_fun
+  }
+
+  if (!is.null(model$.model_update_params)) {
+    update_list <- model$.model_update_params
+  } else {
+    update_list <- update_params
+  }
+
+  if (!is.null(model$.model_grid_fun_args)) {
+    grid_args <- model$.model_grid_fun_args
+  } else {
+    grid_args <- list(...)
+  }
+
+  if (nrow(params$pars) == 0 | is.null(fun)) {
     message("No hyper param tuning specified")
     return(NA) # If hash of NA is changed, has to update rpwf_db_init_values_()
   }
+  stopifnot(".grid_fun needs to be function" = is.function(fun))
 
-  if (!is.null(update_params)) {
-    params$pars <- do.call(update, c(list(params$pars), update_params))
+  if (!is.null(update_list)) {
+    params$pars <- do.call("update", c(list(params$pars), update_list))
   }
 
-  if (!is.null(model$.model_grid_fun)) {
+  if (!is.null(fun)) {
     r_grid <- do.call(
-      model$.model_grid_fun,
-      c(list(x = params$pars), model$.model_grid_fun_args)
+      fun,
+      c(list(x = params$pars), grid_args)
     )
-  } else {
-    stopifnot(".grid_fun needs to be function" = is.function(.grid_fun))
-    r_grid <- .grid_fun(x = params$pars, ...)
   }
 
   return(
@@ -520,7 +541,7 @@ rpwf_grid_gen_ <- function(model,
 rpwf_transform_grid_ <- function(grid, rename_fns, n_predictors) {
   r_grid <- dplyr::rename_with(grid, rename_fns)
 
-  if ("max_depth" %in% colnames(r_grid) ) {
+  if ("max_depth" %in% colnames(r_grid)) {
     message("high value of 'max_depth' can cause memory error")
   }
 
@@ -533,7 +554,7 @@ rpwf_transform_grid_ <- function(grid, rename_fns, n_predictors) {
 
   if ("C" %in% colnames(r_grid)) {
     message("'C' is detected. Reciprocating")
-    r_grid$C <- 1/r_grid$C
+    r_grid$C <- 1 / r_grid$C
   }
 
   return(r_grid)

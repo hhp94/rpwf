@@ -356,7 +356,9 @@ rpwf_export_grid <- function(obj, db_con) {
   query_res <- rpwf_query_( # Use the hash to find the grid_id
     query = "SELECT grid_id FROM r_grid_tbl WHERE grid_hash = ?",
     con = db_con$con,
-    val1 = sapply(RGrid_obj, \(x) { x$hash })
+    val1 = sapply(RGrid_obj, \(x) {
+      x$hash
+    })
   )
   # Add `grid_id` to the accumulating object
   return(dplyr::mutate(obj, grid_id = query_res))
@@ -390,7 +392,9 @@ rpwf_export_df <- function(obj, db_con, seed = 1234) {
   query_res <- rpwf_query_(
     con = db_con$con,
     query = "SELECT df_id FROM df_tbl WHERE df_hash = ?",
-    val1 = sapply(TrainDf_obj, \(x) { x$hash })
+    val1 = sapply(TrainDf_obj, \(x) {
+      x$hash
+    })
   )
   # Add `df_id` to the accumulating object
   return(dplyr::mutate(obj, df_id = query_res))

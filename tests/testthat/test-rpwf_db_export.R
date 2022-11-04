@@ -202,29 +202,6 @@ test_that("rpwf_export_df()", {
   expect_equal(t1$df_id, 2)
 })
 
-test_that("rpwf_add_model_type_()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir = tmp_dir)
-  # Add a train df
-  t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
-    list(set_py_engine(
-      xgb_model_spec_(),
-      "xgboost", "XGBClassifier"
-    )),
-    list("neg_log_loss")
-  ) |>
-    rpwf_add_model_info_(db_con$con) |>
-    rpwf_add_desc_() |>
-    rpwf_add_grid_param_(dials::grid_random, seed = 1234, size = 5) |>
-    rpwf_export_grid(db_con) |>
-    rpwf_export_df(db_con, 1234)
-
-  # print(t)
-  t1a <- rpwf_add_model_type_(t, db_con$con)
-  expect_equal(t1a$model_type_id, 1)
-})
-
 test_that("rpwf_add_random_state_()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)

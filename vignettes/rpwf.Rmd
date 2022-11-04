@@ -306,19 +306,19 @@ to recipe to add a description to the recipe.
 common <- recipe(diagnosis ~ ., data = df) |>
   update_role(id, new_role = "pd.index")
 
-xgb_base_rec <- common |> 
+xgb_base_rec <- common |>
   rpwf_tag_recipe("xgb_base")
 
 svm_base_rec <- common |>
-  step_normalize() |> 
+  step_normalize() |>
   rpwf_tag_recipe("svm_base")
 
 xgb_pca_rec <- xgb_base_rec |>
-  step_pca(threshold = .95) |> 
+  step_pca(threshold = .95) |>
   rpwf_tag_recipe("xgb_pca")
 
 svm_pca_rec <- svm_base_rec |>
-  step_pca(threshold = .95) |> 
+  step_pca(threshold = .95) |>
   rpwf_tag_recipe("svm_pca")
 ```
 
@@ -351,7 +351,7 @@ all_wfs <- rbind(xgb_wfs, svm_wfs)
 * Then, add necessary information with `rpwf_augment()`  
 ```{r}
 all_wfs <- rpwf_augment(all_wfs, db_con)
-all_wfs |> 
+all_wfs |>
   dplyr::select(model_tag, recipe_tag, costs)
 ```
 
@@ -415,17 +415,6 @@ python -m rpwf.script.nested_resampling -h
 ```{bash, eval = FALSE}
 python -m rpwf.script.nested_resampling "/tmp/RtmpNMsSNR/vignette44bb4c7d4218" \
    -db "db.SQLite" -s
-
-# db is at /tmp/RtmpNMsSNR/vignette44bb4c7d4218/rpwfDb/db.SQLite
-# Creating the db.SQLite_results folder
-# Connecting to sqlite:////tmp/RtmpNMsSNR/vignette44bb4c7d4218/rpwfDb/db.SQLite
-#    wflow_id      model_tag recipe_tag                               py_base_learner_args result_path
-# 0         1  XGBClassifier   xgb_base  {"eval_metric":"logloss","n_estimators":50,"us...        None
-# 1         2  XGBClassifier    xgb_pca  {"eval_metric":"logloss","n_estimators":50,"us...        None
-# 2         3       svm_poly   svm_base                 {"kernel":"poly","cache_size":500}        None
-# 3         4        svm_rbf   svm_base                  {"kernel":"rbf","cache_size":500}        None
-# 4         5       svm_poly    svm_pca                 {"kernel":"poly","cache_size":500}        None
-# 5         6        svm_rbf    svm_pca                  {"kernel":"rbf","cache_size":500}        None  
 ```
 
 * Let's run the nested CV with 5 CV for the inner loop for hyper param tuning,
