@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 import pandas
+from numpy import ravel
 from sklearn.model_selection import (
     RepeatedStratifiedKFold,
     GridSearchCV,
@@ -146,7 +147,7 @@ if __name__ == "__main__":
         p_grid = rpwf.RGrid(db_obj, wflow_obj).get_grid()
 
         df_obj = rpwf.TrainDf(db_obj, wflow_obj)
-        X, y = df_obj.get_df_X(), df_obj.get_df_y()
+        X, y = df_obj.get_df_X(), ravel(df_obj.get_df_y())
 
         if y is None:
             print("No target provided, exiting...")

@@ -6,6 +6,7 @@ import pathlib
 from typing import Any, Dict, Union
 
 import joblib
+import numpy
 import pdcast
 import pyarrow.parquet
 import pandas
@@ -92,7 +93,7 @@ class RGrid(_RpwfSQL):
         """Read in the parquet file and return as dict"""
         if self.parquet is None:
             return None
-        return self.parquet.to_pydict()
+        return self.parquet.to_pylist()
 
 
 class TrainDf(_RpwfSQL):
@@ -128,11 +129,11 @@ class TrainDf(_RpwfSQL):
             self.df.set_index(self._index, drop=True, inplace=True)
         assert self._index not in self.df.columns, f"{self._index} is still in the data"
 
-    def get_df_X(self) -> pandas.DataFrame:
+    def get_df_X(self) -> numpy.ndarray:
         """Return the predictor DataFrame"""
         return self.df.loc[:, json.loads(self.query_results["predictors"])].to_numpy()
 
-    def get_df_y(self) -> Union[None, pandas.Series]:
+    def get_df_y(self) -> Union[None, numpy.ndarray]:
         """Return the response Series"""
         if self._target is None:
             print("no target column provided")

@@ -541,9 +541,9 @@ rpwf_grid_gen_ <- function(model,
 rpwf_transform_grid_ <- function(grid, rename_fns, n_predictors) {
   r_grid <- dplyr::rename_with(grid, rename_fns)
 
-  if ("max_depth" %in% colnames(r_grid)) {
-    message("high value of 'max_depth' can cause memory error")
-  }
+  # if ("max_depth" %in% colnames(r_grid)) {
+  #   message("high value of 'max_depth' can cause memory error")
+  # }
 
   if ("colsample_bytree" %in% colnames(r_grid)) {
     message("'colsample_bytree' is detected. Converting to proportions")

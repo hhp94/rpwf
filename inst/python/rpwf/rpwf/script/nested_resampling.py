@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 import pandas
+from numpy import ravel
 from sklearn.model_selection import (
     RepeatedStratifiedKFold,
     GridSearchCV,
@@ -87,6 +88,14 @@ if __name__ == "__main__":
         help="number of splits for the inner loop for hyper param tuning"
     )
     parser.add_argument(
+        "-icr",
+        "--inner-n-repeats",
+        metavar="inner-n-repeats",
+        type=int,
+        default=5,
+        help="number of repeats for the inner loop for hyper param tuning"
+    )
+    parser.add_argument(
         "-ocv",
         "--outer-n-cv",
         metavar="outer-n-cv",
@@ -147,7 +156,7 @@ if __name__ == "__main__":
         p_grid = rpwf.RGrid(db_obj, wflow_obj).get_grid()
 
         df_obj = rpwf.TrainDf(db_obj, wflow_obj)
-        X, y = df_obj.get_df_X(), df_obj.get_df_y()
+        X, y = df_obj.get_df_X(), ravel(df_obj.get_df_y())
 
         if y is None:
             print("No target provided, exiting...")
@@ -158,8 +167,13 @@ if __name__ == "__main__":
         score = wflow_obj._get_par("costs")
 
         # Nested resampling
-        inner_cv = StratifiedKFold(
-            n_splits=args.inner_n_cv, shuffle=True, random_state=wflow_obj.random_state
+        # inner_cv = StratifiedKFold(
+        #     n_splits=args.inner_n_cv, shuffle=True, random_state=wflow_obj.random_state
+        # )
+        inner_cv = RepeatedStratifiedKFold(
+            n_splits=args.inner_n_cv, 
+            n_repeats=args.inner_n_repeats,
+            random_state=wflow_obj.random_state
         )
         outer_cv = RepeatedStratifiedKFold(
             n_splits=args.outer_n_cv,
