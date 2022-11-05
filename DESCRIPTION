@@ -1,8 +1,8 @@
 Package: rpwf
-Title: What the Package Does (One Line, Title Case)
-Version: 0.0.0.9000
+Title: Create Workflow with {tidymodels}. Fit Models with scikit-learn
+Version: 0.0.3-pre-alpha
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
+    person("Hung", "Pham", , "amser.hoanghung@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 License: MIT + file LICENSE
