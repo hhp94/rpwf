@@ -55,6 +55,10 @@ BaseEx <- R6::R6Class(
       self$queried_path <- NULL
       self$db_folder <- NULL
       self$proj_root_path <- db_con$proj_root_path
+      if (grepl("\\\\", self$proj_root_path)) {
+        message("Converting to posix path")
+        self$proj_root_path <- gsub("\\\\", "/", self$proj_root_path)
+      }
     },
 
     #' @description

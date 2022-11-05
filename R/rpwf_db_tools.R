@@ -100,3 +100,37 @@ rpwf_avail_models <- function(con) {
     "SELECT py_module, py_base_learner, r_engine, model_mode FROM model_type_tbl"
   )
 }
+
+#' Get Results from Finished workflows
+#'
+#' Wrapper for an inner join between the `wflow_tbl` and `wflow_result_tbl` and
+#' invoke [readr::read_csv()] to read in the results.
+#'
+#' @inheritParams rpwf_export_grid
+#' @param import_csv whether to read in the results of the workflow.
+#'
+#' @return A tibble with the results stored in the fit_results column
+#' @export
+rpwf_results <- function(db_con, import_csv = TRUE) {
+  df <- DBI::dbGetQuery(
+    db_con$con,
+    "SELECT w.wflow_id AS wflow_id, w.model_tag AS model_tag,
+            w.recipe_tag AS recipe_tag, w.costs AS costs,
+            r.description AS description, r.result_path AS result_path,
+            r.model_path AS model_path
+    FROM wflow_tbl AS w
+      INNER JOIN wflow_result_tbl AS r
+        ON w.wflow_id = r.wflow_id;"
+  ) |> dplyr::as_tibble()
+
+  if (import_csv) {
+    df$fit_results <- lapply(
+      df$result_path,
+      \(x) {
+        dplyr::as_tibble(read.csv(paste(db_con$proj_root_path, x, sep = "/")))
+      }
+    )
+  }
+
+  return(df)
+}

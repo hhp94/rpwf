@@ -89,7 +89,7 @@ class RGrid(_RpwfSQL):
         self._exec_query()
         self._import_parquet("grid_path")
 
-    def val_to_list(d: Dict):
+    def val_to_list(self, d: Dict):
         for v in d:
             d[v] = [d[v]]
         return d
