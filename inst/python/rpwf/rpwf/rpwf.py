@@ -89,11 +89,23 @@ class RGrid(_RpwfSQL):
         self._exec_query()
         self._import_parquet("grid_path")
 
+    def val_to_list(d: Dict):
+        for v in d:
+            d[v] = [d[v]]
+        return d
+
     def get_grid(self) -> Dict[str, Any]:
         """Read in the parquet file and return as dict"""
         if self.parquet is None:
             return None
-        return self.parquet.to_pylist()
+        # convert the parquet file to list of rows
+        grid = self.parquet.to_pylist()
+        # wrap the value of each row in a list
+        l = len(grid)
+        wrapped_grid = [None] * l
+        for i in range(l):
+            wrapped_grid[i]= self.val_to_list(grid[i])
+        return wrapped_grid
 
 
 class TrainDf(_RpwfSQL):

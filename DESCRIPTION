@@ -1,6 +1,6 @@
 Package: rpwf
 Title: Create Workflow with {tidymodels}. Fit Models with scikit-learn
-Version: 0.0.3-pre-alpha
+Version: 0.0.3
 Authors@R: 
     person("Hung", "Pham", , "amser.hoanghung@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "YOUR-ORCID-ID"))
