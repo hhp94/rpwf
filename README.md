@@ -63,13 +63,13 @@ pip install pandas-downcast
 ```
 
 - Next, we copy the python codes into any folder with
-  `rpwf_cp_py_codes()`. Here I’m just copying the codes to my home
+  `rpwf_cp_py_codes()`. Here I’m just copying the codes to my `home/opt`
   folder.
 
 ``` r
-list.files("~") # Coping python codes to this folder
-rpwf_cp_py_codes("~")
-list.files("~") # A folder called "rpwf" is created
+list.files("~/opt") # Coping python codes to this folder
+rpwf_cp_py_codes("~/opt")
+list.files("~/opt") # A folder called "rpwf" is created
 ```
 
 - Install the copied python codes as a local package for maximum
@@ -77,13 +77,23 @@ list.files("~") # A folder called "rpwf" is created
   python codes without re-installation.
 
 ``` bash
-python -m pip install -e ~/rpwf
+python -m pip install -e ~/opt/rpwf
+#   Preparing metadata (setup.py) ... done
+# Installing collected packages: local-rpwf
+#   Running setup.py develop for local-rpwf
+# Successfully installed local-rpwf-0.1.0
 ```
 
 - Remove the package if needed with
 
 ``` bash
 pip uninstall local-rpwf
+# Found existing installation: local-rpwf 0.1.0
+# Uninstalling local-rpwf-0.1.0:
+#   Would remove:
+#     .../local-rpwf.egg-link
+# Proceed (Y/n)? Y
+#   Successfully uninstalled local-rpwf-0.1.0
 ```
 
 ## Linux installation

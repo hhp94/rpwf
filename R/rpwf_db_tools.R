@@ -127,7 +127,9 @@ rpwf_results <- function(db_con, import_csv = TRUE) {
     df$fit_results <- lapply(
       df$result_path,
       \(x) {
-        dplyr::as_tibble(read.csv(paste(db_con$proj_root_path, x, sep = "/")))
+        dplyr::as_tibble(
+          utils::read.csv(paste(db_con$proj_root_path, x, sep = "/"))
+        )
       }
     )
   }

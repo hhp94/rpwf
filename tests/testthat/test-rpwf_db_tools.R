@@ -70,3 +70,11 @@ test_that("rpwf_avail_models()", {
 
   expect_equal(nrow(models), nrow(sup_mod_df__))
 })
+
+test_that("rpwf_results()", {
+  expect_message(rpwf_connect_db("db.SQLite", test_path("fixtures")),
+                 regexp = "found")
+  db_con <- rpwf_connect_db("db.SQLite", test_path("fixtures"))
+  results_df <- rpwf_results(db_con)
+  expect_true(nrow(results_df) > 0L)
+})

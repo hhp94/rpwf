@@ -20,6 +20,9 @@ Imports:
     jsonlite,
     kernlab,
     parsnip,
+    ggplot2,
+    modeldata,
+    utils,
     purrr,
     R6,
     recipes,
@@ -27,14 +30,14 @@ Imports:
     RSQLite,
     stats,
     tidyr,
-    withr
+    withr,
+    testthat
 Suggests: 
     covr,
     dm,
     here,
     knitr,
-    rmarkdown,
-    testthat
+    rmarkdown
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr
