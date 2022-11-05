@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 ```{r, echo = FALSE}
 tmp_dir <- withr::local_tempdir(pattern = "vignette")
-setwd("~/project/rpwf")
+# setwd("~/project/rpwf")
 setwd(tmp_dir)
 ```
 
@@ -78,9 +78,9 @@ estimation is a strong point of R.
 sum(is.na(df))
 ```
 
-* Recode classes as integers.  
+* Re-code classes as integers.  
 ```{r}
-df$class <- as.numeric(df$class) - 1
+df$class <- as.integer(df$class) - 1
 ```
 
 * Add an id column
@@ -99,7 +99,6 @@ Access it with the `$con` method
 ```{r, eval = FALSE}
 db_con$con
 
-# <SQLiteConnection>
 #   Path: <path>\rpwfDb\db.SQLite
 #   Extensions: TRUE
 ```
@@ -283,7 +282,7 @@ function:
 to recipe to add a description to the recipe.  
 ```{r}
 common <- recipe(class ~ ., data = df) |>
-  step_mutate(class = as.integer(class))
+  step_mutate(class = as.integer(class)) |> 
   update_role(id, new_role = "pd.index")
 
 ### xgb recipes
@@ -413,15 +412,14 @@ python -m rpwf.script.nested_resampling -h
   already been run.  
   + The `-c` flag indicates the number of CPU cores dedicated to the model fitting
   task.  
-```{bash, eval = FALSE}
-python -m rpwf.script.nested_resampling "/tmp/RtmpNMsSNR/vignette44bb4c7d4218" \
-   -db "db.SQLite" -s
+```{jupyter, eval = FALSE}
+%run -m rpwf.script.nested_resampling $tmp_dir_posix -db "db.SQLite" -s
 ```
 
 * Let's run the nested CV with 5 CV for the inner loop for hyper param tuning,
 5 CV * 5 Repeats on the outer loop for performance validation.  
-```{bash, eval = FALSE}
-python -m rpwf.script.nested_resampling "/tmp/RtmpNMsSNR/vignette44bb4c7d4218" \
-   -db "db.SQLite" -a -c 7 -icv 5 -icr 1 -ocv 5 - ocr 5
+```{jupyter, eval = FALSE}
+%run -m rpwf.script.nested_resampling $tmp_dir_posix \
+   -db "db.SQLite" -a -c 7 -icv 5 -icr 1 -ocv 5 -ocr 5
 ```
 
