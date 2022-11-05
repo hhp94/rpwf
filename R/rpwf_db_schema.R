@@ -171,11 +171,11 @@ rpwf_schema <- function() {
     model_tag VARCHAR, /* tag of the model */
     recipe_tag VARCHAR, /* tag of the recipe */
     costs VARCHAR, /* cost function */
-    model_type_id INTEGER NOT NULL, /* model function */
+    model_type_id INTEGER, /* model function */
     py_base_learner_args VARCHAR, /* args passed to base learner in python */
     grid_id INTEGER NOT NULL, /* id of the grid for grid search */
     df_id INTEGER NOT NULL, /* id of the train df */
-    random_state INTEGER NOT NULL,  /* Experiment seed, not yet implemented */
+    random_state INTEGER,  /* Experiment seed */
     CONSTRAINT model_type_id_fk
       FOREIGN KEY (model_type_id)
       REFERENCES model_type_tbl (model_type_id),

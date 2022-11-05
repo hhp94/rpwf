@@ -8,12 +8,12 @@
 #'
 #' @return a list of train and test df and the id and target column names.
 #'
-#' @export
+#' @noRd
 #'
 #' @examples
-#' dim_dat <- rpwf_sim()
-#' dim_dat$train
-#' dim_dat$test
+#' sim_dat <- rpwf_sim()
+#' sim_dat$train
+#' sim_dat$test
 rpwf_sim <- function(n_train = 100, n_test = 10, seed = 1234) {
   set.seed(seed)
   n <- n_train + n_test
