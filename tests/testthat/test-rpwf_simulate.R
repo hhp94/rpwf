@@ -1,11 +1,11 @@
 test_that("dummy train data generation and dummy recipe codes works", {
-  dummy_train_rec <- dummy_recipe_(rpwf_sim())
+  dummy_train_rec <- dummy_recipe_(rpwf_sim_())
   # print(dummy_train_rec)
   expect_true("recipe" %in% class(dummy_train_rec))
 })
 
 test_that("dummy test data generation works", {
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "test")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "test")
   # print(dummy_test_rec)
   expect_true("recipe" %in% class(dummy_test_rec))
 })

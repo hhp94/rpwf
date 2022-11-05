@@ -254,8 +254,8 @@ file.
 \if{latex}{\out{\hypertarget{method-BaseEx-export_prep}{}}}
 \subsection{Method \code{export_prep()}}{
 If the db query found no existing metadata, then an export path is made.
-If the metadata is found by the data is not found, then an export path
-is also made. Else get the path from the metadata in the db.
+If the metadata is found but the associated data is not found, then an
+export path is also made. Else get the path from the metadata in the db.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{BaseEx$export_prep(new_path, new_export_query)}\if{html}{\out{</div>}}
 }

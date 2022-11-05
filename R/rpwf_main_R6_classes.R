@@ -47,6 +47,7 @@ BaseEx <- R6::R6Class(
     #' a [DbCon] object.
     initialize = function(db_con) {
       stopifnot("input should be a R6 DbCon() object" = R6::is.R6(db_con))
+      self$path <- NULL
       self$df <- NULL
       self$con <- db_con$con
       self$db_name <- db_con$db_name
@@ -55,10 +56,6 @@ BaseEx <- R6::R6Class(
       self$queried_path <- NULL
       self$db_folder <- NULL
       self$proj_root_path <- db_con$proj_root_path
-      if (grepl("\\\\", self$proj_root_path)) {
-        message("Converting to posix path")
-        self$proj_root_path <- gsub("\\\\", "/", self$proj_root_path)
-      }
     },
 
     #' @description
@@ -178,8 +175,8 @@ BaseEx <- R6::R6Class(
 
     #' @description
     #' If the db query found no existing metadata, then an export path is made.
-    #' If the metadata is found by the data is not found, then an export path
-    #' is also made. Else get the path from the metadata in the db.
+    #' If the metadata is found but the associated data is not found, then an
+    #' export path is also made. Else get the path from the metadata in the db.
     #' @param new_path (`character()`)\cr
     #' Path to the object.
     #' @param new_export_query (`glue::glue_sql()`)\cr
@@ -287,6 +284,8 @@ TrainDf <- R6::R6Class(
       self$prepped <- recipes::prep(recipe) # Init the prepped object
       self$term_info <- self$prepped$term_info # post-transform train metadata
       self$set_hash(rlang::hash(self$prepped)) # Set the hash of the prepped obj
+      self$set_db_folder(glue::glue("{self$db_name}_df")) # Set the root folder
+      self$create_folder() # Create the folder if needed
       # use the hash of the prepped to find the path
       self$find_path_in_db(self$exec_query(
         glue::glue_sql("SELECT df_path AS path FROM df_tbl WHERE df_hash = ?",
@@ -296,8 +295,6 @@ TrainDf <- R6::R6Class(
       self$set_idx_col() # set index column for pandas
       self$set_target_col() # set target column for pandas
       self$set_predictors() # get the predictors
-      self$set_db_folder(glue::glue("{self$db_name}_df")) # Set the root folder
-      self$create_folder() # Create the folder if needed
       self$set_df(recipes::juice(self$prepped), "transformed data")
       self$export_prep(
         new_path = glue::glue(
@@ -399,14 +396,14 @@ RGrid <- R6::R6Class(
     initialize = function(grid_obj, db_con) {
       super$initialize(db_con) # Init from the super class
       self$set_hash(rlang::hash(grid_obj)) # hash the grid
+      self$set_db_folder(glue::glue("{self$db_name}_grid")) # Set the root folder to "rpwf_grids"
+      self$create_folder() # Create the folder if needed
       self$find_path_in_db(self$exec_query(
         glue::glue_sql( # hash is passed into ?
           "SELECT grid_path AS path FROM r_grid_tbl WHERE grid_hash = ?",
           .con = self$con
         )
       ))
-      self$set_db_folder(glue::glue("{self$db_name}_grid")) # Set the root folder to "rpwf_grids"
-      self$create_folder() # Create the folder if needed
       self$set_df(grid_obj, "hyper param grid")
       self$export_prep(
         new_path = glue::glue(

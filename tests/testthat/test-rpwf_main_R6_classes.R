@@ -2,7 +2,7 @@
 test_that("initialization of the TrainDf class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
   train_df_obj <- TrainDf$new(dummy_test_rec, db_con)
@@ -24,7 +24,7 @@ test_that("initialization of the TrainDf class", {
 test_that("export() method of the TrainDf class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
   expect_error(TrainDf$new(dummy_test_rec, "INVALID"),
@@ -53,7 +53,7 @@ test_that("export() method of the TrainDf class", {
 test_that("export() method won't add repeated rows class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
   train_df_obj <- TrainDf$new(dummy_test_rec, db_con)
@@ -74,7 +74,7 @@ test_that("export() method won't add repeated rows class", {
 test_that("Check if data (no outcome) can be exported", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "test")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "test")
 
   # initialization of a new TrainDf object
   expect_message(TrainDf$new(dummy_test_rec, db_con),
@@ -99,7 +99,7 @@ test_that("Check if data (no outcome) can be exported", {
 test_that("pandas index adding", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
-  dummy_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
   expect_message(TrainDf$new(dummy_rec, db_con), regexp = "as pandas idx")
@@ -141,7 +141,7 @@ test_that("renaming function", {
 })
 
 test_that("rpwf_grid_gen_() with tune()", {
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   #### Linear model
   glm_spec <- parsnip::logistic_reg(penalty = hardhat::tune()) |>
     parsnip::set_engine("glmnet") |>
@@ -171,7 +171,7 @@ test_that("rpwf_grid_gen_() with tune()", {
 })
 
 test_that("rpwf_grid_gen_() with tune()", {
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -210,7 +210,7 @@ test_that("rpwf_grid_gen_() with tune()", {
 })
 
 test_that("rpwf_grid_gen_() with fun from set_r_grid", {
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -233,7 +233,7 @@ test_that("rpwf_grid_gen_() with fun from set_r_grid", {
 
 
 test_that("rpwf_grid_gen_() no tuning param", {
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   no_tune_spec <- xgb_model_spec_no_tune_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -252,7 +252,7 @@ test_that("rpwf_grid_gen_() no tuning param", {
 })
 
 test_that("rpwf_finalize_params_()", {
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -290,7 +290,7 @@ test_that("initialization of the RGrid class", {
   db_con <- dummy_con_(tmp_dir)
 
   # Generate a grid
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -355,7 +355,7 @@ test_that("transformation of hyper param", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
 
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   grid_size <- 10
 
   #### XGB model
@@ -412,7 +412,7 @@ test_that("export() method of the RGrid class", {
   db_con <- dummy_con_(tmp_dir)
 
   # Generate a grid
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -467,7 +467,7 @@ test_that("export() method won't add repeated rows class", {
   db_con <- dummy_con_(tmp_dir)
 
   # Generate a grid
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)

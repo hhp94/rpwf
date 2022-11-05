@@ -33,6 +33,14 @@ DbCon <- R6::R6Class(
     initialize = function(db_name, proj_root_path) {
       self$db_name <- db_name
       self$proj_root_path <- proj_root_path
+      if (grepl("\\\\", self$proj_root_path)) {
+        message("Converting to posix path")
+        self$proj_root_path <- gsub("\\\\", "/", self$proj_root_path)
+      }
+      if (grepl("/$", self$proj_root_path)) {
+        message("Removing / at the end of the path")
+        self$proj_root_path <- gsub("/$", "", self$proj_root_path)
+      }
       self$db_path <- paste("rpwfDb", self$db_name, sep = "/")
       # Create the root path if needed
       withr::with_dir(self$proj_root_path, {

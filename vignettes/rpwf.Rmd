@@ -358,7 +358,7 @@ sapply(unique(all_wfs$grids), nrow)
 ## Export data as parquets and add to database.
 * There are two types of parquets files 1) hyper param grids, and 2) train/test
 data frames.  
-* `rpwf_export_grid()` and `rpwf_export_df()` write the parquets and returns
+* `rpwf_write_grid()` and `rpwf_write_df()` write the parquets and returns
 id columns that track where the parquets are to the workflow set.  
 * Because this function only generate a data.frame if its not already written, 
 running each of these functions in parallel is not recommended.  
@@ -367,8 +367,8 @@ running each of these functions in parallel is not recommended.
   run the export functions for each database in parallel.    
 ```{r}
 exported_wfs <- all_wfs |>
-  rpwf_export_grid(db_con) |>
-  rpwf_export_df(db_con)
+  rpwf_write_grid(db_con) |>
+  rpwf_write_df(db_con)
 ```
 
 * Then finally, export the meta data into the database with `rpwf_export_db()`.  

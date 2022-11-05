@@ -106,7 +106,7 @@ rpwf_avail_models <- function(con) {
 #' Wrapper for an inner join between the `wflow_tbl` and `wflow_result_tbl` and
 #' invoke [readr::read_csv()] to read in the results.
 #'
-#' @inheritParams rpwf_export_grid
+#' @inheritParams rpwf_write_grid
 #' @param import_csv whether to read in the results of the workflow.
 #'
 #' @return A tibble with the results stored in the fit_results column

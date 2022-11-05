@@ -1,5 +1,5 @@
 test_that("rpwf_workflow_set()", {
-  dummy_test_rec <- dummy_recipe_(rpwf_sim(), type = "train")
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
       args = list(eval_metric = "logloss", silent = TRUE)
@@ -46,7 +46,7 @@ test_that("rpwf_tag_recipe()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
-  r <- dummy_recipe_(rpwf_sim(), type = "train")
+  r <- dummy_recipe_(rpwf_sim_(), type = "train")
   expect_true(is.null(r$recipe_tag))
   r <- r |>
     rpwf_tag_recipe("test tag")
@@ -58,7 +58,7 @@ test_that("rpwf_add_model_info_()", {
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -77,7 +77,7 @@ test_that("rpwf_add_desc_()", {
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier", "my_xgboost_tag"
@@ -101,7 +101,7 @@ test_that("rpwf_add_grid_param_()", {
     return(mtcars)
   }
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -134,12 +134,12 @@ test_that("rpwf_add_grid_param_()", {
   expect_true(all(sort(names(t3c$grids[[1]])) == sort(renamed_cols)))
 })
 
-test_that("rpwf_export_grid()", {
+test_that("rpwf_write_grid()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -150,22 +150,22 @@ test_that("rpwf_export_grid()", {
   t1 <- rpwf_add_model_info_(t, db_con$con)
   t2 <- rpwf_add_desc_(t1)
   t3 <- rpwf_add_grid_param_(t2, dials::grid_random, seed = 1234, size = 5)
-  t4a <- rpwf_export_grid(t3, db_con)
-  t4b <- rpwf_export_grid(
+  expect_true(!"db.SQLite_grid" %in% (list.files(paste(tmp_dir, "rpwfDb", sep = "/"))))
+
+  rpwf_write_grid(
     rpwf_add_grid_param_(t2, NULL, seed = 1234), # Not use grid
     db_con
   )
-  expect_equal(t4a$grid_id, 2)
-  expect_equal(t4b$grid_id, 1)
-  expect_message(
-    rpwf_export_grid(
-      rpwf_add_grid_param_(t2, NULL, seed = 1234), db_con
-    ), # Not use grid
-    regex = "No hyper param tuning"
-  )
+  expect_true("db.SQLite_grid" %in% (list.files(paste(tmp_dir, "rpwfDb", sep = "/"))))
+
+  rpwf_write_grid(t3, db_con)
+
+  expect_equal(length(list.files(
+    paste(tmp_dir, "rpwfDb", "db.SQLite_grid", sep = "/")
+  )), 1)
 })
 
-test_that("rpwf_export_df()", {
+test_that("rpwf_write_df()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
@@ -173,13 +173,11 @@ test_that("rpwf_export_df()", {
     obj |>
       rpwf_add_model_info_(db_con$con) |>
       rpwf_add_desc_() |>
-      rpwf_add_grid_param_(dials::grid_random, seed = 1234, size = 5) |>
-      rpwf_export_grid(db_con) |>
-      rpwf_export_df(db_con, 1234)
+      rpwf_add_grid_param_(dials::grid_random, seed = 1234, size = 5)
   }
   # Add a train df
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -189,7 +187,7 @@ test_that("rpwf_export_df()", {
     tmp_func()
   # Add a test df
   t1 <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "test")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "test")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -198,8 +196,10 @@ test_that("rpwf_export_df()", {
   ) |>
     tmp_func()
 
-  expect_equal(t$df_id, 1)
-  expect_equal(t1$df_id, 2)
+  expect_true(!"db.SQLite_df" %in% list.files(paste(tmp_dir, "rpwfDb", sep = "/")))
+  rpwf_write_df(t1, db_con, 1234)
+  expect_true("db.SQLite_df" %in% list.files(paste(tmp_dir, "rpwfDb", sep = "/")))
+  expect_equal(length(list.files(paste(tmp_dir, "rpwfDb", "db.SQLite_df", sep = "/"))), 1)
 })
 
 test_that("rpwf_add_random_state_()", {
@@ -207,7 +207,7 @@ test_that("rpwf_add_random_state_()", {
   db_con <- dummy_con_(tmp_dir = tmp_dir)
   # Add a train df
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -217,8 +217,6 @@ test_that("rpwf_add_random_state_()", {
     rpwf_add_model_info_(db_con$con) |>
     rpwf_add_desc_() |>
     rpwf_add_grid_param_(dials::grid_random, seed = 1234, size = 5) |>
-    rpwf_export_grid(db_con) |>
-    rpwf_export_df(db_con, 1234) |>
     rpwf_add_model_type_(db_con$con)
 
   # print(t)
@@ -234,7 +232,7 @@ test_that("rpwf_augment()", {
   db_con <- dummy_con_(tmp_dir = tmp_dir)
   # Add a train df
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -246,6 +244,57 @@ test_that("rpwf_augment()", {
   expect_equal(nrow(t1), 1)
 })
 
+test_that("rpwf_parquet_id_() part 1", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
+
+  query_wflow_tbl <- function() {
+    DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
+  }
+  # Add a train df
+  t <- rpwf_workflow_set(
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
+    list(set_py_engine(
+      xgb_model_spec_(),
+      "xgboost", "XGBClassifier"
+    )),
+    list("neg_log_loss")
+  ) |>
+    rpwf_augment(db_con, dials::grid_latin_hypercube)
+
+  rpwf_write_grid(t, db_con)
+  expect_error(rpwf_parquet_id_(t, db_con),
+    regexp = "df"
+  )
+})
+
+test_that("rpwf_parquet_id_() part 2", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
+
+  query_wflow_tbl <- function() {
+    DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
+  }
+  # Add a train df
+  t <- rpwf_workflow_set(
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
+    list(set_py_engine(
+      xgb_model_spec_(),
+      "xgboost", "XGBClassifier"
+    )),
+    list("neg_log_loss")
+  ) |>
+    rpwf_augment(db_con, dials::grid_latin_hypercube)
+
+  rpwf_write_df(t, db_con)
+  expect_error(rpwf_parquet_id_(t, db_con),
+    regexp = "grid"
+  )
+
+  rpwf_write_grid(t, db_con)
+  expect_true(all(c("grid_id", "df_id") %in% names(rpwf_parquet_id_(t, db_con))))
+})
+
 test_that("rpwf_export_db()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
@@ -255,7 +304,7 @@ test_that("rpwf_export_db()", {
   }
   # Add a train df
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
@@ -264,25 +313,16 @@ test_that("rpwf_export_db()", {
   ) |>
     rpwf_augment(db_con, dials::grid_latin_hypercube)
 
-  t1 <- t |>
-    rpwf_export_grid(db_con) |>
-    rpwf_export_df(db_con, 1234)
+  rpwf_write_grid(t, db_con)
+  rpwf_write_df(t, db_con, 1234)
 
   before <- query_wflow_tbl()
 
   expect_equal(nrow(before), 0) # before export, there would be no wflow
-  rpwf_export_db(t1, db_con$con)
+  rpwf_export_db(t, db_con)
   after <- query_wflow_tbl() # after export, there would be 1 wflow
   expect_equal(nrow(after), 1)
-  rpwf_export_db(t1, db_con$con)
+  rpwf_export_db(t, db_con)
   after1 <- query_wflow_tbl() # exporting the same wflow would not work
   expect_equal(nrow(after1), 1)
-
-  # Check if rwpf_export_grid or export_df hasn't been run
-  expect_error(rpwf_export_db(rpwf_export_grid(t, db_con), db_con$con),
-    regexp = "to write parquet files first"
-  )
-  expect_error(rpwf_export_db(rpwf_export_df(t, db_con, 1234), db_con$con),
-    regexp = "to write parquet files first"
-  )
 })

@@ -11,10 +11,10 @@
 #' @noRd
 #'
 #' @examples
-#' sim_dat <- rpwf_sim()
+#' sim_dat <- rpwf_sim_()
 #' sim_dat$train
 #' sim_dat$test
-rpwf_sim <- function(n_train = 100, n_test = 10, seed = 1234) {
+rpwf_sim_ <- function(n_train = 100, n_test = 10, seed = 1234) {
   set.seed(seed)
   n <- n_train + n_test
   df <- data.frame(
@@ -66,7 +66,7 @@ xgb_model_spec_no_tune_ <- function() {
 #'
 #' For testing, not meant to be called.
 #'
-#' @param sim_dat a [rpwf_sim()] object.
+#' @param sim_dat a [rpwf_sim_()] object.
 #' @param type either `"train"` or `"test"`.
 #'
 #' @return a [recipes::recipe()] object.

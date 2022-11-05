@@ -12,17 +12,17 @@ test_that("rpwf_db_del_wflow()", {
   }
   # Add a train df
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
     )),
     list("neg_log_loss")
   )
-  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube) |>
-    rpwf_export_grid(db_con) |>
-    rpwf_export_df(db_con)
-  rpwf_export_db(t1, db_con$con)
+  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
+  rpwf_write_grid(t1, db_con)
+  rpwf_write_df(t1, db_con)
+  rpwf_export_db(t1, db_con)
   expect_equal(nrow(query_wflow_tbl()), 1)
 
   # delete from wflow
@@ -39,17 +39,17 @@ test_that("rpwf_db_del_entry()", {
   }
   # Add a train df
   t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim(), type = "train")),
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
     list(set_py_engine(
       xgb_model_spec_(),
       "xgboost", "XGBClassifier"
     )),
     list("neg_log_loss")
   )
-  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube) |>
-    rpwf_export_grid(db_con) |>
-    rpwf_export_df(db_con)
-  rpwf_export_db(t1, db_con$con)
+  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
+  rpwf_write_grid(t1, db_con)
+  rpwf_write_df(t1, db_con)
+  rpwf_export_db(t1, db_con)
   expect_equal(nrow(query_wflow_tbl("wflow_tbl")), 1)
 
   # delete from wflow would not work
@@ -73,7 +73,8 @@ test_that("rpwf_avail_models()", {
 
 test_that("rpwf_results()", {
   expect_message(rpwf_connect_db("db.SQLite", test_path("fixtures")),
-                 regexp = "found")
+    regexp = "found"
+  )
   db_con <- rpwf_connect_db("db.SQLite", test_path("fixtures"))
   results_df <- rpwf_results(db_con)
   expect_true(nrow(results_df) > 0L)
