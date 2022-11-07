@@ -96,6 +96,17 @@ test_that("Check if data (no outcome) can be exported", {
   expect_equal(test_df_obj_repeated$path, as.character(test_df_obj$path))
 })
 
+test_that("set_attrs() TrainDf", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir)
+  dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
+
+  TrainDf <- TrainDf$new(dummy_rec, db_con)
+  expect_true(!is.null(TrainDf$export_query))
+  TrainDf$export()$set_attrs()
+  expect_true(is.null(TrainDf$export_query))
+})
+
 test_that("pandas index adding", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir)
@@ -251,6 +262,63 @@ test_that("rpwf_grid_gen_() no tuning param", {
   expect_true(is.na(c_grid_rand))
 })
 
+
+test_that("transformation of hyper param", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir)
+
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
+  grid_size <- 10
+
+  #### XGB model
+  xgb_spec <- parsnip::boost_tree(mtry = hardhat::tune()) |>
+    parsnip::set_engine("xgboost") |>
+    parsnip::set_mode("classification") |>
+    set_py_engine("xgboost", "XGBClassifier",
+                  args = list(eval_metric = "logloss", silent = TRUE)
+    )
+
+  xgb_rename <-
+    jsonlite::toJSON(list(
+      "mtry" = "colsample_bytree"
+    ), auto_unbox = TRUE) |>
+    rpwf_grid_rename_()
+
+  expect_message(
+    rpwf_grid_gen_(
+      xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random,
+      size = grid_size
+    ),
+    regexp = "colsample"
+  )
+
+  xgb_grid <- rpwf_grid_gen_(
+    xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random,
+    size = grid_size
+  )
+
+  expect_true(all(dplyr::between(range(xgb_grid$colsample_bytree), 0, 1)))
+
+  #### Linear model
+  glm_spec <- parsnip::logistic_reg(penalty = hardhat::tune()) |>
+    parsnip::set_engine("glmnet") |>
+    parsnip::set_mode("classification") |>
+    set_py_engine("sklearn.linear_model", "LogisticRegression",
+                  args = list(penalty = "elasticnet")
+    )
+
+  glm_rename <-
+    jsonlite::toJSON(list(
+      "penalty" = "C"
+    ), auto_unbox = TRUE) |>
+    rpwf_grid_rename_()
+
+  glm_param <- rpwf_finalize_params_(glm_spec, dummy_test_rec)
+  glm_grid_1 <- dials::grid_regular(glm_param$pars, levels = 10)
+  glm_grid_2 <- rpwf_transform_grid_(glm_grid_1, glm_rename, glm_param$n_predictors)
+  expect_equal(glm_grid_1$penalty, 1 / (glm_grid_2$C))
+})
+
 test_that("rpwf_finalize_params_()", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
@@ -349,62 +417,6 @@ test_that("passing NA to RGrid class", {
   expect_true(is.na(r_grid_obj$path)) # path is NA because its NULL in the db
   expect_null(r_grid_obj$export_query) # since a query is found, export_q is NULL
   expect_null(r_grid_obj$df) # since a query is found, df is NULL
-})
-
-test_that("transformation of hyper param", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
-
-  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
-  grid_size <- 10
-
-  #### XGB model
-  xgb_spec <- parsnip::boost_tree(mtry = hardhat::tune()) |>
-    parsnip::set_engine("xgboost") |>
-    parsnip::set_mode("classification") |>
-    set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
-    )
-
-  xgb_rename <-
-    jsonlite::toJSON(list(
-      "mtry" = "colsample_bytree"
-    ), auto_unbox = TRUE) |>
-    rpwf_grid_rename_()
-
-  expect_message(
-    rpwf_grid_gen_(
-      xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random,
-      size = grid_size
-    ),
-    regexp = "colsample"
-  )
-
-  xgb_grid <- rpwf_grid_gen_(
-    xgb_spec, dummy_test_rec, xgb_rename, dials::grid_random,
-    size = grid_size
-  )
-
-  expect_true(all(dplyr::between(range(xgb_grid$colsample_bytree), 0, 1)))
-
-  #### Linear model
-  glm_spec <- parsnip::logistic_reg(penalty = hardhat::tune()) |>
-    parsnip::set_engine("glmnet") |>
-    parsnip::set_mode("classification") |>
-    set_py_engine("sklearn.linear_model", "LogisticRegression",
-      args = list(penalty = "elasticnet")
-    )
-
-  glm_rename <-
-    jsonlite::toJSON(list(
-      "penalty" = "C"
-    ), auto_unbox = TRUE) |>
-    rpwf_grid_rename_()
-
-  glm_param <- rpwf_finalize_params_(glm_spec, dummy_test_rec)
-  glm_grid_1 <- dials::grid_regular(glm_param$pars, levels = 10)
-  glm_grid_2 <- rpwf_transform_grid_(glm_grid_1, glm_rename, glm_param$n_predictors)
-  expect_equal(glm_grid_1$penalty, 1 / (glm_grid_2$C))
 })
 
 test_that("export() method of the RGrid class", {
@@ -508,3 +520,46 @@ test_that("export() method won't add repeated rows class", {
   # and the path to the file would be the same
   expect_equal(rgrid_obj_repeated$path, as.character(r_grid_obj$path))
 })
+
+test_that("set_attrs()", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir)
+  dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
+
+  TrainDf <- TrainDf$new(dummy_rec, db_con)
+  expect_true(!is.null(TrainDf$export_query))
+  TrainDf$export()$set_attrs()
+  expect_true(is.null(TrainDf$export_query))
+})
+
+test_that("set_attr() RGrid", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir)
+
+  dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
+  grid_size <- 10
+
+  #### Linear model
+  glm_spec <- parsnip::logistic_reg(penalty = hardhat::tune()) |>
+    parsnip::set_engine("glmnet") |>
+    parsnip::set_mode("classification") |>
+    set_py_engine("sklearn.linear_model", "LogisticRegression",
+                  args = list(penalty = "elasticnet")
+    )
+
+  glm_rename <-
+    jsonlite::toJSON(list(
+      "penalty" = "C"
+    ), auto_unbox = TRUE) |>
+    rpwf_grid_rename_()
+
+  glm_param <- rpwf_finalize_params_(glm_spec, dummy_test_rec)
+  glm_grid_1 <- dials::grid_regular(glm_param$pars, levels = 10)
+  glm_grid_2 <- rpwf_transform_grid_(glm_grid_1, glm_rename, glm_param$n_predictors)
+
+  grid_R6 <- RGrid$new(glm_grid_2, db_con)
+  expect_true(!is.null(grid_R6$export_query))
+  grid_R6$export()$set_attrs()
+  expect_null(grid_R6$export_query)
+})
+

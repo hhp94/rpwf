@@ -53,7 +53,7 @@ test_that("rpwf_tag_recipe()", {
   expect_equal(r$recipe_tag, "test tag")
 })
 
-test_that("rpwf_add_model_info_()", {
+test_that("rpwf_add_model_param_()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
@@ -66,7 +66,7 @@ test_that("rpwf_add_model_info_()", {
     list("neg_log_loss")
   )
 
-  t1 <- rpwf_add_model_info_(t, db_con$con)
+  t1 <- rpwf_add_model_param_(t, db_con$con)
   # print(t1)
   expect_true(!all(c("py_base_learner_args", "model_mode") %in% names(t)))
   expect_true(all(c("py_base_learner_args", "model_mode") %in% names(t1)))
@@ -85,14 +85,14 @@ test_that("rpwf_add_desc_()", {
     list("neg_log_loss")
   )
 
-  t1 <- rpwf_add_model_info_(t, db_con$con)
+  t1 <- rpwf_add_model_param_(t, db_con$con)
   expect_true(all(!c("model_tag", "recipe_tag") %in% names(t1)))
   t2 <- rpwf_add_desc_(t1)
 
   expect_true(all(c("model_tag", "recipe_tag") %in% names(t2)))
 })
 
-test_that("rpwf_add_grid_param_()", {
+test_that("rpwf_add_grid_()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
@@ -109,20 +109,20 @@ test_that("rpwf_add_grid_param_()", {
     list("neg_log_loss")
   )
 
-  t1 <- rpwf_add_model_info_(t, db_con$con)
+  t1 <- rpwf_add_model_param_(t, db_con$con)
   t2 <- rpwf_add_desc_(t1)
 
   # Test if a custom grid generation function works
-  t3a <- rpwf_add_grid_param_(t2, custom_grid, seed = 1234)
+  t3a <- rpwf_add_grid_(t2, custom_grid, seed = 1234)
   expect_equal(t3a$grids[[1]], mtcars)
 
   # Test if using NULL as the grid function would generate no grids
-  t3b <- rpwf_add_grid_param_(t2, NULL, seed = 1234)
+  t3b <- rpwf_add_grid_(t2, NULL, seed = 1234)
   expect_true(is.na(t3b$grids[[1]]))
 
   # Test if using an appropriate grid function would generate a grid with
   # correct names renamed
-  t3c <- rpwf_add_grid_param_(t2, dials::grid_random, seed = 1234, size = 5)
+  t3c <- rpwf_add_grid_(t2, dials::grid_random, seed = 1234, size = 5)
   renamed_cols <- c(
     "colsample_bytree",
     "min_child_weight",
@@ -132,6 +132,46 @@ test_that("rpwf_add_grid_param_()", {
     "subsample"
   )
   expect_true(all(sort(names(t3c$grids[[1]])) == sort(renamed_cols)))
+})
+
+test_that("rpwf_augment()", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
+  # Add a train df
+  t <- rpwf_workflow_set(
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
+    list(set_py_engine(
+      xgb_model_spec_(),
+      "xgboost", "XGBClassifier"
+    )),
+    list("neg_log_loss")
+  )
+  expect_error(rpwf_augment(t, db_con, .grid_fun = "INVALID"))
+  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
+  # print(t1)
+  expect_equal(nrow(t1), 1)
+})
+
+test_that("rpwf_Rgrid_R6_(), rpwf_TrainDf_R6_", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
+
+  t <- rpwf_workflow_set(
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
+    list(set_py_engine(
+      xgb_model_spec_(),
+      "xgboost", "XGBClassifier"
+    )),
+    list("neg_log_loss")
+  )
+
+  t1 <- rpwf_add_model_param_(t, db_con$con)
+  t2 <- rpwf_add_desc_(t1)
+  t3 <- rpwf_add_grid_(t2, dials::grid_random, seed = 1234, size = 5)
+  t4 <- rpwf_Rgrid_R6_(t3, db_con) |>
+    rpwf_TrainDf_R6_(db_con)
+  expect_true("Rgrid" %in% names(t4))
+  expect_true("TrainDf" %in% names(t4))
 })
 
 test_that("rpwf_write_grid()", {
@@ -147,19 +187,18 @@ test_that("rpwf_write_grid()", {
     list("neg_log_loss")
   )
 
-  t1 <- rpwf_add_model_info_(t, db_con$con)
+  t1 <- rpwf_add_model_param_(t, db_con$con)
   t2 <- rpwf_add_desc_(t1)
-  t3 <- rpwf_add_grid_param_(t2, dials::grid_random, seed = 1234, size = 5)
-  expect_true(!"db.SQLite_grid" %in% (list.files(paste(tmp_dir, "rpwfDb", sep = "/"))))
+  t3 <- rpwf_add_grid_(t2, dials::grid_random, seed = 1234, size = 5)
+  t4 <- rpwf_Rgrid_R6_(t3, db_con) |>
+    rpwf_TrainDf_R6_(db_con)
 
-  rpwf_write_grid(
-    rpwf_add_grid_param_(t2, NULL, seed = 1234), # Not use grid
-    db_con
-  )
+  # Test if writing NA grid doesn't export anything
+  rpwf_write_grid(rpwf_Rgrid_R6_(rpwf_add_grid_(t2, NULL, seed = 1234), db_con))
   expect_true("db.SQLite_grid" %in% (list.files(paste(tmp_dir, "rpwfDb", sep = "/"))))
 
-  rpwf_write_grid(t3, db_con)
-
+  # Write an actual grid
+  rpwf_write_grid(t4)
   expect_equal(length(list.files(
     paste(tmp_dir, "rpwfDb", "db.SQLite_grid", sep = "/")
   )), 1)
@@ -171,9 +210,9 @@ test_that("rpwf_write_df()", {
 
   tmp_func <- function(obj) {
     obj |>
-      rpwf_add_model_info_(db_con$con) |>
+      rpwf_add_model_param_(db_con$con) |>
       rpwf_add_desc_() |>
-      rpwf_add_grid_param_(dials::grid_random, seed = 1234, size = 5)
+      rpwf_add_grid_(dials::grid_random, seed = 1234, size = 5)
   }
   # Add a train df
   t <- rpwf_workflow_set(
@@ -194,10 +233,10 @@ test_that("rpwf_write_df()", {
     )),
     list("neg_log_loss")
   ) |>
-    tmp_func()
+    tmp_func() |>
+    rpwf_TrainDf_R6_(db_con)
 
-  expect_true(!"db.SQLite_df" %in% list.files(paste(tmp_dir, "rpwfDb", sep = "/")))
-  rpwf_write_df(t1, db_con, 1234)
+  rpwf_write_df(t1, 1234)
   expect_true("db.SQLite_df" %in% list.files(paste(tmp_dir, "rpwfDb", sep = "/")))
   expect_equal(length(list.files(paste(tmp_dir, "rpwfDb", "db.SQLite_df", sep = "/"))), 1)
 })
@@ -214,10 +253,10 @@ test_that("rpwf_add_random_state_()", {
     )),
     list("neg_log_loss")
   ) |>
-    rpwf_add_model_info_(db_con$con) |>
+    rpwf_add_model_param_(db_con$con) |>
     rpwf_add_desc_() |>
-    rpwf_add_grid_param_(dials::grid_random, seed = 1234, size = 5) |>
-    rpwf_add_model_type_(db_con$con)
+    rpwf_add_grid_(dials::grid_random, seed = 1234, size = 5) |>
+    rpwf_add_py_model_(db_con$con)
 
   # print(t)
   t1a <- rpwf_add_random_state_(t, range = c(1, 5000), seed = 1234)
@@ -225,23 +264,6 @@ test_that("rpwf_add_random_state_()", {
   # Check if seeding works
   t1b <- rpwf_add_random_state_(t, range = c(1, 5000), seed = 1234)
   expect_equal(t1a$random_state, t1b$random_state)
-})
-
-test_that("rpwf_augment()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir = tmp_dir)
-  # Add a train df
-  t <- rpwf_workflow_set(
-    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
-    list(set_py_engine(
-      xgb_model_spec_(),
-      "xgboost", "XGBClassifier"
-    )),
-    list("neg_log_loss")
-  )
-  expect_error(rpwf_augment(t, db_con, .grid_fun = "INVALID"))
-  t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
-  expect_equal(nrow(t1), 1)
 })
 
 test_that("rpwf_parquet_id_() part 1", {
@@ -262,7 +284,7 @@ test_that("rpwf_parquet_id_() part 1", {
   ) |>
     rpwf_augment(db_con, dials::grid_latin_hypercube)
 
-  rpwf_write_grid(t, db_con)
+  rpwf_write_grid(t)
   expect_error(rpwf_parquet_id_(t, db_con),
     regexp = "df"
   )
@@ -286,12 +308,12 @@ test_that("rpwf_parquet_id_() part 2", {
   ) |>
     rpwf_augment(db_con, dials::grid_latin_hypercube)
 
-  rpwf_write_df(t, db_con)
+  rpwf_write_df(t)
   expect_error(rpwf_parquet_id_(t, db_con),
     regexp = "grid"
   )
 
-  rpwf_write_grid(t, db_con)
+  rpwf_write_grid(t)
   expect_true(all(c("grid_id", "df_id") %in% names(rpwf_parquet_id_(t, db_con))))
 })
 
@@ -313,8 +335,8 @@ test_that("rpwf_export_wfs()", {
   ) |>
     rpwf_augment(db_con, dials::grid_latin_hypercube)
 
-  rpwf_write_grid(t, db_con)
-  rpwf_write_df(t, db_con, 1234)
+  rpwf_write_grid(t)
+  rpwf_write_df(t)
 
   before <- query_wflow_tbl()
 

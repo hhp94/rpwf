@@ -120,21 +120,22 @@ BaseEx <- R6::R6Class(
     #' @param type (`character()`)\cr
     #' Used in message
     set_df = function(val, type) {
+      stopifnot("Wrap object around rlang::expr" = rlang::is_expression(val))
       withr::local_dir(new = self$proj_root_path)
       # find_path_in_db must be run first
       if (nrow(self$queried_path) == 0L) {
         # If query yields 0 rows, then create df
         # message(glue::glue("Preparing new {type}..."))
-        self$df <- val
+        self$df <- eval(val)
       } else if (!is.na(self$queried_path$path) &
         !file.exists(self$queried_path$path)) {
         # If parquet file not found but is in found in database
         # message(glue::glue("Metadata found, but new {type} is needed..."))
-        self$df <- val
+        self$df <- eval(val)
       } # Otherwise no transformation needed, leave `self$df` as NULL
-      else {
-        # message(glue::glue("{type} parquet found in {self$db_folder}"))
-      }
+      # else {
+      #   # message(glue::glue("{type} parquet found in {self$db_folder}"))
+      # }
     },
 
     #' @description
@@ -171,6 +172,7 @@ BaseEx <- R6::R6Class(
     #' file.
     export = function() {
       self$export_db()$export_parquet()
+      invisible(self)
     },
 
     #' @description
@@ -302,7 +304,7 @@ TrainDf <- R6::R6Class(
       self$set_idx_col() # set index column for pandas
       self$set_target_col() # set target column for pandas
       self$set_predictors() # get the predictors
-      self$set_df(recipes::juice(self$prepped), "transformed data")
+      self$set_df(rlang::expr(recipes::juice(self$prepped)), "transformed data")
       self$export_prep(
         new_path = glue::glue(
           "rpwfDb", "{self$db_folder}", "{self$hash}.df.parquet",
@@ -316,6 +318,7 @@ TrainDf <- R6::R6Class(
           ), .con = self$con
         )
       ) # Get the path for parquet file
+      invisible(self)
     },
 
     #' @description
@@ -424,7 +427,7 @@ RGrid <- R6::R6Class(
           .con = self$con
         )
       ))
-      self$set_df(self$grid_obj, "hyper param grid")
+      self$set_df(rlang::expr(self$grid_obj), "hyper param grid")
       self$export_prep(
         new_path = glue::glue(
           "rpwfDb", "{self$db_folder}", "{self$hash}.grid.parquet",
@@ -436,6 +439,7 @@ RGrid <- R6::R6Class(
           .con = self$con
         ) # Get the path for parquet file
       )
+      invisible(self)
     }
   )
 )

@@ -1,4 +1,6 @@
 test_that("rpwf_df_set()", {
+  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
+  db_con <- dummy_con_(tmp_dir = tmp_dir)
   df <- rpwf_sim_()$train
 
   r <- recipes::recipe(target ~ ., data = df) |>
@@ -10,8 +12,9 @@ test_that("rpwf_df_set()", {
     recipes::step_normalize(recipes::all_numeric_predictors()) |>
     rpwf_tag_recipe("normalize")
 
-  df <- rpwf_df_set(r, r2, r3)
+  df <- rpwf_df_set(r, r2, r3, db_con = db_con)
   print(df)
+  expect_equal(nrow(df), 2L)
 })
 
 test_that("rpwf_write_df()", {
@@ -29,8 +32,7 @@ test_that("rpwf_write_df()", {
 
   df <- rpwf_df_set(r, r3)
   expect_equal(length(list.files(paste(folder, sep = "/"))), 1L)
-  # rpwf_write_grid(df, db_con)
-  rpwf_write_df(df, db_con)
+  rpwf_write_df(df)
   expect_true("db.SQLite_df" %in% list.files(paste(folder, sep = "/")))
   expect_equal(length(list.files(paste(folder, "db.SQLite_df", sep = "/"))), 2)
   expect_equal(nrow(rpwf_parquet_id_(df, db_con)), 2L)
