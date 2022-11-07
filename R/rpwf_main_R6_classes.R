@@ -286,6 +286,13 @@ TrainDf <- R6::R6Class(
       self$set_hash(rlang::hash(self$prepped)) # Set the hash of the prepped obj
       self$set_db_folder(glue::glue("{self$db_name}_df")) # Set the root folder
       self$create_folder() # Create the folder if needed
+      self$set_attrs()
+    },
+
+    #' @description
+    #' Refresh the attributes using the current hash. Needed to be run because
+    #' it updates the attributes with information from the Db
+    set_attrs = function() {
       # use the hash of the prepped to find the path
       self$find_path_in_db(self$exec_query(
         glue::glue_sql("SELECT df_path AS path FROM df_tbl WHERE df_hash = ?",
@@ -384,6 +391,10 @@ RGrid <- R6::R6Class(
   "RGrid",
   inherit = BaseEx,
   public = list(
+    #' @field grid_obj (`character()`)\cr
+    #' [rpwf_grid_gen_()] performs necessary clean ups before the grid can
+    #' be used in python
+    grid_obj = NULL,
     #' @description
     #' Create a new instance of the RGrid class. These are grids made by
     #' functions such as `dials::grid_latin_hypercube` and `dials::grid_regular`.
@@ -395,16 +406,25 @@ RGrid <- R6::R6Class(
     #' a [DbCon] object.
     initialize = function(grid_obj, db_con) {
       super$initialize(db_con) # Init from the super class
+      self$grid_obj <- grid_obj
       self$set_hash(rlang::hash(grid_obj)) # hash the grid
       self$set_db_folder(glue::glue("{self$db_name}_grid")) # Set the root folder to "rpwf_grids"
       self$create_folder() # Create the folder if needed
+      self$set_attrs()
+    },
+
+    #' @description
+    #' Refresh the attributes using the current hash. Needed to be run because
+    #' tt updates the attributes with information from the Db
+    set_attrs = function() {
+      # use the hash of the prepped to find the path
       self$find_path_in_db(self$exec_query(
         glue::glue_sql( # hash is passed into ?
           "SELECT grid_path AS path FROM r_grid_tbl WHERE grid_hash = ?",
           .con = self$con
         )
       ))
-      self$set_df(grid_obj, "hyper param grid")
+      self$set_df(self$grid_obj, "hyper param grid")
       self$export_prep(
         new_path = glue::glue(
           "rpwfDb", "{self$db_folder}", "{self$hash}.grid.parquet",
