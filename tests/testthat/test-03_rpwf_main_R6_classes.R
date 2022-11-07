@@ -275,7 +275,7 @@ test_that("transformation of hyper param", {
     parsnip::set_engine("xgboost") |>
     parsnip::set_mode("classification") |>
     set_py_engine("xgboost", "XGBClassifier",
-                  args = list(eval_metric = "logloss", silent = TRUE)
+      args = list(eval_metric = "logloss", silent = TRUE)
     )
 
   xgb_rename <-
@@ -304,7 +304,7 @@ test_that("transformation of hyper param", {
     parsnip::set_engine("glmnet") |>
     parsnip::set_mode("classification") |>
     set_py_engine("sklearn.linear_model", "LogisticRegression",
-                  args = list(penalty = "elasticnet")
+      args = list(penalty = "elasticnet")
     )
 
   glm_rename <-
@@ -544,7 +544,7 @@ test_that("set_attr() RGrid", {
     parsnip::set_engine("glmnet") |>
     parsnip::set_mode("classification") |>
     set_py_engine("sklearn.linear_model", "LogisticRegression",
-                  args = list(penalty = "elasticnet")
+      args = list(penalty = "elasticnet")
     )
 
   glm_rename <-
@@ -562,4 +562,3 @@ test_that("set_attr() RGrid", {
   grid_R6$export()$set_attrs()
   expect_null(grid_R6$export_query)
 })
-
