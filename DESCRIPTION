@@ -31,7 +31,10 @@ Imports:
     stats,
     tidyr,
     withr,
-    testthat
+    testthat,
+    tibble,
+    lifecycle,
+    cli
 Suggests: 
     covr,
     dm,

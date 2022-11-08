@@ -371,9 +371,9 @@ exported_wfs <- all_wfs |>
   rpwf_write_df(db_con)
 ```
 
-* Then finally, export the meta data into the database with `rpwf_export_wfs()`.  
+* Then finally, export the meta data into the database with `rpwf_export_db()`.  
 ```{r}
-rpwf_export_wfs(exported_wfs, db_con$con)
+rpwf_export_db(exported_wfs, db_con$con)
 ```
 
 ## Run the workflow in python

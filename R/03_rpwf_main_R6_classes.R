@@ -247,7 +247,7 @@ TrainDf <- R6::R6Class(
     #' @field prepped (`recipes::prep()`)\cr
     #' holds the prepped object.
     prepped = NULL,
-    #' @field term_info (`dplyr::tibble()`)\cr
+    #' @field term_info (`tibble::tibble()`)\cr
     #' the `self$prepped` object has the attribute `term_info` that has
     #' information of transformed variable before actually transforming the data.
     term_info = NULL,

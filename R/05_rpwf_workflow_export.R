@@ -15,16 +15,16 @@
 #' and costs.
 #' @export
 #' @examples
-#' d <- rpwf_sim_()$train
+#' d <- mtcars
+#' d$id <- seq_len(nrow(d))
 #' m1 <- parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
 #'   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
 #' r1 <- d |>
-#'   recipes::recipe(target ~ .) |>
-#'   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
+#'   recipes::recipe(vs ~ .) |>
 #'   # "pd.index" is the special column that used for indexing in pandas
-#'   recipes::update_role(.data$id, new_role = "pd.index")
+#'   recipes::update_role(id, new_role = "pd.index")
 #' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 #' wf
 rpwf_workflow_set <- function(preprocs, models, costs) {
@@ -34,18 +34,19 @@ rpwf_workflow_set <- function(preprocs, models, costs) {
     return(c)
   }
 
-  stopifnot("preproc accept list of recipes" = "recipe" == list_class_fns(preprocs))
-  stopifnot("models accept list of models" = "model_spec" %in% list_class_fns(models) &
-    !"recipe" %in% list_class_fns(models))
-  stopifnot("costs accept list of characters" = "character" %in% list_class_fns(costs))
+  stopifnot("preproc accept list of recipes" = "recipe" ==
+              list_class_fns(preprocs))
+  stopifnot("models accept list of models" = "model_spec" %in%
+              list_class_fns(models) & !"recipe" %in% list_class_fns(models))
+  stopifnot("costs accept list of characters" = "character" %in%
+              list_class_fns(costs))
 
   df <- tidyr::crossing(
     preprocs = unique(preprocs), models = unique(models), costs = unique(costs)
   )
 
   df$costs <- as.character(costs) # results is a list, this unlist that
-  class(df) <- append(class(df), "rpwf_workflow_set")
-  return(df)
+  return(new_rpwf_workflow_set(df))
 }
 
 # rpwf_tag_recipe() ----------------------------------------------------------
@@ -54,8 +55,8 @@ rpwf_workflow_set <- function(preprocs, models, costs) {
 #' Complicated workflow sets can become difficult to track. Add a tag to keep
 #' track of unique recipes.
 #'
-#' @param obj An [recipes::recipe()] object.
-#' @param tag Short description of recipe.
+#' @param obj [recipes::recipe()] object.
+#' @param tag Short string description of recipe.
 #'
 #' @return A tagged [recipes::recipe()] object. Accessible with `obj$recipe_tag`.
 #' @export
@@ -84,16 +85,16 @@ rpwf_tag_recipe <- function(obj, tag) {
 #' db_con <- rpwf_connect_db("db.SQLite", temp_dir)
 #'
 #' # Create a `workflow_set`
-#' d <- rpwf_sim_()$train
+#' d <- mtcars
+#' d$id <- seq_len(nrow(d))
 #' m1 <- parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
 #'   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
 #' r1 <- d |>
-#'   recipes::recipe(target ~ .) |>
-#'   recipes::step_dummy(.data$X3, one_hot = TRUE) |>
+#'   recipes::recipe(vs ~ .) |>
 #'   # "pd.index" is the special column that used for indexing in pandas
-#'   recipes::update_role(.data$id, new_role = "pd.index")
+#'   recipes::update_role(id, new_role = "pd.index")
 #' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 #'
 #' to_export <- wf |>
@@ -237,9 +238,9 @@ rpwf_export_fns_ <- function(required_cols) {
 #' # Before exporting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
 #' # After exporting
-#' rpwf_export_wfs(to_export, db_con)
+#' rpwf_export_db(to_export, db_con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
-rpwf_export_wfs <- rpwf_export_fns_(
+rpwf_export_db <- rpwf_export_fns_(
   c(
     "df_id",
     "grid_id",

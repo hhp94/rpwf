@@ -317,7 +317,7 @@ test_that("rpwf_parquet_id_() part 2", {
   expect_true(all(c("grid_id", "df_id") %in% names(rpwf_parquet_id_(t, db_con))))
 })
 
-test_that("rpwf_export_wfs()", {
+test_that("rpwf_export_db()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
   db_con <- dummy_con_(tmp_dir = tmp_dir)
 
@@ -341,10 +341,10 @@ test_that("rpwf_export_wfs()", {
   before <- query_wflow_tbl()
 
   expect_equal(nrow(before), 0) # before export, there would be no wflow
-  rpwf_export_wfs(t, db_con)
+  rpwf_export_db(t, db_con)
   after <- query_wflow_tbl() # after export, there would be 1 wflow
   expect_equal(nrow(after), 1)
-  rpwf_export_wfs(t, db_con)
+  rpwf_export_db(t, db_con)
   after1 <- query_wflow_tbl() # exporting the same wflow would not work
   expect_equal(nrow(after1), 1)
 })

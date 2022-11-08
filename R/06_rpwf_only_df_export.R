@@ -5,7 +5,7 @@
 #
 #   stopifnot("preproc accept recipes" = "recipe" == unique(sapply(preprocs, class)))
 #
-#   df <- dplyr::tibble(preprocs = unique(preprocs))
+#   df <- tibble::tibble(preprocs = unique(preprocs))
 #   df$recipe_tag <- sapply(df$preprocs, \(x) {
 #     x$recipe_tag
 #   })

@@ -1,5 +1,6 @@
 # c("arrow","DBI","dbplyr","dials","dplyr","glue","hardhat","jsonlite","parsnip",
-# "purrr","R6","recipes","rlang","RSQLite","stats","tidyr","withr", "kernlab")
+# "purrr","R6","recipes","rlang","RSQLite","stats","tidyr","withr", "kernlab",
+# "lifecycle", "cli")
 
 # c("covr", "dm", "here", "knitr", "rmarkdown", "testthat")
 
