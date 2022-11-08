@@ -5,7 +5,7 @@
 #' defined in R and Python. Won't update duplicated rows. Expand compatibility
 #' by adding values to this function.
 #'
-#' @inheritParams rpwf_dm
+#' @inheritParams rpwf_add_py_model
 #'
 #' @return Used for side effects.
 #' @noRd
@@ -14,7 +14,7 @@
 #' tmp_dir <- withr::local_tempdir()
 #' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' DBI::dbListTables(db_con$con)
-rpwf_db_init_values_ <- function(con) {
+rpwf_db_init_values_ <- function(db_con) {
   # Add a value for NA grid
   grid_tbl_query <-
     'INSERT INTO r_grid_tbl (grid_hash)
@@ -23,9 +23,9 @@ rpwf_db_init_values_ <- function(con) {
   message("Adding initial values to the database")
   ## Add stuff into the model_type_tbl
   ### 'sup_mod_df__' is generated in data-raw/supported_models.R
-  try(DBI::dbAppendTable(con, "model_type_tbl", sup_mod_df__), silent = TRUE)
+  try(DBI::dbAppendTable(db_con$con, "model_type_tbl", sup_mod_df__), silent = TRUE)
   ## Add the empty values for the r grid
-  try(DBI::dbExecute(con, grid_tbl_query), silent = TRUE)
+  try(DBI::dbExecute(db_con$con, grid_tbl_query), silent = TRUE)
 }
 
 # Wrapper for db creation -------------------------------------------------
@@ -36,7 +36,7 @@ rpwf_db_init_values_ <- function(con) {
 #' object and create the tables after creating a new `rpwfDb` folder and
 #' database specified by the `DbCon$new()` object.
 #'
-#' @inheritParams rpwf_dm
+#' @inheritParams rpwf_add_py_model
 #' @param schema output of [rpwf_schema()].
 #' @return Used for side effects.
 #' @noRd
@@ -45,14 +45,14 @@ rpwf_db_init_values_ <- function(con) {
 #' tmp_dir <- withr::local_tempdir()
 #' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' DBI::dbListTables(db_con$con)
-rpwf_db_init_ <- function(con, schema = rpwf_schema()) {
+rpwf_db_init_ <- function(db_con, schema = rpwf_schema()) {
   invisible( ### Create the data base
-    DbCreate$new(con = con, query = NULL)$
+    DbCreate$new(con = db_con$con, query = NULL)$
       run(schema$model_type_tbl)$
       run(schema$r_grid_tbl)$
       run(schema$df_tbl)$
       run(schema$wflow_tbl)$
       run(schema$wflow_result_tbl)
   )
-  rpwf_db_init_values_(con = con) ### Add some initial values
+  rpwf_db_init_values_(db_con) ### Add some initial values
 }

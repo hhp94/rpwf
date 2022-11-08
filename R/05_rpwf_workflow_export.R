@@ -70,41 +70,13 @@ rpwf_tag_recipe <- function(obj, tag) {
   return(obj)
 }
 
-#' Wrapper to Generate the Object to be Exported to the Database
-#'
-#' @param wflow_obj object created by the [rpwf_workflow_set()] function.
-#' @inheritParams rpwf_write_grid
-#' @inheritParams rpwf_grid_gen_
-#' @inheritParams rpwf_add_random_state_
-#'
-#' @return tibble with the columns necessary for exporting to db.
+#' @rdname rpwf_augment
 #' @export
-#' @examples
-#' # Create the database
-#' temp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", temp_dir)
-#'
-#' # Create a `workflow_set`
-#' d <- mtcars
-#' d$id <- seq_len(nrow(d))
-#' m1 <- parsnip::boost_tree() |>
-#'   parsnip::set_engine("xgboost") |>
-#'   parsnip::set_mode("classification") |>
-#'   set_py_engine(py_module = "xgboost", py_base_learner = "XGBClassifier")
-#' r1 <- d |>
-#'   recipes::recipe(vs ~ .) |>
-#'   # "pd.index" is the special column that used for indexing in pandas
-#'   recipes::update_role(id, new_role = "pd.index")
-#' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
-#'
-#' to_export <- wf |>
-#'   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10)
-#' list.files(paste0(temp_dir, "/rpwfDb"), recursive = TRUE) # Files are created
-rpwf_augment <- function(wflow_obj, db_con, .grid_fun = NULL,
-                         ..., range = c(1L, 5000L), seed = 1234L) {
+rpwf_augment.rpwf_workflow_set <- function(obj, db_con, .grid_fun = NULL,
+                                           ..., range = c(1L, 5000L), seed = 1234L) {
   py_module <- py_base_learner <- engine <- rename_fns <- model_mode <- NULL
   set.seed(seed)
-  wflow_obj |>
+  obj |>
     rpwf_add_model_param_(db_con$con) |>
     rpwf_add_desc_() |>
     rpwf_add_py_model_(db_con$con) |>
@@ -114,14 +86,6 @@ rpwf_augment <- function(wflow_obj, db_con, .grid_fun = NULL,
     rpwf_TrainDf_R6_(db_con) |>
     dplyr::select(-c(py_module, py_base_learner, engine, rename_fns, model_mode))
 }
-
-# rpwf_augment.default <- function(obj) {
-#   return(obj)
-# }
-#
-# rpwf_augment.rpwf_workflow_set <- function() {
-#
-# }
 
 # rpwf_write_<obj>() ----------------------------------------------------------
 #' Write the Hyper Param Grid Parquet File

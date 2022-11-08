@@ -4,9 +4,8 @@
 #'
 #' @description
 #' Create the "rpwfDb" folder in the provided root path and create a db if
-#' needed. Initialize with `db = DbCon$new(<db_name>, here::here())`.
+#' needed.
 #'
-#' @keywords internal
 #' @noRd
 DbCon <- R6::R6Class(
   "DbCon",
@@ -68,9 +67,8 @@ DbCon <- R6::R6Class(
 #'
 #' @description
 #' A R6 object that provides a shortcut to setting and executing a SQL query
-#' to create new tables in the database. Not meant to be called manually.
+#' to create new tables in the database.
 #'
-#' @keywords internal
 #' @noRd
 DbCreate <- R6::R6Class("DbCreate",
   public = list(
@@ -214,7 +212,7 @@ rpwf_schema <- function() {
 }
 
 # Add models to the db ---------------------------------------------------------
-#' Add scikit-learn Models to database
+#' Add scikit-learn Models to Database
 #'
 #' Use this function to add or update the scikit-learn model using the module (i.e.,
 #' "xgboost"), the base learner in scikit-learn (i.e., "XGBClassifier"),
@@ -222,16 +220,17 @@ rpwf_schema <- function() {
 #' parameter names (i.e., "mtry" in `{parsnip}` is "colsample_bytree"), and
 #' model mode (i.e., "classification")
 #'
-#' @inheritParams rpwf_dm
+#' @param db_con (`DBI::dbConnect()`)\cr
+#' An [rpwf_connect_db()] object.
 #' @param py_module the module in scikit-learn, i.e., "sklearn.ensemble".
 #' @param py_base_learner the base learner in scikit-learn, i.e.,
 #' "RandomForestClassifier".
 #' @param r_engine the engine in parsnip, i.e., "ranger" or "rpart".
 #' @param hyper_par_rename a named list of equivalent hyper parameters, i.e.,
-#' `list(cost_complexity = "ccp_alpha")`
-#' @param model_mode classification or regression
+#' `list(cost_complexity = "ccp_alpha")`.
+#' @param model_mode "classification" or "regression".
 #'
-#' @return Use for side effect to update DB, not returning any values
+#' @return Use for side effect to update DB, not returning any values.
 #' @export
 #'
 #' @examples
@@ -241,7 +240,7 @@ rpwf_schema <- function() {
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 #' rpwf_add_py_model(
-#'   db_con$con,
+#'   db_con,
 #'   "sklearn.ensemble",
 #'   "RandomForestClassifier",
 #'   "rpart",
@@ -253,19 +252,19 @@ rpwf_schema <- function() {
 #'   "classification"
 #' )
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # after adding
-rpwf_add_py_model <- function(con,
+rpwf_add_py_model <- function(db_con,
                               py_module,
                               py_base_learner,
                               r_engine,
                               hyper_par_rename,
                               model_mode) {
   query_results <- DBI::dbGetQuery(
-    con,
+    db_con$con,
     glue::glue_sql(
       "SELECT model_type_id
       FROM model_type_tbl
       WHERE py_module = ? AND py_base_learner = ? AND r_engine = ? AND model_mode = ?;",
-      .con = con
+      .con = db_con$con
     ),
     params = list(py_module, py_base_learner, r_engine, model_mode)
   )
@@ -273,7 +272,7 @@ rpwf_add_py_model <- function(con,
   rename_json <- as.character(jsonlite::toJSON(hyper_par_rename))
   if (nrow(query_results) == 0) {
     DBI::dbExecute(
-      con,
+      db_con$con,
       glue::glue_sql(
         "INSERT INTO model_type_tbl (
           py_module, py_base_learner, r_engine, hyper_par_rename, model_mode
@@ -286,18 +285,18 @@ rpwf_add_py_model <- function(con,
           rename_json,
           model_mode
         ),
-        .con = con
+        .con = db_con$con
       )
     )
   } else if (nrow(query_results) == 1) {
     DBI::dbExecute(
-      con,
+      db_con$con,
       glue::glue_sql(
         "UPDATE model_type_tbl
         SET py_module = ?, py_base_learner = ?, r_engine = ?,
             hyper_par_rename = ?, model_mode = ?
         WHERE model_type_id = ?;",
-        .con = con
+        .con = db_con$con
       ),
       param = list(
         py_module, py_base_learner, r_engine, rename_json, model_mode,
@@ -329,6 +328,6 @@ rpwf_add_py_model <- function(con,
 #' db_con$proj_root_path
 rpwf_connect_db <- function(db_name, proj_root_path) {
   db_con <- DbCon$new(db_name = db_name, proj_root_path = proj_root_path)
-  rpwf_db_init_(db_con$con, rpwf_schema())
+  rpwf_db_init_(db_con, rpwf_schema())
   return(db_con)
 }

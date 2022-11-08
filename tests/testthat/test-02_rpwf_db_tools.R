@@ -5,7 +5,7 @@ test_that("id_col_switch_()", {
 
 test_that("rpwf_db_del_wflow()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir = tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   query_wflow_tbl <- function() {
     DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
@@ -26,7 +26,7 @@ test_that("rpwf_db_del_wflow()", {
   expect_equal(nrow(query_wflow_tbl()), 1)
 
   # delete from wflow
-  rpwf_db_del_wflow(1, db_con$con)
+  rpwf_db_del_wflow(1, db_con)
   expect_equal(nrow(query_wflow_tbl()), 0)
 })
 

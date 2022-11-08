@@ -1,8 +1,8 @@
-#' Delete Exported Workflows
+#' Delete Exported Workflows and Associated Files
 #'
-#' This function specifically just deletes the workflows from the `wflow_tbl`.
+#' This function specifically deletes the workflows from the `wflow_tbl`.
 #'
-#' @inheritParams rpwf_dm
+#' @inheritParams rpwf_add_py_model
 #' @param id numeric vector of workflow ids to be removed.
 #'
 #' @return Called for the side effect.
@@ -12,12 +12,38 @@
 #' # Delete workflows with id from 1 to 99 of the database defined by `con`
 #' tmp_dir <- withr::local_tempdir()
 #' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-#' rpwf_db_del_wflow(1:99, db_con$con)
-rpwf_db_del_wflow <- function(id, con) {
+#' rpwf_db_del_wflow(1:99, db_con)
+rpwf_db_del_wflow <- function(id, db_con, delete_files = FALSE) {
+  if(delete_files) {
+    query_list <- list(
+      grid = "SELECT r.grid_path FROM wflow_tbl AS w
+              INNER JOIN r_grid_tbl AS r ON w.grid_id = r.grid_id;",
+      df = "SELECT d.df_path FROM wflow_tbl AS w
+            INNER JOIN df_tbl AS d ON w.df_id = d.df_id;",
+      results = "SELECT wr.result_path, wr.model_path FROM wflow_tbl AS w
+                 INNER JOIN wflow_result_tbl AS wr ON w.wflow_id = wr.wflow_id;"
+    )
+
+    unlink_fns <- function(query, db_con) {
+      paths <- DBI::dbGetQuery(db_con$con, query) |>
+        unlist() |>
+        purrr::reduce(c) |>
+        unique() |>
+        na.omit()
+      if (length(paths) == 0) {
+        return(NULL)
+      } else {
+        unlink(paste(db_con$proj_root_path, paths, sep = "/"))
+      }
+    }
+
+    purrr::walk(query_list, unlink_fns, db_con = db_con)
+  }
+
   try(DBI::dbExecute(
     conn = con,
     glue::glue_sql("DELETE from wflow_tbl WHERE wflow_id IN ({ids*})",
-      ids = id, .con = con
+      ids = id, .con = db_con$con
     )
   ))
 }
@@ -30,7 +56,7 @@ rpwf_db_del_wflow <- function(id, con) {
 #' @param tbls vector of character of table names, i.e., "df_tbl",
 #' "model_type_tbl", "r_grid_tbl", "r_grid_tbl", "wflow_result_tbl".
 #' @param id vector of ids to be deleted from a particular table.
-#' @inheritParams rpwf_dm
+#' @inheritParams rpwf_add_py_model
 #'
 #' @return Called for the side effect.
 #' @export
@@ -40,17 +66,16 @@ rpwf_db_del_wflow <- function(id, con) {
 #' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' # Before deleting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
-#' rpwf_db_del_entry("model_type_tbl", 1, db_con$con)
+#' rpwf_db_del_entry("model_type_tbl", 1, db_con)
 #' # After deleting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
-rpwf_db_del_entry <- function(tbls, id, con) {
+rpwf_db_del_entry <- function(tbls, id, db_con) {
   for (tbl in tbls) {
     id_col <- id_col_switch_(tbl)
     query <- glue::glue_sql("DELETE from {`tbl`} WHERE {`id_col`} IN ({ids*})",
-      ids = id, .con = con
+      ids = id, .con = db_con$con
     )
-    message(query)
-    try(DBI::dbExecute(conn = con, query))
+    try(DBI::dbExecute(conn = db_con$con, query))
   }
 }
 
@@ -60,7 +85,7 @@ rpwf_db_del_entry <- function(tbls, id, con) {
 #' already added. Other models can be added with [rpwf_add_py_model()]. This
 #' functions shows the models currently in the database.
 #'
-#' @inheritParams rpwf_dm
+#' @inheritParams rpwf_add_py_model
 #'
 #' @return a data.frame of models available in the database.
 #' @export
@@ -68,10 +93,10 @@ rpwf_db_del_entry <- function(tbls, id, con) {
 #' @examples
 #' tmp_dir <- withr::local_tempdir()
 #' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-#' rpwf_avail_models(db_con$con)
-rpwf_avail_models <- function(con) {
+#' rpwf_avail_models(db_con)
+rpwf_avail_models <- function(db_con) {
   DBI::dbGetQuery(
-    con,
+    db_con$con,
     "SELECT py_module, py_base_learner, r_engine, model_mode FROM model_type_tbl"
   )
 }
@@ -79,9 +104,9 @@ rpwf_avail_models <- function(con) {
 #' Get Results from Finished workflows
 #'
 #' Wrapper for an inner join between the `wflow_tbl` and `wflow_result_tbl` and
-#' invoke [readr::read_csv()] to read in the results.
+#' invoke [utils::read.csv()] to read in the results.
 #'
-#' @inheritParams rpwf_write_grid
+#' @inheritParams rpwf_add_py_model
 #' @param import_csv whether to read in the results of the workflow.
 #'
 #' @return A tibble with the results stored in the fit_results column

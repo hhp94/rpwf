@@ -2,23 +2,7 @@ test_that("Can create a connection and create SQL tables", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
 
   db_con <- DbCon$new("db.SQLite", tmp_dir)
-  rpwf_db_init_(db_con$con, rpwf_schema())
-
-  created_tables <- sort(DBI::dbListTables(db_con$con))
-  required_tables <- sort(names(rpwf_schema()))
-
-  # Folder is created
-  expect_true(dir.exists(paste(tmp_dir, "rpwfDb", sep = "/")))
-  # Connection is valid
-  expect_true(DBI::dbIsValid(db_con$con))
-  # All tables are created
-  expect_true(all(created_tables == required_tables))
-})
-
-test_that("Can create a connection and create SQL tables", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- DbCon$new("db.SQLite", tmp_dir)
-  rpwf_db_init_(db_con$con, rpwf_schema())
+  rpwf_db_init_(db_con, rpwf_schema())
 
   created_tables <- sort(DBI::dbListTables(db_con$con))
   required_tables <- sort(names(rpwf_schema()))
@@ -33,7 +17,8 @@ test_that("Can create a connection and create SQL tables", {
 
 test_that("Duplicated values of model_type_tbl are ignored", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- DbCon$new("db.SQLite", tmp_dir)
+  rpwf_db_init_(db_con, rpwf_schema())
 
   before <- sapply(
     c("model_type_tbl", "r_grid_tbl"),
@@ -42,7 +27,7 @@ test_that("Duplicated values of model_type_tbl are ignored", {
     }
   )
   # Try to add repeated values
-  rpwf_db_init_values_(db_con$con)
+  rpwf_db_init_values_(db_con)
   after <- sapply(
     c("model_type_tbl", "r_grid_tbl"),
     \(x){
@@ -70,13 +55,12 @@ test_that("Can create a connection and create SQL tables", {
 
 test_that("Add additional models with rpwf_add_py_model()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-
   db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   DBI::dbListTables(db_con$con)
   before <- DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
   rpwf_add_py_model(
-    db_con$con,
+    db_con,
     "sklearn.ensemble",
     "RandomForestClassifier",
     "rpart",
@@ -95,7 +79,7 @@ test_that("Add additional models with rpwf_add_py_model()", {
 
   # Try updating
   rpwf_add_py_model(
-    db_con$con,
+    db_con,
     "sklearn.ensemble",
     "RandomForestClassifier",
     "rpart",

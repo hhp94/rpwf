@@ -2,9 +2,7 @@
 #'
 #' Working with a `{dm}` object can make life easier than writing manual queries
 #'
-#' @param con (`DBI::dbConnect()`)\cr
-#' a [DBI::dbConnect()] object, created by [DbCon], access with the `$con` method.
-#' See examples.
+
 #'
 #' @return `{dm}` object of the created schema.
 #' @export
@@ -12,17 +10,17 @@
 #' @examples
 #' tmp_dir <- withr::local_tempdir()
 #' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-#' dm_obj <- rpwf_dm(db_con$con)
+#' dm_obj <- rpwf_dm(db_con)
 #' dm_obj
 #' # dm_obj |> dm::dm_draw()
-rpwf_dm <- function(con) {
+rpwf_dm <- function(db_con) {
   model_type_tbl <- model_type_id <- r_grid_tbl <- grid_id <- df_tbl <- NULL
   df_id <- wflow_tbl <- wflow_id <- wflow_result_tbl <- NULL
 
   if (!rlang::is_installed("dm")) {
     stop("dm package is required for this function")
   }
-  dm::dm_from_con(con, learn_keys = FALSE) |>
+  dm::dm_from_con(db_con$con, learn_keys = FALSE) |>
     dm::dm_add_pk(model_type_tbl, model_type_id) |>
     dm::dm_add_pk(r_grid_tbl, grid_id) |>
     dm::dm_add_pk(df_tbl, df_id) |>

@@ -92,17 +92,3 @@ dummy_recipe_ <- function(sim_dat, type = "train") {
     )
   }
 }
-
-#' Generate Temporary Database and Connection
-#'
-#' Meant to be called in a `withr::local_tempdir()` environment of a test.
-#'
-#' @param tmp_dir tmp_dir path.
-#'
-#' @return a [DBI::dbConnect()] object.
-#' @noRd
-dummy_con_ <- function(tmp_dir) {
-  DbCon_obj <- DbCon$new("db.SQLite", tmp_dir)
-  rpwf_db_init_(DbCon_obj$con, rpwf_schema())
-  return(DbCon_obj)
-}
