@@ -73,7 +73,7 @@ rpwf_add_model_param_ <- function(obj, db_con) {
   hyper_par_rename <- rpwf_query_(
     query = "SELECT hyper_par_rename FROM model_type_tbl WHERE
     py_module = ? AND py_base_learner = ? AND r_engine = ?; ",
-    con = con,
+    con = db_con$con,
     val1 = rpwf$py_module,
     val2 = rpwf$py_base_learner,
     val3 = rpwf$engine
@@ -204,11 +204,10 @@ rpwf_add_grid_ <- function(obj, .grid_fun = NULL, seed, ...) {
 #' function is reading from the database and only generate data as needed,
 #' running this function in parallel is not recommended.
 #'
-#' @param obj a [rpwf_workflow_set()] object.
-#' @inheritParams rpwf_add_py_model
+#' @inheritParams rpwf_export_db
 #'
 #' @return A tibble with Rgrid objects added.
-#' @keywords internal
+#' @noRd
 rpwf_Rgrid_R6_ <- function(obj, db_con) {
   obj$Rgrid <- lapply(obj$grids, \(x) {
     RGrid$new(x, db_con)
@@ -224,7 +223,7 @@ rpwf_Rgrid_R6_ <- function(obj, db_con) {
 #' database and only generating data as needed, running this function in parallel
 #' is not recommended.
 #'
-#' @inheritParams rpwf_Rgrid_R6_
+#' @inheritParams rpwf_export_db
 #'
 #' @return A tibble with Rgrid objects added.
 #' @noRd
@@ -235,19 +234,28 @@ rpwf_TrainDf_R6_ <- function(obj, db_con) {
   return(obj)
 }
 
-#' Add Grid Id and Df Id to workflow/data set
+
+#' Recheck if file exists
 #'
-#' @inheritParams rpwf_Rgrid_R6_
+#' @param R6_obj TrainDf or RGrid
+#' @inheritParams rpwf_add_py_model
 #'
-#' @return A tibble with df_id and also grid_id added.
+#' @return Vector of TRUE/FALSE for files exists or not.
+#'
 #' @noRd
-rpwf_parquet_id_ <- function(obj, db_con) {
-  path_chk_ <- function(R6_obj, root = db_con$proj_root_path) {
-    sapply(R6_obj, \(x) {
-      file.exists(paste(root, x$path, sep = "/"))
-    })
-  }
-  #### Get grid id
+path_chk_ <- function(R6_obj, db_con) {
+  sapply(R6_obj, \(x) {
+    file.exists(paste(db_con$proj_root_path, x$path, sep = "/"))
+  })
+}
+
+#' Add Grid Id to workflow/data set
+#'
+#' @inheritParams rpwf_export_db
+#'
+#' @return A tibble with grid_id added.
+#' @noRd
+rpwf_Rgrid_R6_id_ <- function(obj, db_con) {
   grid_query <- rpwf_query_(
     query = "SELECT grid_id FROM r_grid_tbl WHERE grid_hash = ?",
     con = db_con$con,
@@ -257,11 +265,19 @@ rpwf_parquet_id_ <- function(obj, db_con) {
   )
   stopifnot("grid id not found, `rpwf_write_grid()` first?" = !anyNA(grid_query))
   stopifnot("grid parquet not found, `rpwf_write_grid()` first?" = all(
-    path_chk_(obj$Rgrid[which(grid_query != 1)]) # Don't check grid if id = 1
+    path_chk_(obj$Rgrid[which(grid_query != 1)], db_con) # Don't check grid if id = 1
   ))
   obj$grid_id <- grid_query
+  return(obj)
+}
 
-  #### Get df id
+#' Add Df Id to workflow/data set
+#'
+#' @inheritParams rpwf_export_db
+#'
+#' @return A tibble with df_id added.
+#' @noRd
+rpwf_TrainDf_R6_id_ <- function(obj, db_con) {
   df_query <- rpwf_query_(
     con = db_con$con,
     query = "SELECT df_id FROM df_tbl WHERE df_hash = ?",
@@ -270,9 +286,8 @@ rpwf_parquet_id_ <- function(obj, db_con) {
     })
   )
   stopifnot("df id not found, `rpwf_write_df()` first?" = !anyNA(df_query))
-  stopifnot("df parquet not found, `rpwf_write_df()` first?" = all(path_chk_(obj$TrainDf)))
+  stopifnot("df parquet not found, `rpwf_write_df()` first?" = all(path_chk_(obj$TrainDf, db_con)))
   obj$df_id <- df_query
-
   return(obj)
 }
 
@@ -287,4 +302,67 @@ rpwf_parquet_id_ <- function(obj, db_con) {
 #' @noRd
 rpwf_wflow_hash_ <- function(df) {
   apply(as.data.frame(df), 1, rlang::hash)
+}
+
+#' Generate the Export to DB functions
+#'
+#' @param required_col String of required columns.
+#'
+#' @return a function that add the required columns to the database.
+#' @noRd
+rpwf_export_fns_ <- function(required_cols) {
+  fns <- function(obj, db_con) {
+    # These columns must be present
+    required <- force(required_cols)
+
+    # Query the wflow that's already in the database
+    db_wflow_hash <- rpwf_wflow_hash_(
+      dplyr::select(
+        DBI::dbGetQuery(db_con$con, glue::glue("SELECT * FROM wflow_tbl;")),
+        dplyr::all_of(required)
+      )
+    )
+
+    # Generate hash of current wflows
+    to_export_hash <- rpwf_wflow_hash_(dplyr::select(obj, dplyr::all_of(required)))
+    matched_wflow <- to_export_hash %in% db_wflow_hash
+
+    if (any(matched_wflow)) {
+      message("the following workflows are already in the database\n")
+      print(obj[matched_wflow, which(names(obj) %in% required)])
+    }
+    # Only add the workflow that's not in the database
+    to_export <- as.data.frame(obj[!matched_wflow, which(names(obj) %in% required)])
+
+    if (nrow(to_export) == 0) {
+      message("All workflows found in db, exiting...")
+      return(0)
+    } else {
+      message("Exporting workflows to db...")
+      DBI::dbAppendTable(db_con$con, name = "wflow_tbl", value = to_export)
+    }
+  }
+  return(fns)
+}
+
+#' Function for Exporting `rpwf_workflow_set()`
+#'
+#' @inheritParams rpwf_export_db
+#'
+#' @noRd
+rpwf_export_wfs_ <- function(obj, db_con) {
+  rpwf_Rgrid_R6_id_(obj = obj, db_con = db_con) |>
+    rpwf_TrainDf_R6_id_(db_con = db_con) |>
+    rpwf_export_fns_(
+      c(
+        "df_id",
+        "grid_id",
+        "model_tag",
+        "recipe_tag",
+        "costs",
+        "model_type_id",
+        "random_state",
+        "py_base_learner_args"
+      )
+    )(db_con = db_con)
 }

@@ -77,9 +77,9 @@ rpwf_augment.rpwf_workflow_set <- function(obj, db_con, .grid_fun = NULL,
   py_module <- py_base_learner <- engine <- rename_fns <- model_mode <- NULL
   set.seed(seed)
   obj |>
-    rpwf_add_model_param_(db_con$con) |>
+    rpwf_add_model_param_(db_con) |>
     rpwf_add_desc_() |>
-    rpwf_add_py_model_(db_con$con) |>
+    rpwf_add_py_model_(db_con) |>
     rpwf_add_random_state_(range, seed) |>
     rpwf_add_grid_(.grid_fun, seed, ...) |>
     rpwf_Rgrid_R6_(db_con) |>
@@ -129,90 +129,8 @@ rpwf_write_df <- function(obj, seed = 1234) {
   }
 }
 
-#' Generate the Export to DB functions
-#'
-#' @param required_col String of required columns.
-#'
-#' @return a function that add the required columns to the database.
-#' @noRd
-rpwf_export_fns_ <- function(required_cols) {
-  fns <- function(obj, db_con) {
-    rpwf <- rpwf_parquet_id_(obj = obj, db_con = db_con)
-
-    # These columns must be present
-    required <- force(required_cols)
-
-    # Query the wflow that's already in the database
-    db_wflow_hash <- rpwf_wflow_hash_(
-      dplyr::select(
-        DBI::dbGetQuery(db_con$con, glue::glue("SELECT * FROM wflow_tbl;")),
-        dplyr::all_of(required)
-      )
-    )
-
-    # Generate hash of current wflows
-    to_export_hash <- rpwf_wflow_hash_(dplyr::select(rpwf, dplyr::all_of(required)))
-    matched_wflow <- to_export_hash %in% db_wflow_hash
-
-    if (any(matched_wflow)) {
-      message("the following workflows are already in the database\n")
-      print(rpwf[matched_wflow, which(names(rpwf) %in% required)])
-    }
-    # Only add the workflow that's not in the database
-    to_export <- as.data.frame(rpwf[!matched_wflow, which(names(rpwf) %in% required)])
-
-    if (nrow(to_export) == 0) {
-      message("All workflows found in db, exiting...")
-      return(0)
-    } else {
-      message("Exporting workflows to db...")
-      DBI::dbAppendTable(db_con$con, name = "wflow_tbl", value = to_export)
-    }
-  }
-  return(fns)
-}
-
-#' Export the [rpwf_augment()] Object into the Database
-#'
-#' @inheritParams rpwf_Rgrid_R6_
-#'
-#' @return number of rows exported.
+#' @rdname rpwf_export_db
 #' @export
-#' @examples
-#' # Create the database
-#' temp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", temp_dir)
-#'
-#' # Create a `workflow_set`
-#' d <- mtcars
-#' d$target <- stats::rbinom(nrow(d), 1, 0.5)
-#' m1 <- parsnip::boost_tree() |>
-#'   parsnip::set_engine("xgboost") |>
-#'   parsnip::set_mode("classification") |>
-#'   set_py_engine("xgboost", "XGBClassifier", "my_xgboost_model")
-#' r1 <- d |>
-#'   recipes::recipe(target ~ .)
-#' wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
-#'
-#' to_export <- wf |>
-#'   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10)
-#' rpwf_write_grid(to_export, db_con)
-#' rpwf_write_df(to_export, db_con)
-#'
-#' # Before exporting
-#' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
-#' # After exporting
-#' rpwf_export_db(to_export, db_con)
-#' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")
-rpwf_export_db <- rpwf_export_fns_(
-  c(
-    "df_id",
-    "grid_id",
-    "model_tag",
-    "recipe_tag",
-    "costs",
-    "model_type_id",
-    "random_state",
-    "py_base_learner_args"
-  )
-)
+rpwf_export_db.rpwf_workflow_set <- function(obj, db_con) {
+  rpwf_export_wfs_(obj, db_con)
+}

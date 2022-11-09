@@ -13,9 +13,6 @@
 #' @param tag a string to name this model. Useful in keeping track of different
 #' combinations of models.
 #' @param ... not used. Included to force `con`, `args` to be specified by names.
-#' @inheritParams rpwf_add_py_model
-#' If provided will perform check to see if the specified `py_base_learner` is
-#' in the database or not.
 #' @param args arguments passed to the python base learner via named list.
 #' Boolean must be in R format, i.e., `TRUE`, `FALSE`.
 #'
@@ -44,15 +41,11 @@
 #'     )
 #'   )
 set_py_engine <- function(obj, py_module, py_base_learner, tag = NULL, ...,
-                          db_con = NULL, args = NULL) {
+                          args = NULL) {
   stopifnot(
     "`py_module` and `py_base_learner` need to be of type character" =
       all(sapply(c(py_module, py_base_learner), is.character))
   )
-  if (!is.null(db_con)) {
-    message("Connection provided, checking if the python module is in the db")
-    rpwf_chk_model_avail_(db_con, py_module, py_base_learner, obj$engine)
-  }
   # Augment the model spec object with these attributes
   obj$py_module <- py_module
   obj$py_base_learner <- py_base_learner
