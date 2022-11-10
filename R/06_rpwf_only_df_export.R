@@ -5,10 +5,16 @@ rpwf_data_set <- function(..., db_con) {
   stopifnot("preproc accept recipes" = "recipe" == unique(sapply(preprocs, class)))
   # Add columns. No need for the `rpwf_augment()` method.
   df <- tibble::tibble(preprocs = unique(preprocs))
-  df$recipe_tag <- sapply(df$preprocs, \(x) { x$recipe_tag })
+  df$recipe_tag <- sapply(df$preprocs, \(x) {
+    x$recipe_tag
+  })
   df$grids <- NA
-  df$Rgrid <- lapply(df$grids, \(x) { RGrid$new(x, db_con) })
-  df$TrainDf <- lapply(df$preprocs, \(x) {TrainDf$new(x, db_con)})
+  df$Rgrid <- lapply(df$grids, \(x) {
+    RGrid$new(x, db_con)
+  })
+  df$TrainDf <- lapply(df$preprocs, \(x) {
+    TrainDf$new(x, db_con)
+  })
   return(new_rpwf_data_set(df))
 }
 

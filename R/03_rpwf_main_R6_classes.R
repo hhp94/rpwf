@@ -420,6 +420,7 @@ RGrid <- R6::R6Class(
           .con = self$con
         )
       ))
+      print(self$export_query)
       self$set_df(rlang::expr(self$grid_obj), "hyper param grid")
       self$export_prep(
         new_path = glue::glue(

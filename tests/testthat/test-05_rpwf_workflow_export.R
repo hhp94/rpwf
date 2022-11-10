@@ -1,9 +1,8 @@
 test_that("rpwf_workflow_set()", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
-    set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
-    )
+    set_py_engine("xgboost", "XGBClassifier")
+
   expect_equal(
     nrow(rpwf_workflow_set(
       list(dummy_test_rec, dummy_test_rec),
@@ -296,17 +295,22 @@ test_that("rpwf_Rgrid_R6/TrainDf_R6_id_() part 2", {
     DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
   }
   # Add a train df
-  t <- rpwf_workflow_set(list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
-                         list(
-                           set_py_engine(xgb_model_spec_(),
-                                         "xgboost", "XGBClassifier")
-                         ),
-                         list("neg_log_loss")) |>
+  t <- rpwf_workflow_set(
+    list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
+    list(
+      set_py_engine(
+        xgb_model_spec_(),
+        "xgboost", "XGBClassifier"
+      )
+    ),
+    list("neg_log_loss")
+  ) |>
     rpwf_augment(db_con, dials::grid_latin_hypercube)
 
   rpwf_write_df(t)
   expect_error(rpwf_Rgrid_R6_id_(t, db_con),
-               regexp = "grid")
+    regexp = "grid"
+  )
 
   rpwf_write_grid(t)
   expect_true(all(c("grid_id", "df_id") %in% names(
@@ -345,3 +349,4 @@ test_that("rpwf_export_db()", {
   after1 <- query_wflow_tbl() # exporting the same wflow would not work
   expect_equal(nrow(after1), 1)
 })
+

@@ -35,11 +35,11 @@ rpwf_workflow_set <- function(preprocs, models, costs) {
   }
 
   stopifnot("preproc accept list of recipes" = "recipe" ==
-              list_class_fns(preprocs))
+    list_class_fns(preprocs))
   stopifnot("models accept list of models" = "model_spec" %in%
-              list_class_fns(models) & !"recipe" %in% list_class_fns(models))
+    list_class_fns(models) & !"recipe" %in% list_class_fns(models))
   stopifnot("costs accept list of characters" = "character" %in%
-              list_class_fns(costs))
+    list_class_fns(costs))
 
   df <- tidyr::crossing(
     preprocs = unique(preprocs), models = unique(models), costs = unique(costs)
@@ -105,7 +105,9 @@ rpwf_augment.rpwf_workflow_set <- function(obj, db_con, .grid_fun = NULL,
 rpwf_write_grid <- function(obj) {
   stopifnot("Run rpwf_augment() first!" = "Rgrid" %in% names(obj))
   for (g in obj$Rgrid) {
-    g$export()$set_attrs() # Export and update information in the db
+    g$set_attrs()
+    g$export()
+    g$set_attrs() # Export and update information in the db
   }
 }
 
@@ -125,7 +127,7 @@ rpwf_write_df <- function(obj, seed = 1234) {
   stopifnot("Run rpwf_augment() first!" = "TrainDf" %in% names(obj))
   for (r in obj$TrainDf) {
     set.seed(seed)
-    r$export()$set_attrs()
+    r$set_attrs()$export()$set_attrs()
   }
 }
 

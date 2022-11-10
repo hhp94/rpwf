@@ -10,13 +10,12 @@
 #' base learner comes from (i.e., `xgboost`, `sklearn.ensemble`, etc.).
 #' @param py_base_learner a character value that select the python base learner,
 #' (i.e., XGBClassifier, DecisionTreeClassifier, etc.).
-#' @param tag a string to name this model. Useful in keeping track of different
+#' @param rpwf_model_tag a string to name this model. Useful in keeping track of different
 #' combinations of models.
-#' @param ... not used. Included to force `con`, `args` to be specified by names.
-#' @param args arguments passed to the python base learner via named list.
+#' @param ... arguments passed to the python base learner via named list.
 #' Boolean must be in R format, i.e., `TRUE`, `FALSE`.
 #'
-#' @return a model spec object with additional attributes `self$tag`,
+#' @return a model spec object with additional attributes `self$rpwf_model_tag`,
 #' `self$py_base_learner` and `self$py_base_learner_args`.
 #'
 #' @export
@@ -31,17 +30,13 @@
 #'     "xgboost",
 #'     "XGBClassifier",
 #'     "my_xgboost_model",
-#'     db_con = db_con,
-#'     args = list(
-#'       eval_metric = "logloss",
-#'       use_label_encoder = FALSE,
-#'       verbosity = 0,
-#'       silent = TRUE,
-#'       n_estimators = 100
-#'     )
-#'   )
-set_py_engine <- function(obj, py_module, py_base_learner, tag = NULL, ...,
-                          args = NULL) {
+#'     eval_metric = "logloss",
+#'     use_label_encoder = FALSE,
+#'     verbosity = 0,
+#'     silent = TRUE,
+#'     n_estimators = 100
+#' )
+set_py_engine <- function(obj, py_module, py_base_learner, rpwf_model_tag = NULL, ...) {
   stopifnot(
     "`py_module` and `py_base_learner` need to be of type character" =
       all(sapply(c(py_module, py_base_learner), is.character))
@@ -50,20 +45,27 @@ set_py_engine <- function(obj, py_module, py_base_learner, tag = NULL, ...,
   obj$py_module <- py_module
   obj$py_base_learner <- py_base_learner
 
-  if (!is.null(args)) {
+  args <- list(...)
+  if (length(args) > 0) {
+    n <- names(args)
     stopifnot(
-      "Use named list for py learner args" =
-        all("list" %in% class(args)) & !is.null(names(args))
+      "Use named list" = all(!anyNA(n) & !is.null(n))
+    )
+    stopifnot(
+      "All args must be named" = all(length(n) == length(args) & !any(grepl("^$", n)))
+    )
+    stopifnot(
+      "Args names have to be unique" = (length(n) == dplyr::n_distinct(n))
     )
     obj$py_base_learner_args <- jsonlite::toJSON(args, auto_unbox = TRUE)
   }
 
-  if (!is.null(tag)) {
+  if (!is.null(rpwf_model_tag)) {
     stopifnot(
-      "tag must be a character string of length 1" =
-        length(tag) == 1L & is.character(tag)
+      "rpwf_model_tag must be a character string of length 1" =
+        length(rpwf_model_tag) == 1L & is.character(rpwf_model_tag)
     )
-    obj$model_tag <- tag
+    obj$model_tag <- rpwf_model_tag
   }
 
   return(obj)
@@ -91,7 +93,7 @@ rpwf_cp_py_codes <- function(proj_root_path, overwrite = FALSE) {
   copy_fns <- function() {
     from_folder <-
       system.file("python", "rpwf", package = "rpwf", mustWork = TRUE)
-    file.copy(from_folder, proj_root_path, recursive = TRUE)
+    file.copy(from_folder, proj_root_path, overwrite = overwrite, recursive = TRUE)
   }
 
   if (!dir.exists(to_folder)) {

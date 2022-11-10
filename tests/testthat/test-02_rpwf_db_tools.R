@@ -20,19 +20,22 @@ test_that("rpwf_db_del_wflow()", {
     list("neg_log_loss")
   )
   t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
+
   rpwf_write_grid(t1)
   rpwf_write_df(t1)
+  expect_equal(length(list.files(paste(tmp_dir, "rpwfDb", sep = "/"), recursive = TRUE)), 3)
   rpwf_export_db(t1, db_con)
   expect_equal(nrow(query_wflow_tbl()), 1)
 
   # delete from wflow
-  rpwf_db_del_wflow(1, db_con)
+  rpwf_db_del_wflow(1, db_con, TRUE)
   expect_equal(nrow(query_wflow_tbl()), 0)
+  expect_equal(length(list.files(paste(tmp_dir, "rpwfDb", sep = "/"), recursive = TRUE)), 1)
 })
 
 test_that("rpwf_db_del_entry()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir = tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   query_wflow_tbl <- function(tbl) {
     DBI::dbGetQuery(db_con$con, glue::glue("SELECT * FROM {tbl}"))
@@ -53,20 +56,20 @@ test_that("rpwf_db_del_entry()", {
   expect_equal(nrow(query_wflow_tbl("wflow_tbl")), 1)
 
   # delete from wflow would not work
-  expect_error(rpwf_db_del_entry("wflow_tbl", 1, db_con$con),
+  expect_error(rpwf_db_del_entry("wflow_tbl", 1, db_con),
     regex = "instead"
   )
 
   # delete from random tables
   expect_true(nrow(query_wflow_tbl("model_type_tbl")) > 0)
-  rpwf_db_del_entry("model_type_tbl", 1:99, db_con$con)
+  rpwf_db_del_entry("model_type_tbl", 1:99, db_con)
 })
 
 test_that("rpwf_avail_models()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir = tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
-  models <- rpwf_avail_models(db_con$con)
+  models <- rpwf_avail_models(db_con)
 
   expect_equal(nrow(models), nrow(sup_mod_df__))
 })

@@ -1,7 +1,7 @@
 # TrainDf R6 class --------------------------------------------------------
 test_that("initialization of the TrainDf class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
@@ -23,7 +23,7 @@ test_that("initialization of the TrainDf class", {
 
 test_that("export() method of the TrainDf class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
@@ -52,7 +52,7 @@ test_that("export() method of the TrainDf class", {
 
 test_that("export() method won't add repeated rows class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
@@ -73,7 +73,7 @@ test_that("export() method won't add repeated rows class", {
 
 test_that("Check if data (no outcome) can be exported", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "test")
 
   # initialization of a new TrainDf object
@@ -98,7 +98,7 @@ test_that("Check if data (no outcome) can be exported", {
 
 test_that("set_attrs() TrainDf", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   TrainDf <- TrainDf$new(dummy_rec, db_con)
@@ -109,7 +109,7 @@ test_that("set_attrs() TrainDf", {
 
 test_that("pandas index adding", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
@@ -158,7 +158,7 @@ test_that("rpwf_grid_gen_() with tune()", {
     parsnip::set_engine("glmnet") |>
     parsnip::set_mode("classification") |>
     set_py_engine("sklearn.linear_model", "LogisticRegression",
-      args = list(penalty = "elasticnet")
+      penalty = "elasticnet"
     )
 
   glm_rename <-
@@ -185,7 +185,7 @@ test_that("rpwf_grid_gen_() with tune()", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
 
   hyper_par_rename <-
@@ -224,7 +224,7 @@ test_that("rpwf_grid_gen_() with fun from set_r_grid", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     ) |>
     set_r_grid(dials::grid_latin_hypercube, size = 10)
 
@@ -247,7 +247,7 @@ test_that("rpwf_grid_gen_() no tuning param", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   no_tune_spec <- xgb_model_spec_no_tune_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
   grid_size <- 10
   # generation of the grids
@@ -265,7 +265,7 @@ test_that("rpwf_grid_gen_() no tuning param", {
 
 test_that("transformation of hyper param", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   grid_size <- 10
@@ -275,7 +275,7 @@ test_that("transformation of hyper param", {
     parsnip::set_engine("xgboost") |>
     parsnip::set_mode("classification") |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
 
   xgb_rename <-
@@ -304,7 +304,7 @@ test_that("transformation of hyper param", {
     parsnip::set_engine("glmnet") |>
     parsnip::set_mode("classification") |>
     set_py_engine("sklearn.linear_model", "LogisticRegression",
-      args = list(penalty = "elasticnet")
+      penalty = "elasticnet"
     )
 
   glm_rename <-
@@ -323,11 +323,11 @@ test_that("rpwf_finalize_params_()", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
   dummy_mod_spec_no_tune_ <- xgb_model_spec_no_tune_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
   expect_equal(nrow(rpwf_finalize_params_(dummy_mod_spec, dummy_test_rec)$par), 6)
   # returning no params so r_grid_gen() would return an NA
@@ -355,13 +355,13 @@ test_that("set_r_grid()", {
 
 test_that("initialization of the RGrid class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   # Generate a grid
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
   grid_size <- 10
 
@@ -385,7 +385,6 @@ test_that("initialization of the RGrid class", {
   )
 
   c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
-
   # Generate an object
   r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
@@ -397,7 +396,7 @@ test_that("initialization of the RGrid class", {
 
 test_that("passing NA to RGrid class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   # Generate an object
   r_grid_obj <- RGrid$new(NA, db_con)
@@ -421,13 +420,13 @@ test_that("passing NA to RGrid class", {
 
 test_that("export() method of the RGrid class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   # Generate a grid
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
   grid_size <- 10
 
@@ -476,13 +475,14 @@ test_that("export() method of the RGrid class", {
 
 test_that("export() method won't add repeated rows class", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+
 
   # Generate a grid
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   dummy_mod_spec <- xgb_model_spec_() |>
     set_py_engine("xgboost", "XGBClassifier",
-      args = list(eval_metric = "logloss", silent = TRUE)
+      eval_metric = "logloss", silent = TRUE
     )
   grid_size <- 10
 
@@ -523,7 +523,7 @@ test_that("export() method won't add repeated rows class", {
 
 test_that("set_attrs()", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   TrainDf <- TrainDf$new(dummy_rec, db_con)
@@ -534,7 +534,7 @@ test_that("set_attrs()", {
 
 test_that("set_attr() RGrid", {
   tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- dummy_con_(tmp_dir)
+  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   grid_size <- 10
@@ -544,7 +544,7 @@ test_that("set_attr() RGrid", {
     parsnip::set_engine("glmnet") |>
     parsnip::set_mode("classification") |>
     set_py_engine("sklearn.linear_model", "LogisticRegression",
-      args = list(penalty = "elasticnet")
+      penalty = "elasticnet"
     )
 
   glm_rename <-
@@ -562,3 +562,4 @@ test_that("set_attr() RGrid", {
   grid_R6$export()$set_attrs()
   expect_null(grid_R6$export_query)
 })
+

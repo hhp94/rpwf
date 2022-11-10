@@ -3,6 +3,7 @@
 # "lifecycle", "cli")
 
 # c("covr", "dm", "here", "knitr", "rmarkdown", "testthat")
+# setwd("~/project/rpwf")
 
 # Depends:
 #   R (>= 2.10)

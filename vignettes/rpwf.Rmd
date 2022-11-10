@@ -100,7 +100,7 @@ db_con$con
   + `wflow_result_tbl` holds the fitted results of the workflows.  
 
 ```{r, fig.align='center', fig.width=6, fig.height=6}
-dm_obj <- rpwf_dm(db_con$con)
+dm_obj <- rpwf_dm(db_con)
 dm_obj |>
   dm::dm_draw()
 ```
@@ -119,7 +119,7 @@ choose the R engine with [`set_engine()`](https://parsnip.tidymodels.org/referen
 * Check the available models with `rpwf_avail_models()` and add another model
 with `rpwf_add_py_model()`.
 ```{r}
-rpwf_avail_models(db_con$con)
+rpwf_avail_models(db_con)
 ```
 
 ### `xgboost`
@@ -189,10 +189,8 @@ svm_rbf_model <- svm_rbf(
     "SVC",
     "svm_rbf",
     tag = "svm_rbf",
-    args = list(
-      kernel = "rbf", # fix kernel parameter = "rbf"
-      cache_size = 500
-    )
+    kernel = "rbf", # fix kernel parameter = "rbf"
+    cache_size = 500
   )
 ```
 
@@ -210,12 +208,9 @@ enet_model <- logistic_reg(
     "sklearn.linear_model",
     "LogisticRegression",
     "glmnet",
-    tag = "enet",
-    args = list(
-      solver = "saga",
-      penalty = "elasticnet",
-      warm_start = TRUE
-    )
+    solver = "saga",
+    penalty = "elasticnet",
+    warm_start = TRUE
   )
 ```
 
@@ -346,7 +341,7 @@ all_wfs |>
 * Checking the generated grids, we can see that the names of the hyper 
 parameters have been renamed to conform to the scikit-learn API.  
 ```{r}
-sapply(unique(all_wfs$grids), head)
+sapply((all_wfs$grids), head)
 ```
 
 * Here are the dimensions of the grids. This is always good to check to make
@@ -366,14 +361,13 @@ running each of these functions in parallel is not recommended.
   workflow at a time, or split the work into multiple different databases and 
   run the export functions for each database in parallel.    
 ```{r}
-exported_wfs <- all_wfs |>
-  rpwf_write_grid(db_con) |>
-  rpwf_write_df(db_con)
+rpwf_write_grid(all_wfs)
+rpwf_write_df(all_wfs)
 ```
 
 * Then finally, export the meta data into the database with `rpwf_export_db()`.  
 ```{r}
-rpwf_export_db(exported_wfs, db_con$con)
+rpwf_export_db(all_wfs, db_con)
 ```
 
 ## Run the workflow in python

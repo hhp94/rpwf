@@ -4,6 +4,7 @@
 #'
 #' @inheritParams rpwf_add_py_model
 #' @param id numeric vector of workflow ids to be removed.
+#' @param delete_files deletes the associated files or not.
 #'
 #' @return Called for the side effect.
 #' @export
@@ -14,7 +15,7 @@
 #' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 #' rpwf_db_del_wflow(1:99, db_con)
 rpwf_db_del_wflow <- function(id, db_con, delete_files = FALSE) {
-  if(delete_files) {
+  if (delete_files) {
     query_list <- list(
       grid = "SELECT r.grid_path FROM wflow_tbl AS w
               INNER JOIN r_grid_tbl AS r ON w.grid_id = r.grid_id;",
@@ -25,11 +26,15 @@ rpwf_db_del_wflow <- function(id, db_con, delete_files = FALSE) {
     )
 
     unlink_fns <- function(query, db_con) {
-      paths <- DBI::dbGetQuery(db_con$con, query) |>
-        unlist() |>
-        purrr::reduce(c) |>
-        unique() |>
-        na.omit()
+      query_results <- DBI::dbGetQuery(db_con$con, query) # returns a data.frame
+      if (nrow(query_results) == 0) {
+        return(NULL)
+      }
+      paths <- query_results |> # returns a data.frame
+        unlist() |> # convert columns to list of vectors
+        purrr::reduce(c) |> # bind columns (vectors of paths) to vector
+        unique() |> # remove duplicated path
+        na.omit() # remove NA paths
       if (length(paths) == 0) {
         return(NULL)
       } else {
@@ -41,7 +46,7 @@ rpwf_db_del_wflow <- function(id, db_con, delete_files = FALSE) {
   }
 
   try(DBI::dbExecute(
-    conn = con,
+    conn = db_con$con,
     glue::glue_sql("DELETE from wflow_tbl WHERE wflow_id IN ({ids*})",
       ids = id, .con = db_con$con
     )

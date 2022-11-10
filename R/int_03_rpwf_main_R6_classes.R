@@ -76,18 +76,22 @@ rpwf_grid_gen_ <- function(model,
 #' function is a temporary solution for transformation before a more scalable
 #' solution specific to each model is needed.
 #'
-#' @param grid the generated R grid
+#' @param grid the generated R grid.
 #' @inheritParams rpwf_grid_gen_
-#' @param ... other parameters needed for transformation
+#' @param n_predictors number of predictors. Needed for converting from mtry to
+#' proportion.
+#' @param ... other parameters needed for transformation.
 #'
 #' @return a transformed and renamed grid
 #' @noRd
-rpwf_transform_grid_ <- function(grid, rename_fns, n_predictors) {
+rpwf_transform_grid_ <- function(grid, rename_fns, n_predictors, ...) {
   r_grid <- dplyr::rename_with(grid, rename_fns)
 
-  # if ("max_depth" %in% colnames(r_grid)) {
-  #   message("high value of 'max_depth' can cause memory error")
-  # }
+  if ("max_depth" %in% colnames(r_grid)) {
+    if(max(r_grid$max_depth) > 15) {
+      message("high value of 'max_depth' can cause memory error")
+    }
+  }
 
   if ("colsample_bytree" %in% colnames(r_grid)) {
     message("'colsample_bytree' is detected. Converting to proportions")

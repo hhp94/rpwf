@@ -6,7 +6,7 @@
 #'
 #' @return a `rpwf_workflow_set` object, which inherits from [tibble::tibble()].
 #' @noRd
-new_rpwf_workflow_set <- function (obj = tibble::tibble()) {
+new_rpwf_workflow_set <- function(obj = tibble::tibble()) {
   stopifnot(tibble::is_tibble(obj))
   structure(obj, class = c("rpwf_workflow_set", class(tibble::tibble())))
 }
@@ -98,8 +98,7 @@ rpwf_export_db.default <- function(obj, db_con) {
 #'
 #' @return a `rpwf_data_set` object, which inherits from [tibble::tibble()].
 #' @noRd
-new_rpwf_data_set <- function (obj = tibble::tibble()) {
+new_rpwf_data_set <- function(obj = tibble::tibble()) {
   stopifnot(tibble::is_tibble(obj))
   structure(obj, class = c("rpwf_data_set", class(tibble::tibble())))
 }
-
