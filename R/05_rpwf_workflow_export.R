@@ -127,7 +127,9 @@ rpwf_write_df <- function(obj, seed = 1234) {
   stopifnot("Run rpwf_augment() first!" = "TrainDf" %in% names(obj))
   for (r in obj$TrainDf) {
     set.seed(seed)
-    r$set_attrs()$export()$set_attrs()
+    r$set_attrs()
+    r$export()
+    r$set_attrs()
   }
 }
 

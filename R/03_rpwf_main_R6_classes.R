@@ -189,6 +189,7 @@ BaseEx <- R6::R6Class(
       } else {
         # Else get the path from the query results and assign to `self$path`
         self$set_path(self$queried_path$path)
+        self$set_export_query(NULL)
       }
     },
 
@@ -284,7 +285,7 @@ TrainDf <- R6::R6Class(
       self$set_hash(rlang::hash(self$prepped)) # Set the hash of the prepped obj
       self$set_db_folder(glue::glue("{self$db_name}_df")) # Set the root folder
       self$create_folder() # Create the folder if needed
-      self$set_attrs()
+      self$set_attrs() # Doesn't cost much because only prep is ran.
     },
 
     #' @description
@@ -420,7 +421,7 @@ RGrid <- R6::R6Class(
           .con = self$con
         )
       ))
-      print(self$export_query)
+
       self$set_df(rlang::expr(self$grid_obj), "hyper param grid")
       self$export_prep(
         new_path = glue::glue(
