@@ -4,7 +4,7 @@ Version: 0.0.3
 Authors@R: 
     person("Hung", "Pham", , "amser.hoanghung@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8271-9355"))
-Description: What the package does (one paragraph).
+Description: rpwf aims to streamline the process of data engineering in R, generate sets of feature engineering experiments, and run these experiments in Python.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -17,9 +17,7 @@ Imports:
     glue,
     hardhat,
     jsonlite,
-    kernlab,
     parsnip,
-    ggplot2,
     modeldata,
     utils,
     purrr,
@@ -33,6 +31,8 @@ Imports:
     testthat,
     tibble
 Suggests:
+    kernlab,
+    ggplot2,
     arrow,
     covr,
     dm,

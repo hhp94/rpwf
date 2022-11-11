@@ -34,7 +34,7 @@ rpwf_db_del_wflow <- function(id, db_con, delete_files = FALSE) {
         unlist() |> # convert columns to list of vectors
         purrr::reduce(c) |> # bind columns (vectors of paths) to vector
         unique() |> # remove duplicated path
-        na.omit() # remove NA paths
+        stats::na.omit() # remove NA paths
       if (length(paths) == 0) {
         return(NULL)
       } else {

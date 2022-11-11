@@ -7,6 +7,9 @@
 rpwf_results(db_con, import_csv = TRUE)
 }
 \arguments{
+\item{db_con}{(\code{DBI::dbConnect()})\cr
+An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
+
 \item{import_csv}{whether to read in the results of the workflow.}
 }
 \value{
@@ -14,5 +17,5 @@ A tibble with the results stored in the fit_results column
 }
 \description{
 Wrapper for an inner join between the \code{wflow_tbl} and \code{wflow_result_tbl} and
-invoke \code{\link[readr:read_delim]{readr::read_csv()}} to read in the results.
+invoke \code{\link[utils:read.table]{utils::read.csv()}} to read in the results.
 }

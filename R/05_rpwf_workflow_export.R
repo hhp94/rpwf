@@ -105,9 +105,7 @@ rpwf_augment.rpwf_workflow_set <- function(obj, db_con, .grid_fun = NULL,
 rpwf_write_grid <- function(obj) {
   stopifnot("Run rpwf_augment() first!" = "Rgrid" %in% names(obj))
   for (g in obj$Rgrid) {
-    g$set_attrs()
-    g$export()
-    g$set_attrs() # Export and update information in the db
+    g$set_attrs()$export()$set_attrs() # Export and update information in the db
   }
 }
 
@@ -127,9 +125,7 @@ rpwf_write_df <- function(obj, seed = 1234) {
   stopifnot("Run rpwf_augment() first!" = "TrainDf" %in% names(obj))
   for (r in obj$TrainDf) {
     set.seed(seed)
-    r$set_attrs()
-    r$export()
-    r$set_attrs()
+    r$set_attrs()$export()$set_attrs()
   }
 }
 

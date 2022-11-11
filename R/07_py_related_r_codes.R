@@ -35,7 +35,7 @@
 #'     verbosity = 0,
 #'     silent = TRUE,
 #'     n_estimators = 100
-#' )
+#'   )
 set_py_engine <- function(obj, py_module, py_base_learner, rpwf_model_tag = NULL, ...) {
   stopifnot(
     "`py_module` and `py_base_learner` need to be of type character" =

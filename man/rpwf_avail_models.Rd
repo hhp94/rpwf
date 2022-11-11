@@ -4,12 +4,11 @@
 \alias{rpwf_avail_models}
 \title{Show Available Models}
 \usage{
-rpwf_avail_models(con)
+rpwf_avail_models(db_con)
 }
 \arguments{
-\item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
-See examples.}
+\item{db_con}{(\code{DBI::dbConnect()})\cr
+An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 }
 \value{
 a data.frame of models available in the database.
@@ -22,5 +21,5 @@ functions shows the models currently in the database.
 \examples{
 tmp_dir <- withr::local_tempdir()
 db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-rpwf_avail_models(db_con$con)
+rpwf_avail_models(db_con)
 }

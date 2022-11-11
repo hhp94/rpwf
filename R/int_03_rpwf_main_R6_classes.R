@@ -88,7 +88,7 @@ rpwf_transform_grid_ <- function(grid, rename_fns, n_predictors, ...) {
   r_grid <- dplyr::rename_with(grid, rename_fns)
 
   if ("max_depth" %in% colnames(r_grid)) {
-    if(max(r_grid$max_depth) > 15) {
+    if (max(r_grid$max_depth) > 15) {
       message("high value of 'max_depth' can cause memory error")
     }
   }

@@ -4,7 +4,7 @@
 \alias{rpwf_db_del_entry}
 \title{Deletes Rows from Tables Other than \code{wflow_tbl}}
 \usage{
-rpwf_db_del_entry(tbls, id, con)
+rpwf_db_del_entry(tbls, id, db_con)
 }
 \arguments{
 \item{tbls}{vector of character of table names, i.e., "df_tbl",
@@ -12,9 +12,8 @@ rpwf_db_del_entry(tbls, id, con)
 
 \item{id}{vector of ids to be deleted from a particular table.}
 
-\item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
-See examples.}
+\item{db_con}{(\code{DBI::dbConnect()})\cr
+An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 }
 \value{
 Called for the side effect.
@@ -28,7 +27,7 @@ tmp_dir <- withr::local_tempdir()
 db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 # Before deleting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
-rpwf_db_del_entry("model_type_tbl", 1, db_con$con)
+rpwf_db_del_entry("model_type_tbl", 1, db_con)
 # After deleting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
 }

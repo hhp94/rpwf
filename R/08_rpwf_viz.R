@@ -1,8 +1,9 @@
 #' Generate a `{dm}` Object of the Database
 #'
 #' Working with a `{dm}` object can make life easier than writing manual queries
+#' Also allows the visualization of the database with `dm::dm_draw()`.
 #'
-
+#' @inheritParams rpwf_add_py_model
 #'
 #' @return `{dm}` object of the created schema.
 #' @export

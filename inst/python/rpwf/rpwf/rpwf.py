@@ -141,17 +141,22 @@ class TrainDf(_RpwfSQL):
             self.df.set_index(self._index, drop=True, inplace=True)
         assert self._index not in self.df.columns, f"{self._index} is still in the data"
 
-    def get_df_X(self) -> numpy.ndarray:
+    def get_df_X(self, to_ndarray = False) -> Union[numpy.ndarray, pandas.DataFrame]:
         """Return the predictor DataFrame"""
-        return self.df.loc[:, json.loads(self.query_results["predictors"])].to_numpy()
+        df_X = self.df.loc[:, json.loads(self.query_results["predictors"])]
+        if to_ndarray:
+          return df_X.to_numpy()
+        return df_X
 
-    def get_df_y(self) -> Union[None, numpy.ndarray]:
+    def get_df_y(self, to_ndarray = False) -> Union[None, numpy.ndarray, pandas.DataFrame]:
         """Return the response Series"""
         if self._target is None:
             print("no target column provided")
             return None
-        return self.df.loc[:, self.df.columns == self._target].to_numpy()
-
+        df_y = self.df.loc[:, self.df.columns == self._target].to_numpy()
+        if to_ndarray:
+          return df_y.to_numpy()
+        return df_y.to_numpy()
 
 # class Cost(_RpwfSQL):
 #     """Get the cost metrics (RMSE, neg_log_loss etc.)"""

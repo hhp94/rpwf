@@ -75,8 +75,8 @@ rpwf_augment.default <- function(obj, ...) {
 #'
 #' to_export <- wf |>
 #'   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10)
-#' rpwf_write_grid(to_export, db_con)
-#' rpwf_write_df(to_export, db_con)
+#' rpwf_write_grid(to_export)
+#' rpwf_write_df(to_export)
 #'
 #' # Before exporting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl;")

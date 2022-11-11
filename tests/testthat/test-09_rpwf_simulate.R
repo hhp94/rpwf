@@ -16,15 +16,3 @@ test_that("xgb_model_spec_ works", {
   # print(names(mod_spec))
   expect_true("model_spec" %in% class(mod_spec))
 })
-
-test_that("dummy_con_()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_obj <- dummy_con_(tmp_dir)
-  con <- db_obj$con
-  expect_equal(sort(DBI::dbListTables(db_obj$con)), sort(names(rpwf_schema())))
-  expect_true({
-    rm(db_obj)
-    gc()
-    !DBI::dbIsValid(con)
-  })
-})

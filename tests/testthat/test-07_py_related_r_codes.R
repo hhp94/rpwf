@@ -61,12 +61,14 @@ test_that("set_py_engine() added py_base_learner attributes", {
   mod_spec <- xgb_model_spec_()
   expect_error(
     set_py_engine(mod_spec, "xgboost", "XGBClassifier",
-    eval_metric = "a", eval_metric = "b"),
+      eval_metric = "a", eval_metric = "b"
+    ),
     regexp = "unique"
   )
   expect_error(
     set_py_engine(mod_spec, "xgboost", "XGBClassifier",
-                  tag = "a", "b", "c"),
+      tag = "a", "b", "c"
+    ),
     regexp = "must be named"
   )
 })

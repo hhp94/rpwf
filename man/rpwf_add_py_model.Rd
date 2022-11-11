@@ -2,10 +2,10 @@
 % Please edit documentation in R/01_rpwf_db_schema.R
 \name{rpwf_add_py_model}
 \alias{rpwf_add_py_model}
-\title{Add scikit-learn Models to database}
+\title{Add scikit-learn Models to Database}
 \usage{
 rpwf_add_py_model(
-  con,
+  db_con,
   py_module,
   py_base_learner,
   r_engine,
@@ -14,9 +14,8 @@ rpwf_add_py_model(
 )
 }
 \arguments{
-\item{con}{(\code{DBI::dbConnect()})\cr
-a \code{\link[DBI:dbConnect]{DBI::dbConnect()}} object, created by \link{DbCon}, access with the \verb{$con} method.
-See examples.}
+\item{db_con}{(\code{DBI::dbConnect()})\cr
+An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 
 \item{py_module}{the module in scikit-learn, i.e., "sklearn.ensemble".}
 
@@ -26,12 +25,12 @@ See examples.}
 \item{r_engine}{the engine in parsnip, i.e., "ranger" or "rpart".}
 
 \item{hyper_par_rename}{a named list of equivalent hyper parameters, i.e.,
-\code{list(cost_complexity = "ccp_alpha")}}
+\code{list(cost_complexity = "ccp_alpha")}.}
 
-\item{model_mode}{classification or regression}
+\item{model_mode}{"classification" or "regression".}
 }
 \value{
-Use for side effect to update DB, not returning any values
+Use for side effect to update DB, not returning any values.
 }
 \description{
 Use this function to add or update the scikit-learn model using the module (i.e.,
@@ -47,7 +46,7 @@ db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 DBI::dbListTables(db_con$con)
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 rpwf_add_py_model(
-  db_con$con,
+  db_con,
   "sklearn.ensemble",
   "RandomForestClassifier",
   "rpart",

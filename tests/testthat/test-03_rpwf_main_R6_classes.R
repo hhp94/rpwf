@@ -5,7 +5,7 @@ test_that("initialization of the TrainDf class", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
-  train_df_obj <- TrainDf$new(dummy_test_rec, db_con)
+  train_df_obj <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   expect_equal(class(train_df_obj$prepped), "recipe")
   # these three values are set in the recipe data
   expect_equal(train_df_obj$idx_col, "id")
@@ -27,10 +27,10 @@ test_that("export() method of the TrainDf class", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
-  expect_error(TrainDf$new(dummy_test_rec, "INVALID"),
+  expect_error(TrainDf$new(dummy_test_rec, "INVALID")$set_attrs(),
     regex = "input should be a R6"
   )
-  train_df_obj <- TrainDf$new(dummy_test_rec, db_con)
+  train_df_obj <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   # write the parquet and export the database
   train_df_obj$export()
   # Check if the data is exported into the database
@@ -56,11 +56,11 @@ test_that("export() method won't add repeated rows class", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
-  train_df_obj <- TrainDf$new(dummy_test_rec, db_con)
+  train_df_obj <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   # write the parquet and export the database
   train_df_obj$export()
   # initialize a new TrainDf object using the same recipe
-  train_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)
+  train_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   # If we try the same recipe, hash check would find one row
   expect_equal(nrow(train_df_obj_repeated$queried_path), 1)
   # if hash check find one row, then export query would return NULL
@@ -77,15 +77,15 @@ test_that("Check if data (no outcome) can be exported", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "test")
 
   # initialization of a new TrainDf object
-  expect_message(TrainDf$new(dummy_test_rec, db_con),
+  expect_message(TrainDf$new(dummy_test_rec, db_con)$set_attrs(),
     regexp = "No outcome added"
   )
 
-  test_df_obj <- TrainDf$new(dummy_test_rec, db_con)
+  test_df_obj <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   # write the parquet and export the database
   test_df_obj$export()
   # initialize a new TrainDf object using the same recipe
-  test_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)
+  test_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   # If we try the same recipe, hash check would find one row
   expect_equal(nrow(test_df_obj_repeated$queried_path), 1)
   # if hash check find one row, then export query would return NULL
@@ -101,7 +101,7 @@ test_that("set_attrs() TrainDf", {
   db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
-  TrainDf <- TrainDf$new(dummy_rec, db_con)
+  TrainDf <- TrainDf$new(dummy_rec, db_con)$set_attrs()
   expect_true(!is.null(TrainDf$export_query))
   TrainDf$export()$set_attrs()
   expect_true(is.null(TrainDf$export_query))
@@ -113,15 +113,17 @@ test_that("pandas index adding", {
   dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
-  expect_message(TrainDf$new(dummy_rec, db_con), regexp = "as pandas idx")
+  expect_message(TrainDf$new(dummy_rec, db_con)$set_attrs(),
+    regexp = "as pandas idx"
+  )
   expect_message(TrainDf$new(
     recipes::update_role(dummy_rec, id, new_role = "INVALID ROLE"),
     db_con
-  ), regexp = "No pandas idx added")
+  )$set_attrs(), regexp = "No pandas idx added")
   expect_true(TrainDf$new(
     recipes::update_role(dummy_rec, id, new_role = "INVALID ROLE"),
     db_con
-  )$idx_col |> is.na())
+  )$set_attrs()$idx_col |> is.na())
 })
 
 # Rgrid generation --------------------------------------------------------
@@ -386,7 +388,7 @@ test_that("initialization of the RGrid class", {
 
   c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
   # Generate an object
-  r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)
+  r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
   expect_true(is.data.frame(r_grid_obj$queried_path))
   expect_equal(nrow(r_grid_obj$queried_path), 0)
@@ -399,7 +401,7 @@ test_that("passing NA to RGrid class", {
   db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
 
   # Generate an object
-  r_grid_obj <- RGrid$new(NA, db_con)
+  r_grid_obj <- RGrid$new(NA, db_con)$set_attrs()
   # write the parquet and export the database
 
   r_grid_obj$export()
@@ -452,7 +454,7 @@ test_that("export() method of the RGrid class", {
   c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
 
   # Generate an object
-  r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)
+  r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
   # write the parquet and export the database
   r_grid_obj$export()
 
@@ -507,10 +509,10 @@ test_that("export() method won't add repeated rows class", {
   c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
 
   # Generate an object
-  r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)
+  r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
   r_grid_obj$export()
   # initialize a new RGrid object using the same recipe
-  rgrid_obj_repeated <- RGrid$new(c_grid_lhcube, db_con)
+  rgrid_obj_repeated <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
   # If we try the same recipe, hash check would find one row
   expect_equal(nrow(rgrid_obj_repeated$queried_path), 1)
   # if hash check find one row, then export query would return NULL
@@ -519,17 +521,6 @@ test_that("export() method won't add repeated rows class", {
   expect_true(is.null(rgrid_obj_repeated$df))
   # and the path to the file would be the same
   expect_equal(rgrid_obj_repeated$path, as.character(r_grid_obj$path))
-})
-
-test_that("set_attrs()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-  dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
-
-  TrainDf <- TrainDf$new(dummy_rec, db_con)
-  expect_true(!is.null(TrainDf$export_query))
-  TrainDf$export()$set_attrs()
-  expect_true(is.null(TrainDf$export_query))
 })
 
 test_that("set_attr() RGrid", {
@@ -557,9 +548,8 @@ test_that("set_attr() RGrid", {
   glm_grid_1 <- dials::grid_regular(glm_param$pars, levels = 10)
   glm_grid_2 <- rpwf_transform_grid_(glm_grid_1, glm_rename, glm_param$n_predictors)
 
-  grid_R6 <- RGrid$new(glm_grid_2, db_con)
+  grid_R6 <- RGrid$new(glm_grid_2, db_con)$set_attrs()
   expect_true(!is.null(grid_R6$export_query))
   grid_R6$export()$set_attrs()
   expect_null(grid_R6$export_query)
 })
-

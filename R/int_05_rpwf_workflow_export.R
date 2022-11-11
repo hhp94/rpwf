@@ -146,7 +146,8 @@ rpwf_add_py_model_ <- function(obj, db_con) {
     val2 = obj$py_base_learner
   )
   # Add `model_type_id` to the accumulating object
-  return(dplyr::mutate(obj, model_type_id = query_res))
+  obj$model_type_id <- query_res
+  return(obj)
 }
 
 #' Add the Random State Seeds for Python `random_state`
@@ -164,7 +165,8 @@ rpwf_add_random_state_ <- function(obj, range, seed) {
   stopifnot("range should be an int vector" = !anyNA(sorted_range))
   random_state <- sample(sorted_range[1]:sorted_range[2], size = nrow(obj))
   # Add `random_state` to the accumulating object
-  return(dplyr::mutate(obj, random_state = random_state))
+  obj$random_state <- random_state
+  return(obj)
 }
 
 #' Add Relevant Parameters to the `dials::grid_<functions>`
@@ -173,7 +175,6 @@ rpwf_add_random_state_ <- function(obj, range, seed) {
 #' @param seed random seed.
 #' @inheritParams rpwf_grid_gen_
 #'
-#' @importFrom rlang .data
 #' @return tibble with the additional column `"grids"`.
 #' @noRd
 rpwf_add_grid_ <- function(obj, .grid_fun = NULL, seed, ...) {
@@ -182,8 +183,8 @@ rpwf_add_grid_ <- function(obj, .grid_fun = NULL, seed, ...) {
     "Run rpwf_workflow_set() first!" =
       all(c("preprocs", "models", "costs") %in% names(obj))
   )
-  dplyr::mutate(obj, grids = purrr::pmap(
-    .l = list(.data$models, .data$preprocs, .data$rename_fns),
+  obj$grids <- purrr::pmap(
+    .l = list(obj$models, obj$preprocs, obj$rename_fns),
     .f = \(x, y, z) {
       set.seed(seed)
       rpwf_grid_gen_(
@@ -194,7 +195,8 @@ rpwf_add_grid_ <- function(obj, .grid_fun = NULL, seed, ...) {
         ...
       )
     }
-  ))
+  )
+  return(obj)
 }
 
 #' Add Rgrid R6 Object

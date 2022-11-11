@@ -70,7 +70,6 @@ xgb_model_spec_no_tune_ <- function() {
 #' @param type either `"train"` or `"test"`.
 #'
 #' @return a [recipes::recipe()] object.
-#' @importFrom rlang .data
 #' @noRd
 dummy_recipe_ <- function(sim_dat, type = "train") {
   id <- X3 <- NULL

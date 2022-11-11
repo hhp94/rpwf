@@ -147,11 +147,13 @@ if __name__ == "__main__":
         p_grid = rpwf.RGrid(db_obj, wflow_obj).get_grid()
 
         df_obj = rpwf.TrainDf(db_obj, wflow_obj)
-        X, y = df_obj.get_df_X(), ravel(df_obj.get_df_y())
+        X, y = df_obj.get_df_X(True), df_obj.get_df_y(True)
 
         if y is None:
             print("No target provided, exiting...")
             sys.exit()
+        
+        y = ravel(y)
 
         model_type_obj = rpwf.Model(db_obj, wflow_obj)
         base_learner = rpwf.BaseLearner(wflow_obj, model_type_obj).base_learner
@@ -179,7 +181,8 @@ if __name__ == "__main__":
             )
             param_tuner.fit(X=X, y=y)
             tuning_results = pandas.DataFrame(param_tuner.cv_results_)
-            cv_results = tuning_results.loc[tuning_results['rank_test_score'] == 1]
+            cv_results = tuning_results
+            # tuning_results.loc[tuning_results['rank_test_score'] == 1]
 
         # if args.export:
             # Export the results

@@ -349,4 +349,3 @@ test_that("rpwf_export_db()", {
   after1 <- query_wflow_tbl() # exporting the same wflow would not work
   expect_equal(nrow(after1), 1)
 })
-

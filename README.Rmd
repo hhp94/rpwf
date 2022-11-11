@@ -19,22 +19,18 @@ knitr::opts_chunk$set(
 [![Codecov test coverage](https://codecov.io/gh/hhp94/rpwf/branch/master/graph/badge.svg)](https://app.codecov.io/gh/hhp94/rpwf?branch=master)
 <!-- badges: end -->
 
-`{rpwf}` allows data engineering in R with [{tidymodels}](https://www.tidymodels.org/) 
-and running the generated workflow sets using python's very mature ML framework  [scikit-learn](https://scikit-learn.org/stable/index.html). 
-To facilitate this, a SQLite database is created to handles all the paths and 
-information needed to fit models between R and Python. On top of the 
-wonderful experience manipulating data in R, `{rpwf}` also enables the ability 
-to use the generation of hyper parameter grids using the [{dials}](https://dials.tidymodels.org/) functions
-such as [`grid_max_entropy`](https://dials.tidymodels.org/reference/grid_max_entropy.html) and etc. for
-grid search in [scikit-learn](https://scikit-learn.org/stable/index.html).
+{rpwf} is a lightweight R and Python package that enables:  
 
-The combination of automated handling of paths and files with SQLite and provided 
-python CLI templates aims to make feature engineering on HPCs a smoother 
-experience.  
+* data engineering in ![R](https://img.shields.io/static/v1?label=%20&message=%20&color=blue&logo=R) with [{tidymodels}](https://www.tidymodels.org/).  
+  + hyper parameter grids generation using the [{dials}](https://dials.tidymodels.org/) functions
+  such as [`grid_max_entropy`](https://dials.tidymodels.org/reference/grid_max_entropy.html).  
+  + vast libraries of cool data transformation methods such as splines basis expansion, data reduction, and multiple imputation.  
+* testing the generated data transformation pipeline in ![Python](https://img.shields.io/static/v1?label=%20&message=%20&color=yellow&logo=Python) with [scikit-learn](https://scikit-learn.org/stable/index.html).  
+* streamlining the use of HPC and cloud computing to massively speed up feature engineering experimentation.  
 
 # Installation
 ## R
-* Install the package from github
+* Install the package from github   
 ```{r, eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("hhp94/rpwf", branch = "master")
@@ -63,7 +59,7 @@ conda install pyarrow sqlalchemy xgboost
 pip install pandas-downcast
 ```
 
-* Next, we copy the python codes into any folder with `rpwf_cp_py_codes()`. Here
+* Next, copy the python codes into any folder with `rpwf_cp_py_codes()`. Here
 I'm just copying the codes to my `home/opt` folder.  
 
 ```{r, eval = FALSE}
@@ -96,7 +92,7 @@ pip uninstall local-rpwf
 ```
 
 ## Linux installation
-[`{arrow}`](https://arrow.apache.org/) installation on linux might fail. In 
+The R [`{arrow}`](https://arrow.apache.org/) installation on linux might fail. In 
 which case, use this [instruction](https://cran.r-project.org/web/packages/arrow/vignettes/install.html). 
 The following codes worked for me
 
