@@ -75,7 +75,7 @@ class Base:
                 results.append(row)
 
         return pandas.DataFrame(results).loc[
-            :, ["wflow_id", "wflow_desc", "py_base_learner_args", "result_path"]
+            :, ["wflow_id", "model_tag", "recipe_tag", "py_base_learner_args", "result_path"]
         ]
 
     def __repr__(self) -> str:

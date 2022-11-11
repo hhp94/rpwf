@@ -1,0 +1,423 @@
+---
+title: "rpwf"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{rpwf}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  message = FALSE,
+  warning = FALSE
+)
+```
+
+```{r setup, message = FALSE}
+library(rpwf)
+library(dplyr)
+library(parsnip)
+library(recipes)
+library(modeldata)
+library(ggplot2)
+```
+
+## Introduction
+* I wrote this package because I want to wrangle data in R, i.e., using 
+[`{data.table}`](http://rdatatable.gitlab.io/data.table/), [`{tidymodels}`](https://www.tidymodels.org/), [`{tidyverse}`](https://www.tidyverse.org/), spline basis functions generations with 
+[`{mgcv}`](https://cran.r-project.org/web/packages/mgcv/index.html)/[`{gratia}`](https://gavinsimpson.github.io/gratia/), and visualization with [`{ggplot2}`](https://ggplot2.tidyverse.org/) to name a few.  
+  + Importantly,[`{mice}`](https://github.com/amices/mice)
+  and [`{missForest}`](https://cran.r-project.org/web/packages/missForest/) in R 
+  are powerful multiple imputation methods.  
+* Meanwhile, the ML and DL ecosystems in python are usually more mature, 
+flexible, and many latest updates and ML research papers have python 
+implementations.  
+  + I find that fitting model in python is usually faster and consume less 
+  memory for the equivalent model in R, possibly due to `numpy` and bleeding
+  edge implementation of software.  
+* `{rpwf}` allows wrangling data in R while having access to the latest and 
+greatest ML packages in python.  
+* In Kaggle competitions, it is usually feature engineering that gives a 
+competitor an edge. `{rpwf}` helps by  
+  + Enabling the use of the [`{workflowset}`](https://workflowsets.tidymodels.org/)
+  framework. Workflow sets are pre-defined test experiments that test how
+  engineered features affect the predictive performance.  
+  + Allowing seamless deployment on HPC clusters or cloud computers because 
+  the pathing and uploading of results is handled by (a) SQLite database(s).  
+
+## Demonstration
+* Let's demonstrate using the `sim_classification()` function from [`{modeldata}`](https://modeldata.tidymodels.org/).  
+```{r}
+set.seed(123)
+tmp_dir <- withr::local_tempdir(pattern = "vignette") # Temp folder
+df <- modeldata::sim_classification(num_samples = 1000, num_linear = 40)
+df[1:6, 1:6]
+```
+
+* Data is balanced. 
+```{r}
+table(df$class)
+```
+
+* There's no missing data.  
+```{r}
+sum(is.na(df))
+```
+
+* Re-code classes, our response variable, as integers  
+```{r}
+df$class <- as.integer(df$class) - 1
+```
+
+* Add an id column
+```{r}
+df$id <- seq_len(nrow(df))
+```
+
+## Initialize a database
+* Create a database called `"db.SQLite"` with `rpwf_connect_db()`.
+```{r}
+db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+```
+
+* `db_con` is an object that holds a [`{DBI}`](https://dbi.r-dbi.org/) connection
+to the SQLite database that we just created. Access it with `db_con$con`.  
+```{r, eval = FALSE}
+db_con$con
+#   Path: <path>\rpwfDb\db.SQLite
+#   Extensions: TRUE
+```
+
+## Define models with [`{parsnip}`](https://parsnip.tidymodels.org/)
+* Identical to {parsnips}, first choose a model, i.e., [`boost_tree()`](https://parsnip.tidymodels.org/reference/boost_tree.html), then 
+choose the R engine with [`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html) and classification or regression with [`set_mode()`](https://parsnip.tidymodels.org/reference/set_mode.html).  
+* Then, pipe the object into the `set_py_engine()` function.  
+* `set_py_engine()` has 3 important arguments  
+  + `py_module` and `py_base_learner` defines how to import a base learner in 
+  a python script.  
+  + `args` defines the arguments that can be passed to the base learner in python.  
+  + `tag` is an optional argument that's helpful for keeping track of models.  
+
+* Check the available models with `rpwf_avail_models()` and add another model
+with `rpwf_add_py_model()`.
+```{r}
+rpwf_avail_models(db_con)
+```
+
+### `xgboost`
+* I fix the `n_estimators` at 50 and tune the learning rate. Other arguments
+can be found at the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), 
+* To do this, I pass the parameter `n_estimators = 50` to the `args` argument
+of `set_py_engine()`.  
+* I am going to tune 6 hyper parameters by passing them the `tune()` functions 
+just like in `{parsnips}`.  
+
+```{r}
+# This model is equivalent to the following python codes:
+
+# from xgboost import XGBClassifier
+#
+# base_learner = XGBClassifier(
+#   eval_metric = "logloss",
+#   use_label_encoder = False,
+#   verbosity = 0,
+#   silent = True
+# )
+
+xgb_model <- boost_tree(
+  mtry = tune(),
+  min_n = tune(),
+  tree_depth = tune(),
+  learn_rate = tune(),
+  loss_reduction = tune(),
+  sample_size = tune()
+) |>
+  set_engine("xgboost") |>
+  set_mode("classification") |>
+  set_py_engine(
+    "xgboost",
+    "XGBClassifier",
+    args = list(
+      eval_metric = "logloss",
+      n_estimators = 50,
+      use_label_encoder = FALSE,
+      verbosity = 0,
+      silent = TRUE
+    )
+  )
+```
+
+### `svm`
+* From the [sklearn.svm.SCV docs](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC), the argument `cache_size` can help speed up model fitting if memory is
+available. I will increase this from the default value. This is an example
+of how fitting models in python can have some very useful settings.  
+  + In this example, `cache_size` wouldn't reduce fit time because the data is 
+  small.  
+* Let's set up a *radial basis kernel* svm model.  
+  + I have to fix the `kernel` argument in `args` to `rbf`. 
+  + This is because `{tidymodels}` defines `svm_poly()` and `svm_rbf()` 
+  separately for polynomial basis svm and radial basis svm while sci-kit learn 
+  defines them both with `sklearn.svm.SVC`.  
+
+```{r}
+svm_rbf_model <- svm_rbf(
+  cost = tune(),
+  rbf_sigma = tune()
+) |>
+  set_engine("kernlab") |>
+  set_mode("classification") |>
+  set_py_engine(
+    "sklearn.svm",
+    "SVC",
+    "svm_rbf",
+    tag = "svm_rbf",
+    kernel = "rbf", # fix kernel parameter = "rbf"
+    cache_size = 500
+  )
+```
+
+### `glm`
+* Let's also fit an elastic net model.  
+
+```{r}
+enet_model <- logistic_reg(
+  penalty = tune(),
+  mixture = tune()
+) |>
+  set_engine("glmnet") |>
+  set_mode("classification") |>
+  set_py_engine(
+    "sklearn.linear_model",
+    "LogisticRegression",
+    "glmnet",
+    solver = "saga",
+    penalty = "elasticnet",
+    warm_start = TRUE
+  )
+```
+
+
+## Hyper parameter tuning
+* The `{dials}` package provides 1) sensible hyper parameters ranges, and 2) 
+functions that go beyond the random grid and regular grid such as 
+`dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
+* `dials::grid_latin_hypercube` will be helpful for models with a lot of 
+hyper parameters such as `xgboost`. But for `svm_rbf_model`, tuning just 2 
+hyper parameters on a 2-D grid with `dials::grid_regular` would provide sufficient
+coverage of the hyper parameter space at an acceptable speed.  
+* Updating the range of the hyper parameter space is similar to [how it works](https://dials.tidymodels.org/articles/dials.html) in `{dials}`. Just 
+provide the tuning functions (or create new ones) to the `.model_update_params` argument.  
+* **Models specific tuning grids** can be added at this step with `set_r_grid()`.  
+
+### `xgboost`
+* For the `xgboost_model`, let's use a `dials::grid_latin_hypercube`.  
+* Let's limit `max_depth`. To do this, I add a named list to the `.model_update_params` argument.  
+```{r}
+xgb_model <- xgb_model |>
+  set_r_grid(
+    .model_grid_fun = dials::grid_latin_hypercube,
+    .model_update_params = list(tree_depth = dials::tree_depth(range(2, 5))),
+    size = 100
+  )
+```
+
+### `svm`
+* For the `svm_rbf_model`, let's use a 2D regular grid.  
+```{r}
+svm_rbf_model <- svm_rbf_model |>
+  set_r_grid(dials::grid_regular, levels = 10)
+```
+
+### `glm`
+* Let's also use a 2D regular grid for the enet model. However, I changed the 
+range of the l1 penalty to allows for a greater regularization strength since
+scikit-learn inverse the penalty value.  
+```{r}
+enet_model <- enet_model |>
+  set_r_grid(dials::grid_regular,
+    list(penalty = dials::penalty(range = c(-8, 0.5))),
+    levels = 10
+  )
+```
+
+## Define transformation pipelines with [`{recipes}`](https://recipes.tidymodels.org/)
+* Recipes are defined as usual.  
+  + Use the formula or the role interface to specify the response and predictors.  
+  + The base recipe is used to gauge the baseline performance of each model.  
+  + The pca recipe is used to de-correlate the variables. [`step_pca()`](https://recipes.tidymodels.org/reference/step_pca.html) conveniently
+  provides an argument to keep an arbitrary threshold of the variance explained. 
+  I choose 95%.  
+* **`rpwf` reserves one optional special role** that can be used with the `update_role()` function:
+  + `pd.index` is a special role. It will mark a column for conversion into a
+  pandas index in python.  
+  + Below, the column `df$id` will become the `pandas.DataFrame` index.  
+* Pipe a recipe into `rpwf_tag_recipe()` to add a description to the recipe.  
+```{r}
+common <- recipe(class ~ ., data = df) |>
+  step_mutate(class = as.integer(class)) |>
+  update_role(id, new_role = "pd.index")
+
+### xgb recipes
+xgb_base_rec <- common |>
+  rpwf_tag_recipe("xgb_base")
+
+xgb_pca_rec <- xgb_base_rec |>
+  step_normalize(all_numeric_predictors()) |>
+  step_pca(threshold = .95) |>
+  rpwf_tag_recipe("xgb_pca")
+
+### glm and svm recipes
+scaled_base_rec <- common |>
+  step_normalize(all_numeric_predictors()) |>
+  rpwf_tag_recipe("scaled_base")
+
+scaled_pca_rec <- scaled_base_rec |>
+  step_pca(threshold = .95) |>
+  rpwf_tag_recipe("scaled_pca")
+```
+
+## Create workflowsets 
+### `rpwf_workflow_set()`
+* The function `rpwf_workflow_set()` mimics [`workflowsets::workflow_set()`](https://workflowsets.tidymodels.org/). It 
+creates a combination of all the provided recipes and models. Then, one can 
+work with the resulting data.frame just like any data.frame (e.g., filtering
+out redundant workflows and etc.). 
+* One `workflow_set` for `xgboost` and one for `svm` and `glm` are created and
+`rbind()` into one final `workflow_set`.  
+* The `cost` argument is to specify which measure of predictive performance is
+optimized for. Look up the values in the [scikit-learn docs](https://scikit-learn.org/stable/modules/model_evaluation.html). 
+Custom cost functions are possible but would require coding on the python side.    
+
+```{r}
+### xgboost workflow_set
+xgb_wfs <- rpwf_workflow_set(
+  preprocs = list(xgb_base_rec, xgb_pca_rec),
+  models = list(xgb_model),
+  cost = "roc_auc"
+)
+### svm and glm workflow_set
+svm_glm_wfs <- rpwf_workflow_set(
+  preprocs = list(scaled_base_rec, scaled_pca_rec),
+  models = list(svm_rbf_model, enet_model),
+  cost = "roc_auc"
+)
+### combined workflow_set
+all_wfs <- rbind(xgb_wfs, svm_glm_wfs)
+```
+
+### `rpwf_augment()`
+* `rpwf_augment()` is a wrapper function for many tasks. But most importantly,
+it generates the hyper parameter grids in R and transform these grids to make them 
+compatible with sklearn's API. For example the following conversions were done:
+  + The `mtry` positive integer in R is converted into sklearn's `colsample_bytree`
+  positive proportions.  
+  + The `penalty` in R is reciprocated in sklearn. This is why in
+  order to have the l1 penalty > 1 (which is too large most of the time), the 
+  range upper bound is changed to be positive and smaller than 1.  
+```{r}
+all_wfs <- rpwf_augment(all_wfs, db_con)
+all_wfs |>
+  dplyr::select(model_tag, recipe_tag, costs)
+```
+
+* Checking the generated grids, we can see that the names of the hyper 
+parameters have been renamed to conform to the scikit-learn API.  
+```{r}
+sapply(unique(all_wfs$grids), head)
+```
+
+* Here are the dimensions of the grids. This is always good to check to make
+sure we didn't accidentally make a grid that's too big.  
+```{r}
+sapply(unique(all_wfs$grids), nrow)
+```
+
+## Export data as parquets and add to database.
+* There are two types of parquets files 1) hyper param grids, and 2) train/test
+data frames.  
+* `rpwf_write_grid()` and `rpwf_write_df()` write the parquets and returns
+id columns that track where the parquets are to the workflow set.  
+* Because this function only generate a data.frame if its not already written, 
+running each of these functions in parallel is not recommended.  
+  + To get around this, one can either work with a manageable number of 
+  workflows at a time, or split the work into multiple different databases and 
+  run the export functions for each database in parallel.    
+```{r}
+rpwf_write_grid(all_wfs)
+rpwf_write_df(all_wfs)
+```
+
+* Then finally, export the meta data into the database with `rpwf_export_db()`.  
+```{r}
+rpwf_export_db(all_wfs, db_con)
+```
+
+## Run the workflow in python
+```{bash, eval = FALSE}
+tmp_dir_posix = <Path to the folder that contains the generated "rpwfDB" folder>
+```
+
+* The `rpwf` python codes contains scripts that performs model fitting. These are 
+also templates to experiment further using the data generated in R.   
+* For example, to use the `nested_resampling.py` script, in the terminal, run 
+the following command to get the list of arguments  
+```{bash, eval = FALSE}
+python -m rpwf.script.nested_resampling -h
+```
+
+* Or the following in a Jupyter notebook cell
+```{bash, eval = FALSE}
+%run -m rpwf.script.nested_resampling -h
+```
+
+* This following command display the workflows we exported.  
+```{bash, eval = FALSE}
+%run -m rpwf.script.nested_resampling $tmp_dir_posix -db "db.SQLite" -s
+```
+  + The positional argument is the path to the folder that holds the generated
+  `"rpwfDb"` folder. In this case, my temp folder.  
+  + The `-db` flag is to specify the name of the database we are connecting to.  
+  + The `-s` flag shows the workflows present in the database.  
+* The other important flags are  
+  + The `-a` flag runs all the workflow that hasn't been run.    
+  + The `-w` flag accept a list of ids (i.e., 1 2 3 4) to specify which workflow
+  to run.  
+  + The `-f` flag force a run and overwrite the results of a workflow that has
+  already been run.  
+  + The `-c` flag indicates the number of CPU cores dedicated to the model fitting
+  task.  
+
+* Let's run the nested CV with 5 CV * 2 repeats for the inner loop for 
+hyper param tuning, 5 CV * 2 repeats on the outer loop for performance 
+validation.  
+```{bash, eval = FALSE}
+%run -m rpwf.script.nested_resampling $tmp_dir_posix \
+   -db "db.SQLite" -a -c 7 -icv 5 -icr 2 -ocv 5 -ocr 2
+```
+
+## Visualize the results
+* Results can be imported back into R by passing the `db_con` object to
+`rpwf_results()`.  
+```{r, eval = FALSE}
+fit_results <- rpwf_results(db_con)
+```
+
+```{r, echo = FALSE, message = FALSE}
+db_con <- rpwf_connect_db("db.SQLite", system.file("extdata", package = "rpwf"))
+fit_results <- rpwf_results(db_con)
+```
+
+* We can now just manipulate the results with R.  
+```{r, fig.align='center', fig.width=8, fig.height=4}
+fit_results |>
+  tidyr::unnest(fit_results) |>
+  ggplot(aes(y = roc_auc, x = recipe_tag, color = recipe_tag)) +
+  geom_boxplot() +
+  geom_jitter() +
+  facet_wrap(~model_tag, scale = "free_x") +
+  theme_bw()
+```
+

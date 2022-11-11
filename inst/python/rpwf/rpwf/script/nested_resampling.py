@@ -1,15 +1,16 @@
 """Run nested cross validation of the scores"""
-import argparse
 from __future__ import annotations
+import argparse
 from pathlib import Path
 import sys
 
 import pandas
+from numpy import ravel
 from sklearn.model_selection import (
     RepeatedStratifiedKFold,
     GridSearchCV,
     StratifiedKFold,
-    cross_val_score,
+    cross_val_score
 )
 
 from .. import database, rpwf
@@ -17,7 +18,7 @@ from .. import database, rpwf
 
 def get_wflow_list(all_wflow: pandas.DataFrame):
     """If the workflow has results in the db or not"""
-    if not args.rerun:  # Don't run wflows that have results in db
+    if not args.force:  # Don't run wflows that have results in db
         all_wflow = all_wflow.loc[all_wflow["result_path"].isnull(), :]
     if args.all_id:
         return all_wflow.loc[:, "wflow_id"].to_list()
@@ -52,7 +53,7 @@ if __name__ == "__main__":
         "--all-id",
         action="store_true",
         default=False,
-        help="run all wflows in the db",
+        help="run all wflows in the db"
     )
     id_group.add_argument(
         "-w",
@@ -60,15 +61,15 @@ if __name__ == "__main__":
         metavar="wflow-id",
         nargs="+",
         type=int,
-        help="input list of wflows to run",
+        help="input list of wflows to run"
     )
 
     parser.add_argument(
-        "-r",
-        "--rerun",
+        "-f",
+        "--force",
         action="store_true",
         default=False,
-        help="rerun wflows with completed results",
+        help="force runnning of wflows"
     )
     parser.add_argument(
         "-c",
@@ -76,7 +77,7 @@ if __name__ == "__main__":
         metavar="cores",
         type=int,
         default=-1,
-        help="number of cores for parallization",
+        help="number of cores for parallization"
     )
     parser.add_argument(
         "-icv",
@@ -84,7 +85,15 @@ if __name__ == "__main__":
         metavar="inner-n-cv",
         type=int,
         default=5,
-        help="number of splits for the inner loop for hyper param tuning",
+        help="number of splits for the inner loop for hyper param tuning"
+    )
+    parser.add_argument(
+        "-icr",
+        "--inner-n-repeats",
+        metavar="inner-n-repeats",
+        type=int,
+        default=5,
+        help="number of repeats for the inner loop for hyper param tuning"
     )
     parser.add_argument(
         "-ocv",
@@ -92,7 +101,7 @@ if __name__ == "__main__":
         metavar="outer-n-cv",
         type=int,
         default=5,
-        help="number of splits for the outer loop for cv with best hyper param",
+        help="number of splits for the outer loop for cv with best hyper param"
     )
     parser.add_argument(
         "-ocr",
@@ -100,15 +109,14 @@ if __name__ == "__main__":
         metavar="outer-n-repeats",
         type=int,
         default=5,
-        help="number of repeats of splits for the outer loop for cv with best hyper param",
+        help="number of repeats of splits for the outer loop for cv with best hyper param"
     )
-    parser.add_argument(
-        "-e",
-        "--export",
-        action="store_true",
-        default=False,
-        help="Export results to database or not",
-    )
+    # parser.add_argument(
+    #     "-e",
+    #     "--export",
+    #     action="store_true",
+    #     help="export results to database or not"
+    # )
 
     args = parser.parse_args()
 
@@ -148,19 +156,26 @@ if __name__ == "__main__":
         p_grid = rpwf.RGrid(db_obj, wflow_obj).get_grid()
 
         df_obj = rpwf.TrainDf(db_obj, wflow_obj)
-        X, y = df_obj.get_df_X(), df_obj.get_df_y()
+        X, y = df_obj.get_df_X(True), df_obj.get_df_y(True)
 
         if y is None:
             print("No target provided, exiting...")
             sys.exit()
-
+        
+        y = ravel(y)
+        
         model_type_obj = rpwf.Model(db_obj, wflow_obj)
         base_learner = rpwf.BaseLearner(wflow_obj, model_type_obj).base_learner
-        score = rpwf.Cost(db_obj, wflow_obj).get_cost()
+        score = wflow_obj._get_par("costs")
 
         # Nested resampling
-        inner_cv = StratifiedKFold(
-            n_splits=args.inner_n_cv, shuffle=True, random_state=wflow_obj.random_state
+        # inner_cv = StratifiedKFold(
+        #     n_splits=args.inner_n_cv, shuffle=True, random_state=wflow_obj.random_state
+        # )
+        inner_cv = RepeatedStratifiedKFold(
+            n_splits=args.inner_n_cv, 
+            n_repeats=args.inner_n_repeats,
+            random_state=wflow_obj.random_state
         )
         outer_cv = RepeatedStratifiedKFold(
             n_splits=args.outer_n_cv,
@@ -171,7 +186,7 @@ if __name__ == "__main__":
         if p_grid is None:
             print("No tune grid specified, running with default params")
             nested_score = cross_val_score(
-                base_learner, X=X, y=y, cv=outer_cv, n_jobs=n_cores
+                base_learner, X=X, y=y, cv=outer_cv, n_jobs=n_cores, scoring=score
             )
 
         else:
@@ -185,9 +200,9 @@ if __name__ == "__main__":
             )
             nested_score = cross_val_score(param_tuner, X=X, y=y, cv=outer_cv)
 
-        if args.export:
+        # if args.export:
             # Export the results
-            exporter = rpwf.Export(db_obj, wflow_obj)
-            nested_score_df = pandas.DataFrame(nested_score, columns=[score])
-            exporter.export_cv(nested_score_df, "nested_cv")
-            exporter.export_db()
+        exporter = rpwf.Export(db_obj, wflow_obj)
+        nested_score_df = pandas.DataFrame(nested_score, columns=[score])
+        exporter.export_cv(nested_score_df, "nested_cv")
+        exporter.export_db()

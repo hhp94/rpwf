@@ -6,6 +6,7 @@ import pathlib
 from typing import Any, Dict, Union
 
 import joblib
+import numpy
 import pdcast
 import pyarrow.parquet
 import pandas
@@ -88,11 +89,23 @@ class RGrid(_RpwfSQL):
         self._exec_query()
         self._import_parquet("grid_path")
 
+    def val_to_list(self, d: Dict):
+        for v in d:
+            d[v] = [d[v]]
+        return d
+
     def get_grid(self) -> Dict[str, Any]:
         """Read in the parquet file and return as dict"""
         if self.parquet is None:
             return None
-        return self.parquet.to_pydict()
+        # convert the parquet file to list of rows
+        grid = self.parquet.to_pylist()
+        # wrap the value of each row in a list
+        l = len(grid)
+        wrapped_grid = [None] * l
+        for i in range(l):
+            wrapped_grid[i]= self.val_to_list(grid[i])
+        return wrapped_grid
 
 
 class TrainDf(_RpwfSQL):
@@ -128,33 +141,38 @@ class TrainDf(_RpwfSQL):
             self.df.set_index(self._index, drop=True, inplace=True)
         assert self._index not in self.df.columns, f"{self._index} is still in the data"
 
-    def get_df_X(self) -> pandas.DataFrame:
+    def get_df_X(self, to_ndarray = False) -> Union[numpy.ndarray, pandas.DataFrame]:
         """Return the predictor DataFrame"""
-        return self.df.loc[:, json.loads(self.query_results["predictors"])]
+        df_X = self.df.loc[:, json.loads(self.query_results["predictors"])]
+        if to_ndarray:
+          return df_X.to_numpy()
+        return df_X
 
-    def get_df_y(self) -> Union[None, pandas.Series]:
+    def get_df_y(self, to_ndarray = False) -> Union[None, numpy.ndarray, pandas.DataFrame]:
         """Return the response Series"""
         if self._target is None:
             print("no target column provided")
             return None
-        return self.df.loc[:, self.df.columns == self._target]
+        df_y = self.df.loc[:, self.df.columns == self._target].to_numpy()
+        if to_ndarray:
+          return df_y.to_numpy()
+        return df_y.to_numpy()
 
+# class Cost(_RpwfSQL):
+#     """Get the cost metrics (RMSE, neg_log_loss etc.)"""
 
-class Cost(_RpwfSQL):
-    """Get the cost metrics (RMSE, neg_log_loss etc.)"""
+#     def __init__(self, base: Base, wflow: Wflow) -> None:
+#         """Get the cost metric associated with the wflow"""
+#         super().__init__(base)
+#         self.cost_id: int = wflow._get_par("cost_id")
+#         self.query = sqlalchemy.select(
+#             self.base.meta_dat.tables["cost_tbl"].c.cost_name
+#         ).where(self.base.meta_dat.tables["cost_tbl"].c.cost_id == self.cost_id)
+#         self._exec_query()
 
-    def __init__(self, base: Base, wflow: Wflow) -> None:
-        """Get the cost metric associated with the wflow"""
-        super().__init__(base)
-        self.cost_id: int = wflow._get_par("cost_id")
-        self.query = sqlalchemy.select(
-            self.base.meta_dat.tables["cost_tbl"].c.cost_name
-        ).where(self.base.meta_dat.tables["cost_tbl"].c.cost_id == self.cost_id)
-        self._exec_query()
-
-    def get_cost(self) -> str:
-        """Cost metric for optimization e.g. log_loss"""
-        return self.query_results["cost_name"]
+#     def get_cost(self) -> str:
+#         """Cost metric for optimization e.g. log_loss"""
+#         return self.query_results["cost_name"]
 
 
 class Model(_RpwfSQL):
@@ -243,7 +261,7 @@ class Export(_RpwfSQL):
         """Export the cross validation results, expects pd.DataFrame results"""
         self.desc = desc  # descriptions of the result (sampling schemes)
         self.csv_path = self.base.result_path.joinpath(
-            f"wflow_{self.wflow_id}_{self.desc}_results.csv"
+            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}_results.csv"
         )
         results.to_csv(self.csv_path, index=False)  # res_tblite the csv
         self.csv_path = self._gen_rel_path(self.csv_path)  # To rel path after export
@@ -297,7 +315,7 @@ class Export(_RpwfSQL):
     def export_model(self, model: Any) -> None:
         """Export the fitted model if needed, run before export_db()"""
         self.model_path = self.base.result_path.joinpath(
-            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}.joblib"
+            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}_model.joblib"
         )
         joblib.dump(model, self.model_path)
         self.model_path = self._gen_rel_path(self.model_path)
