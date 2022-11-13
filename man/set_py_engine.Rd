@@ -32,8 +32,9 @@ needed to run \code{sklearn} models. Importantly, also passes \code{sklearn} bas
 specific arguments through the \code{args} parameter.
 }
 \examples{
+board <- pins::board_temp()
 tmp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 parsnip::boost_tree() |>
   parsnip::set_engine("xgboost") |>
   parsnip::set_mode("classification") |>

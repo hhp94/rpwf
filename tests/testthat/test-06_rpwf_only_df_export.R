@@ -1,6 +1,9 @@
 test_that("rpwf_data_set()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
+
   df <- rpwf_sim_()$train
 
   r <- recipes::recipe(target ~ ., data = df) |>
@@ -18,15 +21,15 @@ test_that("rpwf_data_set()", {
 })
 
 test_that("rpwf_export_db.rpwf_data_set()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   query_wflow_tbl <- function() {
     DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
   }
   # Add a train df
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
   df <- rpwf_sim_()$train
 
   r <- recipes::recipe(target ~ ., data = df) |>
@@ -39,10 +42,10 @@ test_that("rpwf_export_db.rpwf_data_set()", {
     rpwf_tag_recipe("normalize")
 
   df <- rpwf_data_set(r, r2, r3, db_con = db_con)
-  expect_equal(length(list.files(tmp_dir, recursive = TRUE)), 1L)
+  expect_equal(length(list.files(board$path)), 0L)
 
   rpwf_write_df(df)
-  expect_equal(length(list.files(tmp_dir, recursive = TRUE)), 3L)
+  expect_equal(length(list.files(board$path)), 2L)
 
   before <- query_wflow_tbl()
 

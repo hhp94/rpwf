@@ -51,12 +51,14 @@ above command.
   + pyarrow  
   + scikit-learn  
   + xgboost  
+  + pins
   + any other machine learning library such as `lightgbm` and etc.  
 
 ```{bash, eval = FALSE}
 conda activate py39
 conda install pyarrow sqlalchemy xgboost
 pip install pandas-downcast
+python -m pip install pins
 ```
 
 * Next, copy the python codes into any folder with `rpwf_cp_py_codes()`. Here

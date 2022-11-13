@@ -41,8 +41,9 @@ Generic S3 Function for \code{rpwf_workflow_set} and \code{rpwf_data_set}
 }
 \examples{
 # Create the database
-temp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", temp_dir)
+board <- pins::board_temp()
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 
 # Create a `workflow_set`
 d <- mtcars
@@ -59,5 +60,5 @@ wf <- rpwf_workflow_set(list(r1), list(m1), "neg_log_loss")
 
 to_export <- wf |>
   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10)
-list.files(paste0(temp_dir, "/rpwfDb"), recursive = TRUE) # Files are created
+print(to_export)
 }

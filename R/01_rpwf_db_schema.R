@@ -10,49 +10,36 @@
 DbCon <- R6::R6Class(
   "DbCon",
   public = list(
-    #' @field db_name name of the database.
-    db_name = NULL,
-    #' @field proj_root_path root path of the project.
-    proj_root_path = NULL,
+    #' @field dbname name of the database.
+    dbname = NULL,
+    #' @field board a `{pins}` board object.
+    board = NULL,
     #' @field db_path path to the database.
     db_path = NULL,
     #' @field con a [DBI::dbConnect()] object to the database.
     con = NULL,
     #' @description
     #' Create an `DbCon` object. Should be a singleton. `self$con` returns a
-    #' [DBI::dbConnect()] object and `self$proj_root_path` returns
-    #' `proj_root_path`.
-    #' @param db_name name of the database.
-    #' @param proj_root_path root path of the project.
+    #' [DBI::dbConnect()] object and `self$board` returns
+    #' `board`.
+    #'
+    #' @inheritParams rpwf_connect_db
+    #'
     #' @return A new `DbCon` object.
     #' @examples
-    #' db_con = DbCon$new("db.SQLite", tempdir())
+    #' board <- pins::board_temp()
+    #' tmp_dir <- withr::local_tempdir()
+    #' db_con <- DbCon$new(paste(tmp_dir, "db.SQLite", sep = "/"), board)
     #' db_con$con
-    #' db_con$proj_root_path
-    initialize = function(db_name, proj_root_path) {
-      self$db_name <- db_name
-      self$proj_root_path <- proj_root_path
-      if (grepl("\\\\", self$proj_root_path)) {
-        message("Converting to posix path")
-        self$proj_root_path <- gsub("\\\\", "/", self$proj_root_path)
-      }
-      if (grepl("/$", self$proj_root_path)) {
-        message("Removing / at the end of the path")
-        self$proj_root_path <- gsub("/$", "", self$proj_root_path)
-      }
-      self$db_path <- paste("rpwfDb", self$db_name, sep = "/")
+    #' db_con$board
+    initialize = function(dbname, board, ...) {
+      stopifnot("board needs to be a `pins::board_<>` object"=all(class(board) %in% c("pins_board_folder", "pins_board")))
+      stopifnot(is.character(dbname) & length(dbname) == 1)
+      self$dbname <- dbname
+      self$board <- board
       # Create the root path if needed
-      withr::with_dir(self$proj_root_path, {
-        if (!dir.exists("rpwfDb")) {
-          dir.create("rpwfDb")
-        }
-        if (file.exists(self$db_path)) {
-          message("db found")
-        } else {
-          message("creating new db")
-        }
-        self$con <- DBI::dbConnect(RSQLite::SQLite(), dbname = self$db_path)
-      })
+      self$con <- DBI::dbConnect(RSQLite::SQLite(), dbname = self$dbname, ...)
+      stopifnot("Created connection is not valid" = DBI::dbIsValid(self$con))
     }
   ),
   private = list(
@@ -82,8 +69,10 @@ DbCreate <- R6::R6Class("DbCreate",
     #' @param query a SQL query string.
     #' @return A new `DbCreate` object.
     #' @examples
-    #' db_con = DbCon$new("db.SQLite", tempdir())
-    #' db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
+    #' board <- pins::board_temp()
+    #' tmp_dir <- withr::local_tempdir()
+    #' db_con <- DbCon$new(paste(tmp_dir, "db.SQLite", sep = "/"), board)
+    #' db <- DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
     initialize = function(con, query) {
       self$con <- con
       self$query <- query
@@ -156,7 +145,7 @@ rpwf_schema <- function() {
   tbl$r_grid_tbl <-
     "CREATE TABLE IF NOT EXISTS r_grid_tbl(
     grid_id INTEGER PRIMARY KEY,
-    grid_path VARCHAR UNIQUE, /* Path to grid parquet, one NULL is accepted*/
+    grid_pin_name VARCHAR UNIQUE, /* Path to grid parquet, one NULL is accepted*/
     grid_hash VARCHAR UNIQUE NOT NULL /* Hash of the grid for caching */
   );"
   # df_tbl-----------------------------------------------
@@ -166,7 +155,7 @@ rpwf_schema <- function() {
     idx_col VARCHAR, /* id column for pandas index */
     target VARCHAR, /* target column, NULL if test data.frame */
     predictors VARCHAR NOT NULL, /* predictors columns */
-    df_path VARCHAR UNIQUE NOT NULL, /* Path to the parquet file of the experiment */
+    df_pin_name VARCHAR UNIQUE NOT NULL, /* Path to the parquet file of the experiment */
     df_hash VARCHAR UNIQUE NOT NULL /* Hash of the *recipe* to juice the file */
   );"
   # wflow_tbl-----------------------------------------------
@@ -235,8 +224,9 @@ rpwf_schema <- function() {
 #'
 #' @examples
 #' # Generate dummy database
+#' board <- pins::board_temp()
 #' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' db_con <- DbCon$new(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 #' rpwf_add_py_model(
@@ -315,19 +305,21 @@ rpwf_add_py_model <- function(db_con,
 #' Create the "rpwfDb" folder in the provided root path and create a db if
 #' needed. Access the connection with `object$con`
 #'
-#' @param db_name name of the database.
-#' @param proj_root_path root path of the project.
+#' @param dbname path to the database, passed to RSQLite::SQLite().
+#' @param board a `{pins}` board object.
+#' @param ... arguments passed to [DBI::dbConnect()]
 #' @return A new `DbCon` object.
 #'
 #' @export
 #'
 #' @examples
+#' board <- pins::board_temp()
 #' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' db_con$con
-#' db_con$proj_root_path
-rpwf_connect_db <- function(db_name, proj_root_path) {
-  db_con <- DbCon$new(db_name = db_name, proj_root_path = proj_root_path)
+#' db_con$board
+rpwf_connect_db <- function(dbname, board, ...) {
+  db_con <- DbCon$new(dbname = dbname, board = board, ...)
   rpwf_db_init_(db_con, rpwf_schema())
   return(db_con)
 }

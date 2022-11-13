@@ -28,8 +28,8 @@ rpwf_grid_gen_ <- function(model,
   fun <- NULL
   update_list <- NULL
 
-  # Assign these two variables. Make sure the engine specific argument overide
-  # the arguements here.
+  # Assign these two variables. Make sure the engine specific argument override
+  # the arguments here.
   if (!is.null(model$.model_grid_fun)) {
     fun <- model$.model_grid_fun
   } else {
@@ -151,7 +151,7 @@ rpwf_grid_rename_ <- function(json) {
 #' @return finalized parameter object.
 #' @noRd
 rpwf_finalize_params_ <- function(model, preproc) {
-  # some parameters (mtry) requires the data to be finalized
+  # some parameters `mtry` requires the data to be finalized
   stopifnot("model_spec" %in% class(model) &
     "recipe" %in% class(preproc))
 
@@ -161,7 +161,8 @@ rpwf_finalize_params_ <- function(model, preproc) {
     drop = TRUE
   ]
 
-  # mtry conversion to python requires ncol() and nrow() of pre-transform data
+  # `mtry` conversion to python requires `ncol()` and `nrow()` of pre-transform
+  # data
   finalized_params <- dials::finalize(
     hardhat::extract_parameter_set_dials(model),
     dplyr::select(preproc$template, dplyr::all_of(preds))

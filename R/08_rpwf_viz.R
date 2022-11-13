@@ -9,10 +9,10 @@
 #' @export
 #'
 #' @examples
+#' board <- pins::board_temp()
 #' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' dm_obj <- rpwf_dm(db_con)
-#' dm_obj
 #' # dm_obj |> dm::dm_draw()
 rpwf_dm <- function(db_con) {
   model_type_tbl <- model_type_id <- r_grid_tbl <- grid_id <- df_tbl <- NULL

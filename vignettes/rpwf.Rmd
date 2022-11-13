@@ -23,6 +23,7 @@ library(parsnip)
 library(recipes)
 library(modeldata)
 library(ggplot2)
+library(pins)
 ```
 
 ## Introduction
@@ -46,7 +47,8 @@ competitor an edge. `{rpwf}` helps by
   framework. Workflow sets are pre-defined test experiments that test how
   engineered features affect the predictive performance.  
   + Allowing seamless deployment on HPC clusters or cloud computers because 
-  the pathing and uploading of results is handled by (a) SQLite database(s).  
+  the pathing and uploading of results is handled by (a) SQLite database(s)
+  and the [`{pins}`](https://pins.rstudio.com/) package.  
 
 ## Demonstration
 * Let's demonstrate using the `sim_classification()` function from [`{modeldata}`](https://modeldata.tidymodels.org/).  
@@ -78,9 +80,11 @@ df$id <- seq_len(nrow(df))
 ```
 
 ## Initialize a database
-* Create a database called `"db.SQLite"` with `rpwf_connect_db()`.
+* Create a database called `"db.SQLite"` with `rpwf_connect_db()`.  
+* Create a `pins::board_<>` and pass it to `rpwf_connect_db`.  
 ```{r}
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+board <- board_temp()
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 ```
 
 * `db_con` is an object that holds a [`{DBI}`](https://dbi.r-dbi.org/) connection
@@ -199,11 +203,11 @@ enet_model <- logistic_reg(
   )
 ```
 
-
 ## Hyper parameter tuning
-* The `{dials}` package provides 1) sensible hyper parameters ranges, and 2) 
-functions that go beyond the random grid and regular grid such as 
-`dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
+* The `{dials}` package provides  
+  1. sensible hyper parameters ranges, and  
+  2. functions that go beyond the random grid and regular grid such as 
+  `dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
 * `dials::grid_latin_hypercube` will be helpful for models with a lot of 
 hyper parameters such as `xgboost`. But for `svm_rbf_model`, tuning just 2 
 hyper parameters on a 2-D grid with `dials::grid_regular` would provide sufficient
@@ -357,13 +361,13 @@ rpwf_export_db(all_wfs, db_con)
 
 ## Run the workflow in python
 ```{bash, eval = FALSE}
-tmp_dir_posix = <Path to the folder that contains the generated "rpwfDB" folder>
+tmp_dir_posix = <Path to the folder that contains the pins::board>
 ```
 
 * The `rpwf` python codes contains scripts that performs model fitting. These are 
 also templates to experiment further using the data generated in R.   
 * For example, to use the `nested_resampling.py` script, in the terminal, run 
-the following command to get the list of arguments  
+the following command to get the list of arguments
 ```{bash, eval = FALSE}
 python -m rpwf.script.nested_resampling -h
 ```
@@ -406,7 +410,12 @@ fit_results <- rpwf_results(db_con)
 ```
 
 ```{r, echo = FALSE, message = FALSE}
-db_con <- rpwf_connect_db("db.SQLite", system.file("extdata", package = "rpwf"))
+db_path <- paste(system.file("extdata", package = "rpwf"), "db.SQLite", sep = "/")
+board_path <- paste(system.file("extdata", package = "rpwf"), "test_board", sep = "/")
+
+board <- pins::board_folder(board_path)
+db_con <- rpwf_connect_db(db_path, board)
+
 fit_results <- rpwf_results(db_con)
 ```
 

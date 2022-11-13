@@ -41,8 +41,9 @@ model mode (i.e., "classification")
 }
 \examples{
 # Generate dummy database
+board <- pins::board_temp()
 tmp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+db_con <- DbCon$new(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 DBI::dbListTables(db_con$con)
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 rpwf_add_py_model(

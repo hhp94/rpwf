@@ -1,7 +1,9 @@
 # TrainDf R6 class --------------------------------------------------------
 test_that("initialization of the TrainDf class", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
@@ -15,15 +17,17 @@ test_that("initialization of the TrainDf class", {
     list("X1", "X2", "X3_X1", "X3_X2", "X3_X3", "X3_X4")
   )
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
-  expect_true(is.data.frame(train_df_obj$queried_path))
-  expect_equal(nrow(train_df_obj$queried_path), 0)
+  expect_true(is.data.frame(train_df_obj$queried_pin_name))
+  expect_equal(nrow(train_df_obj$queried_pin_name), 0)
   # The SQL query is 0 row, make a new export query to insert to database
   expect_true(!is.null(train_df_obj$export_query))
 })
 
 test_that("export() method of the TrainDf class", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization
@@ -41,18 +45,20 @@ test_that("export() method of the TrainDf class", {
     )$df_hash,
     train_df_obj$hash
   )
-  expect_true(file.exists(paste(tmp_dir, train_df_obj$path, sep = "/")))
+  expect_true(pins::pin_exists(board, train_df_obj$pin_name))
   # Removing the file and re-exporting would create a new file work
-  unlink(paste(tmp_dir, train_df_obj$path, sep = "/"))
+  unlink(paste(board$path, train_df_obj$pin_name, sep = "/"), recursive = TRUE)
   # File doesn't exist after unlinking
-  expect_true(!file.exists(paste(tmp_dir, train_df_obj$path, sep = "/")))
+  expect_true(!pins::pin_exists(board, train_df_obj$pin_name))
   train_df_obj$export() # Re-export
-  expect_true(file.exists(paste(tmp_dir, train_df_obj$path, sep = "/")))
+  expect_true(pins::pin_exists(board, train_df_obj$pin_name))
 })
 
 test_that("export() method won't add repeated rows class", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
@@ -62,18 +68,20 @@ test_that("export() method won't add repeated rows class", {
   # initialize a new TrainDf object using the same recipe
   train_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   # If we try the same recipe, hash check would find one row
-  expect_equal(nrow(train_df_obj_repeated$queried_path), 1)
+  expect_equal(nrow(train_df_obj_repeated$queried_pin_name), 1)
   # if hash check find one row, then export query would return NULL
   expect_true(is.null(train_df_obj_repeated$export_query))
   # `recipes::juice()` won't run, so self$df is NULL
   expect_true(is.null(train_df_obj_repeated$df))
-  # and the path to the file would be the same
-  expect_equal(train_df_obj_repeated$path, as.character(train_df_obj$path))
+  # and the pin_name to the file would be the same
+  expect_equal(train_df_obj_repeated$pin_name, as.character(train_df_obj$pin_name))
 })
 
 test_that("Check if data (no outcome) can be exported", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "test")
 
   # initialization of a new TrainDf object
@@ -87,18 +95,20 @@ test_that("Check if data (no outcome) can be exported", {
   # initialize a new TrainDf object using the same recipe
   test_df_obj_repeated <- TrainDf$new(dummy_test_rec, db_con)$set_attrs()
   # If we try the same recipe, hash check would find one row
-  expect_equal(nrow(test_df_obj_repeated$queried_path), 1)
+  expect_equal(nrow(test_df_obj_repeated$queried_pin_name), 1)
   # if hash check find one row, then export query would return NULL
   expect_true(is.null(test_df_obj_repeated$export_query))
   # `recipes::juice()` won't run, so self$df is NULL
   expect_true(is.null(test_df_obj_repeated$df))
-  # and the path to the file would be the same
-  expect_equal(test_df_obj_repeated$path, as.character(test_df_obj$path))
+  # and the pin_name to the file would be the same
+  expect_equal(test_df_obj_repeated$pin_name, as.character(test_df_obj$pin_name))
 })
 
 test_that("set_attrs() TrainDf", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
   dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   TrainDf <- TrainDf$new(dummy_rec, db_con)$set_attrs()
@@ -108,18 +118,22 @@ test_that("set_attrs() TrainDf", {
 })
 
 test_that("pandas index adding", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
   dummy_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
 
   # initialization of a new TrainDf object
   expect_message(TrainDf$new(dummy_rec, db_con)$set_attrs(),
     regexp = "as pandas idx"
   )
+
   expect_message(TrainDf$new(
     recipes::update_role(dummy_rec, id, new_role = "INVALID ROLE"),
     db_con
   )$set_attrs(), regexp = "No pandas idx added")
+
   expect_true(TrainDf$new(
     recipes::update_role(dummy_rec, id, new_role = "INVALID ROLE"),
     db_con
@@ -244,7 +258,6 @@ test_that("rpwf_grid_gen_() with fun from set_r_grid", {
   expect_true("colsample_bytree" %in% names(c_grid_lhcube))
 })
 
-
 test_that("rpwf_grid_gen_() no tuning param", {
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   no_tune_spec <- xgb_model_spec_no_tune_() |>
@@ -264,10 +277,11 @@ test_that("rpwf_grid_gen_() no tuning param", {
   expect_true(is.na(c_grid_rand))
 })
 
-
 test_that("transformation of hyper param", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   grid_size <- 10
@@ -356,8 +370,10 @@ test_that("set_r_grid()", {
 })
 
 test_that("initialization of the RGrid class", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   # Generate a grid
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
@@ -390,15 +406,17 @@ test_that("initialization of the RGrid class", {
   # Generate an object
   r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
-  expect_true(is.data.frame(r_grid_obj$queried_path))
-  expect_equal(nrow(r_grid_obj$queried_path), 0)
+  expect_true(is.data.frame(r_grid_obj$queried_pin_name))
+  expect_equal(nrow(r_grid_obj$queried_pin_name), 0)
   # The SQL query is 0 row, make a new export query to insert to database
   expect_true(!is.null(r_grid_obj$export_query))
 })
 
 test_that("passing NA to RGrid class", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   # Generate an object
   r_grid_obj <- RGrid$new(NA, db_con)$set_attrs()
@@ -415,14 +433,16 @@ test_that("passing NA to RGrid class", {
     r_grid_obj$hash
   )
 
-  expect_true(is.na(r_grid_obj$path)) # path is NA because its NULL in the db
+  expect_true(is.na(r_grid_obj$pin_name)) # pin_name is NA because its NULL in the db
   expect_null(r_grid_obj$export_query) # since a query is found, export_q is NULL
   expect_null(r_grid_obj$df) # since a query is found, df is NULL
 })
 
 test_that("export() method of the RGrid class", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   # Generate a grid
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
@@ -466,19 +486,21 @@ test_that("export() method of the RGrid class", {
     )$grid_hash,
     r_grid_obj$hash
   )
-  expect_true(file.exists(paste(tmp_dir, r_grid_obj$path, sep = "/")))
+
+  expect_true(pins::pin_exists(board, r_grid_obj$pin_name))
   # Removing the file and re-exporting would create a new file work
-  unlink(paste(tmp_dir, r_grid_obj$path, sep = "/"))
+  unlink(paste(board$path, r_grid_obj$pin_name, sep = "/"), recursive = TRUE)
   # File doesn't exist after unlinking
-  expect_true(!file.exists(paste(tmp_dir, r_grid_obj$path, sep = "/")))
+  expect_true(!pins::pin_exists(board, r_grid_obj$pin_name))
   r_grid_obj$export() # Re-export
-  expect_true(file.exists(paste(tmp_dir, r_grid_obj$path, sep = "/")))
+  expect_true(pins::pin_exists(board, r_grid_obj$pin_name))
 })
 
 test_that("export() method won't add repeated rows class", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   # Generate a grid
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
@@ -514,18 +536,20 @@ test_that("export() method won't add repeated rows class", {
   # initialize a new RGrid object using the same recipe
   rgrid_obj_repeated <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
   # If we try the same recipe, hash check would find one row
-  expect_equal(nrow(rgrid_obj_repeated$queried_path), 1)
+  expect_equal(nrow(rgrid_obj_repeated$queried_pin_name), 1)
   # if hash check find one row, then export query would return NULL
   expect_true(is.null(rgrid_obj_repeated$export_query))
   # `recipes::juice()` won't run, so self$df is NULL
   expect_true(is.null(rgrid_obj_repeated$df))
-  # and the path to the file would be the same
-  expect_equal(rgrid_obj_repeated$path, as.character(r_grid_obj$path))
+  # and the pin_name to the file would be the same
+  expect_equal(rgrid_obj_repeated$pin_name, as.character(r_grid_obj$pin_name))
 })
 
 test_that("set_attr() RGrid", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   dummy_test_rec <- dummy_recipe_(rpwf_sim_(), type = "train")
   grid_size <- 10

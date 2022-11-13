@@ -4,12 +4,14 @@
 \alias{rpwf_connect_db}
 \title{Create a Database and Return an Object that Stores the Connection and Path}
 \usage{
-rpwf_connect_db(db_name, proj_root_path)
+rpwf_connect_db(dbname, board, ...)
 }
 \arguments{
-\item{db_name}{name of the database.}
+\item{dbname}{path to the database, passed to RSQLite::SQLite().}
 
-\item{proj_root_path}{root path of the project.}
+\item{board}{a \code{{pins}} board object.}
+
+\item{...}{arguments passed to \code{\link[DBI:dbConnect]{DBI::dbConnect()}}}
 }
 \value{
 A new \code{DbCon} object.
@@ -19,8 +21,9 @@ Create the "rpwfDb" folder in the provided root path and create a db if
 needed. Access the connection with \code{object$con}
 }
 \examples{
+board <- pins::board_temp()
 tmp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 db_con$con
-db_con$proj_root_path
+db_con$board
 }

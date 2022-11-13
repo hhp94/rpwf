@@ -23,8 +23,9 @@ new_rpwf_workflow_set <- function(obj = tibble::tibble()) {
 #' @export
 #' @examples
 #' # Create the database
-#' temp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", temp_dir)
+#' board <- pins::board_temp()
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #'
 #' # Create a `workflow_set`
 #' d <- mtcars
@@ -41,7 +42,7 @@ new_rpwf_workflow_set <- function(obj = tibble::tibble()) {
 #'
 #' to_export <- wf |>
 #'   rpwf_augment(db_con, dials::grid_latin_hypercube, size = 10)
-#' list.files(paste0(temp_dir, "/rpwfDb"), recursive = TRUE) # Files are created
+#' print(to_export)
 rpwf_augment <- function(obj, ...) {
   UseMethod("rpwf_augment")
 }
@@ -59,8 +60,9 @@ rpwf_augment.default <- function(obj, ...) {
 #' @export
 #' @examples
 #' # Create the database
-#' temp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", temp_dir)
+#' board <- pins::board_temp()
+#' tmp_dir <- withr::local_tempdir()
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #'
 #' # Create a `workflow_set`
 #' d <- mtcars

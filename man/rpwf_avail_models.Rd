@@ -19,7 +19,8 @@ already added. Other models can be added with \code{\link[=rpwf_add_py_model]{rp
 functions shows the models currently in the database.
 }
 \examples{
+board <- pins::board_temp()
 tmp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 rpwf_avail_models(db_con)
 }

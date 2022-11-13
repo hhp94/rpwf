@@ -21,8 +21,9 @@
 #' @export
 #'
 #' @examples
+#' board <- pins::board_temp()
 #' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' parsnip::boost_tree() |>
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
@@ -78,7 +79,7 @@ set_py_engine <- function(obj, py_module, py_base_learner, rpwf_model_tag = NULL
 #' `python -m pip install -e .` to install the codes as a local python package.
 #' Remove the python codes with `pip uninstall local-rpwf`.
 #'
-#' @param proj_root_path root path of the project.
+#' @param board a `{pins}` board object.
 #' @param overwrite overwriting the copied python codes or not. Default to `FALSE`.
 #'
 #' @return a newly copied folder called "rpwf" under the provided project path.
@@ -88,12 +89,12 @@ set_py_engine <- function(obj, py_module, py_base_learner, rpwf_model_tag = NULL
 #' tmp_dir <- withr::local_tempdir()
 #' rpwf_cp_py_codes(tmp_dir)
 #' list.files(paste0(tmp_dir, "/rpwf"), recursive = TRUE)
-rpwf_cp_py_codes <- function(proj_root_path, overwrite = FALSE) {
-  to_folder <- paste(proj_root_path, "rpwf", sep = "/")
+rpwf_cp_py_codes <- function(board, overwrite = FALSE) {
+  to_folder <- paste(board, "rpwf", sep = "/")
   copy_fns <- function() {
     from_folder <-
       system.file("python", "rpwf", package = "rpwf", mustWork = TRUE)
-    file.copy(from_folder, proj_root_path, overwrite = overwrite, recursive = TRUE)
+    file.copy(from_folder, board, overwrite = overwrite, recursive = TRUE)
   }
 
   if (!dir.exists(to_folder)) {

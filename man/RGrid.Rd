@@ -15,8 +15,8 @@ This object works by:
 \item calculate the hash of the grid and check the hash is in the database.
 \item if the hash is found in the database:
 \itemize{
-\item assign the path associated with the hash of the grid to \code{self$path}.
-\item check if the grid exists with \code{self$path}.
+\item assign the pin_name associated with the hash of the grid to \code{self$pin_name}.
+\item check if the grid exists with \code{self$pin_name}.
 \item if not exists, assign the grid to \code{self$df}.
 \item if the file exists, then assign \code{NULL} to the \code{self$df} attribute to stop
 \code{self$export_parquet()} from executing.
@@ -24,8 +24,8 @@ This object works by:
 \item if the hash is not found in the database:
 \itemize{
 \item assign the grid to \code{self$df}.
-\item generate a new path to write the grid.
-\item generate a SQL query to update the database with the new hash and new path
+\item generate a new pin_name to write the grid.
+\item generate a SQL query to update the database with the new hash and new pin_name
 }
 \item update the database with the generated SQL query with \code{self$export_db()}
 \item write the parquet with \code{self$export_parquet()}
@@ -33,7 +33,7 @@ This object works by:
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[rpwf:BaseEx]{rpwf::BaseEx}} -> \code{RGrid}
+\code{rpwf::BaseEx} -> \code{RGrid}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -55,18 +55,16 @@ be used in python}
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="create_folder"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-create_folder'><code>rpwf::BaseEx$create_folder()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="exec_query"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-exec_query'><code>rpwf::BaseEx$exec_query()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export'><code>rpwf::BaseEx$export()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_db'><code>rpwf::BaseEx$export_db()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_parquet"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_parquet'><code>rpwf::BaseEx$export_parquet()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_prep"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_prep'><code>rpwf::BaseEx$export_prep()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="find_path_in_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-find_path_in_db'><code>rpwf::BaseEx$find_path_in_db()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_db_folder"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_db_folder'><code>rpwf::BaseEx$set_db_folder()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="find_pin_name_in_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-find_pin_name_in_db'><code>rpwf::BaseEx$find_pin_name_in_db()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_df"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_df'><code>rpwf::BaseEx$set_df()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_export_query"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_export_query'><code>rpwf::BaseEx$set_export_query()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_hash"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_hash'><code>rpwf::BaseEx$set_hash()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_path"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_path'><code>rpwf::BaseEx$set_path()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_pin_name"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_pin_name'><code>rpwf::BaseEx$set_pin_name()</code></a></span></li>
 </ul>
 </details>
 }}

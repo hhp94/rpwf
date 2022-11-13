@@ -27,8 +27,9 @@ Generic S3 Function for \code{\link[=rpwf_augment]{rpwf_augment()}} Object into 
 }
 \examples{
 # Create the database
-temp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", temp_dir)
+board <- pins::board_temp()
+tmp_dir <- withr::local_tempdir()
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 
 # Create a `workflow_set`
 d <- mtcars

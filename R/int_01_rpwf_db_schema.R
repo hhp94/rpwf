@@ -9,11 +9,6 @@
 #'
 #' @return Used for side effects.
 #' @noRd
-#'
-#' @examples
-#' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-#' DBI::dbListTables(db_con$con)
 rpwf_db_init_values_ <- function(db_con) {
   # Add a value for NA grid
   grid_tbl_query <-
@@ -40,11 +35,6 @@ rpwf_db_init_values_ <- function(db_con) {
 #' @param schema output of [rpwf_schema()].
 #' @return Used for side effects.
 #' @noRd
-#'
-#' @examples
-#' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-#' DBI::dbListTables(db_con$con)
 rpwf_db_init_ <- function(db_con, schema = rpwf_schema()) {
   invisible( ### Create the data base
     DbCreate$new(con = db_con$con, query = NULL)$

@@ -4,10 +4,10 @@
 \alias{rpwf_cp_py_codes}
 \title{Copy sklearn Codes into the Project Root Folder}
 \usage{
-rpwf_cp_py_codes(proj_root_path, overwrite = FALSE)
+rpwf_cp_py_codes(board, overwrite = FALSE)
 }
 \arguments{
-\item{proj_root_path}{root path of the project.}
+\item{board}{a \code{{pins}} board object.}
 
 \item{overwrite}{overwriting the copied python codes or not. Default to \code{FALSE}.}
 }

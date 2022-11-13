@@ -1,14 +1,14 @@
-test_that("Can create a connection and create SQL tables", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-
-  db_con <- DbCon$new("db.SQLite", tmp_dir)
-  rpwf_db_init_(db_con, rpwf_schema())
+test_that("rpwf_connect_db()", {
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   created_tables <- sort(DBI::dbListTables(db_con$con))
   required_tables <- sort(names(rpwf_schema()))
 
   # Folder is created
-  expect_true(dir.exists(paste(tmp_dir, "rpwfDb", sep = "/")))
+  expect_true(fs::file_exists(db_name))
   # Connection is valid
   expect_true(DBI::dbIsValid(db_con$con))
   # All tables are created
@@ -16,9 +16,10 @@ test_that("Can create a connection and create SQL tables", {
 })
 
 test_that("Duplicated values of model_type_tbl are ignored", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- DbCon$new("db.SQLite", tmp_dir)
-  rpwf_db_init_(db_con, rpwf_schema())
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   before <- sapply(
     c("model_type_tbl", "r_grid_tbl"),
@@ -37,27 +38,12 @@ test_that("Duplicated values of model_type_tbl are ignored", {
   expect_true(all(before == after))
 })
 
-test_that("Can create a connection and create SQL tables", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
-
-  created_tables <- sort(DBI::dbListTables(db_con$con))
-  required_tables <- sort(names(rpwf_schema()))
-
-  # Folder is created
-  expect_true(dir.exists(paste(tmp_dir, "rpwfDb", sep = "/")))
-  # Connection is valid
-  expect_true(DBI::dbIsValid(db_con$con))
-  # All tables are created
-  expect_true(all(created_tables == required_tables))
-})
-
 test_that("Add additional models with rpwf_add_py_model()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
-  DBI::dbListTables(db_con$con)
   before <- DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl")
   rpwf_add_py_model(
     db_con,

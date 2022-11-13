@@ -29,7 +29,9 @@ Imports:
     tidyr,
     withr,
     testthat,
-    tibble
+    tibble,
+    pins,
+    fs
 Suggests:
     kernlab,
     ggplot2,
