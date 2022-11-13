@@ -1,8 +1,0 @@
-file: wflow_1_nested_cv_186599438321_results.csv
-file_size: 190
-pin_hash: de0ee77eb2cfa438
-type: csv
-title: 'wflow_1_nested_cv_186599438321_results.csv: a pinned 10 x 1 data frame'
-description: ~
-created: 20221113T025514Z
-api_version: 1.0

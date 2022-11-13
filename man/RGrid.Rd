@@ -33,7 +33,7 @@ This object works by:
 }
 \keyword{internal}
 \section{Super class}{
-\code{rpwf::BaseEx} -> \code{RGrid}
+\code{\link[rpwf:BaseEx]{rpwf::BaseEx}} -> \code{RGrid}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}

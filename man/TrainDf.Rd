@@ -41,7 +41,7 @@ assign to \code{self$df}.
 }
 \keyword{internal}
 \section{Super class}{
-\code{rpwf::BaseEx} -> \code{TrainDf}
+\code{\link[rpwf:BaseEx]{rpwf::BaseEx}} -> \code{TrainDf}
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}

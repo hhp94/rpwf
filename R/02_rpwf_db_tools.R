@@ -104,7 +104,9 @@ rpwf_results <- function(db_con, import_csv = TRUE) {
   if (import_csv) {
     df$fit_results <- lapply(
       df$result_path,
-      \(x) { pins::pin_read(db_con$board, name = x) }
+      \(x) {
+        pins::pin_read(db_con$board, name = x)
+      }
     )
   }
 

@@ -29,11 +29,11 @@ DbCon <- R6::R6Class(
     #' @examples
     #' board <- pins::board_temp()
     #' tmp_dir <- withr::local_tempdir()
-    #' db_con <- DbCon$new(paste(tmp_dir, "db.SQLite", sep = "/"), board)
+    #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
     #' db_con$con
     #' db_con$board
     initialize = function(dbname, board, ...) {
-      stopifnot("board needs to be a `pins::board_<>` object"=all(class(board) %in% c("pins_board_folder", "pins_board")))
+      stopifnot("board needs to be a `pins::board_<>` object" = all(class(board) %in% c("pins_board_folder", "pins_board")))
       stopifnot(is.character(dbname) & length(dbname) == 1)
       self$dbname <- dbname
       self$board <- board
@@ -71,7 +71,7 @@ DbCreate <- R6::R6Class("DbCreate",
     #' @examples
     #' board <- pins::board_temp()
     #' tmp_dir <- withr::local_tempdir()
-    #' db_con <- DbCon$new(paste(tmp_dir, "db.SQLite", sep = "/"), board)
+    #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
     #' db <- DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
     initialize = function(con, query) {
       self$con <- con
@@ -226,7 +226,7 @@ rpwf_schema <- function() {
 #' # Generate dummy database
 #' board <- pins::board_temp()
 #' tmp_dir <- withr::local_tempdir()
-#' db_con <- DbCon$new(paste(tmp_dir, "db.SQLite", sep = "/"), board)
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 #' rpwf_add_py_model(

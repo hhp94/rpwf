@@ -81,7 +81,7 @@ test_that("rpwf_avail_models()", {
 
 test_that("rpwf_results()", {
   db_path <- paste(test_path("fixtures"), "db.SQLite", sep = "/")
-  board_path <- paste(test_path("fixtures"), "test_board", sep = "/")
+  board_path <- paste(test_path("fixtures"), "t", sep = "/")
 
   expect_true(file.exists(db_path))
   board <- pins::board_folder(board_path)

@@ -245,7 +245,9 @@ rpwf_TrainDf_R6_ <- function(obj, db_con) {
 #'
 #' @noRd
 pin_exists_recheck_ <- function(R6_obj, db_con) {
-  sapply(R6_obj, \(x) { pins::pin_exists(x$board, x$pin_name) })
+  sapply(R6_obj, \(x) {
+    pins::pin_exists(x$board, x$pin_name)
+  })
 }
 
 #' Add Grid Id to workflow/data set

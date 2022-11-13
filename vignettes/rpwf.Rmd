@@ -411,7 +411,7 @@ fit_results <- rpwf_results(db_con)
 
 ```{r, echo = FALSE, message = FALSE}
 db_path <- paste(system.file("extdata", package = "rpwf"), "db.SQLite", sep = "/")
-board_path <- paste(system.file("extdata", package = "rpwf"), "test_board", sep = "/")
+board_path <- paste(system.file("extdata", package = "rpwf"), "t", sep = "/")
 
 board <- pins::board_folder(board_path)
 db_con <- rpwf_connect_db(db_path, board)
