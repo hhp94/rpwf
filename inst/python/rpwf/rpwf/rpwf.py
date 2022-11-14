@@ -8,6 +8,7 @@ from typing import Any, Dict, Union
 import joblib
 import numpy
 import pdcast
+import pins
 import pyarrow.parquet
 import pandas
 import sqlalchemy
@@ -39,12 +40,12 @@ class _RpwfSQL:
         except Exception as exc:
             raise ValueError("Query matched no id") from exc
 
-    def _import_parquet(self, df_path: str) -> None:
+    def _import_parquet(self, df_pin_name: str) -> None:
         """Create attribute `self.parquet` file for importing"""
         # If no grid is used, then `parquet_path` would be NA
-        if (parquet_path := self.query_results.get(df_path, None)) is not None:
+        if (parquet_path := self.query_results.get(df_pin_name, None)) is not None:
             self.parquet = pyarrow.parquet.read_table(
-                self.base.proj_root_path.joinpath(parquet_path)
+                self.base.db_path.joinpath(parquet_path)
             )
 
 
@@ -84,10 +85,10 @@ class RGrid(_RpwfSQL):
         super().__init__(base)
         self.grid_id: int = wflow._get_par("grid_id")
         self.query = sqlalchemy.select(
-            self.base.meta_dat.tables["r_grid_tbl"].c.grid_path
+            self.base.meta_dat.tables["r_grid_tbl"].c.grid_pin_name
         ).where(self.base.meta_dat.tables["r_grid_tbl"].c.grid_id == self.grid_id)
         self._exec_query()
-        self._import_parquet("grid_path")
+        self._import_parquet("grid_pin_name")
 
     def val_to_list(self, d: Dict):
         for v in d:
@@ -121,7 +122,7 @@ class TrainDf(_RpwfSQL):
         self._exec_query()
         self._index: Union[None, str] = self.query_results["idx_col"]
         self._target: Union[None, str] = self.query_results["target"]
-        self._import_parquet("df_path")  # Import the parquet file
+        self._import_parquet("df_pin_name")  # Import the parquet file
         self._get_df(downcast)  # Convert to pandas DataFrame, can perform downcast
 
     def _get_df(self, downcast) -> None:
@@ -206,7 +207,7 @@ class BaseLearner:
         """Build the base learner from the Model and Wflow objects"""
         learner_module = getattr(
             importlib.import_module(f"{model_param._get_py_module()}"),
-            f"{model_param._get_base_learner()}",
+            f"{model_param._get_base_learner()}"
         )
         print(f"Running {learner_module}")
         if wflow.args_json is None:
@@ -255,7 +256,7 @@ class Export(_RpwfSQL):
 
     def _gen_rel_path(self, path: pathlib.Path) -> str:
         """Generate relative paths to store in the database"""
-        return str(pathlib.PurePosixPath(path.relative_to(self.base.proj_root_path)))
+        return str(pathlib.PurePosixPath(path.relative_to(self.base.db_path)))
 
     def export_cv(self, results: pandas.DataFrame, desc: str) -> None:
         """Export the cross validation results, expects pd.DataFrame results"""
@@ -291,11 +292,11 @@ class Export(_RpwfSQL):
         """After exporting the cv results, we update the database"""
         # Assert that the exported files exists
         try:
-            assert self.base.proj_root_path.joinpath(
+            assert self.base.db_path.joinpath(
                 self.csv_path
             ).exists(), """Run export_cv() first"""
             if self.model_path:
-                assert self.base.proj_root_path.joinpath(self.model_path).exists()
+                assert self.base.db_path.joinpath(self.model_path).exists()
         except TypeError as new_entry_error:
             raise TypeError("Run export_cv() first") from new_entry_error
         except AssertionError as file_not_exists:

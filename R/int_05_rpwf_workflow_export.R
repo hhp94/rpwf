@@ -226,12 +226,13 @@ rpwf_Rgrid_R6_ <- function(obj, db_con) {
 #' is not recommended.
 #'
 #' @inheritParams rpwf_export_db
+#' @param seed random seed. To control for recipes such as down sampling.
 #'
 #' @return A tibble with Rgrid objects added.
 #' @noRd
-rpwf_TrainDf_R6_ <- function(obj, db_con) {
+rpwf_TrainDf_R6_ <- function(obj, db_con, seed = 1234) {
   obj$TrainDf <- lapply(obj$preprocs, \(x) {
-    TrainDf$new(x, db_con)
+    TrainDf$new(x, db_con, seed = seed)
   })
   return(obj)
 }

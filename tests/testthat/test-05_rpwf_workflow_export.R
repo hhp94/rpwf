@@ -246,7 +246,7 @@ test_that("rpwf_write_df()", {
     tmp_func() |>
     rpwf_TrainDf_R6_(db_con)
 
-  rpwf_write_df(t1, 1234)
+  rpwf_write_df(t1)
   expect_equal(length(list.files(board$path)), 1L)
 })
 

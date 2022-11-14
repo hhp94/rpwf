@@ -34,6 +34,8 @@ Queried pin_name of the object.}
 a \code{{pins}} board object.}
 
 \item{\code{dbname}}{name of the database.}
+
+\item{\code{seed}}{random seed.}
 }
 \if{html}{\out{</div>}}
 }

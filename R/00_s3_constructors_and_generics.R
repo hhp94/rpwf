@@ -1,3 +1,22 @@
+# rpwf_db_schema ---------------------------------------------------------------
+
+#' Print the Board Information as a YAML File
+#'
+#' The board information is needed as an input for the pre-made sklearn CLI.
+#'
+#' @param board `pins::board` object
+#'
+#' @return named list for YAML
+#' @export
+#' @examples
+#' tmp_dir <- withr::local_tempdir()
+#' board <- pins::board_temp()
+#' rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
+#' list.files(tmp_dir)
+rpwf_write_board_yaml <- function(board, file) {
+  UseMethod("rpwf_write_board_yaml")
+}
+
 # rpwf_workflow_export ---------------------------------------------------------
 
 #' Constructor for `rpwf_workflow_set` Class

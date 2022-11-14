@@ -17,11 +17,10 @@ knitr::opts_chunk$set(
 ```
 
 ```{r setup, message = FALSE}
-library(rpwf)
+# library(rpwf)
 library(dplyr)
 library(parsnip)
 library(recipes)
-library(modeldata)
 library(ggplot2)
 library(pins)
 ```
@@ -55,7 +54,7 @@ competitor an edge. `{rpwf}` helps by
 ```{r}
 set.seed(123)
 tmp_dir <- withr::local_tempdir(pattern = "vignette") # Temp folder
-df <- modeldata::sim_classification(num_samples = 1000, num_linear = 40)
+df <- modeldata::sim_classification(num_samples = 100, num_linear = 40)
 df[1:6, 1:6]
 ```
 
@@ -71,7 +70,7 @@ sum(is.na(df))
 
 * Re-code classes, our response variable, as integers  
 ```{r}
-df$class <- as.integer(df$class) - 1
+df$class <- as.integer(df$class) - 1L
 ```
 
 * Add an id column
@@ -302,12 +301,14 @@ xgb_wfs <- rpwf_workflow_set(
   models = list(xgb_model),
   cost = "roc_auc"
 )
+
 ### svm and glm workflow_set
 svm_glm_wfs <- rpwf_workflow_set(
   preprocs = list(scaled_base_rec, scaled_pca_rec),
   models = list(svm_rbf_model, enet_model),
   cost = "roc_auc"
 )
+
 ### combined workflow_set
 all_wfs <- rbind(xgb_wfs, svm_glm_wfs)
 ```
@@ -355,7 +356,9 @@ rpwf_write_df(all_wfs)
 ```
 
 * Then finally, export the meta data into the database with `rpwf_export_db()`.  
+* Also export the board information as a YAML file.  
 ```{r}
+rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
 rpwf_export_db(all_wfs, db_con)
 ```
 

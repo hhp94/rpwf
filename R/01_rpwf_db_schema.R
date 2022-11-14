@@ -1,3 +1,19 @@
+# Board S3 methods -------------------------------------------------------------
+#' @rdname rpwf_write_board_yaml
+#' @export
+rpwf_write_board_yaml.pins_board_folder <- function(board, file) {
+  yaml_board <- yaml::yaml.load(yaml::as.yaml(board)) |>
+    purrr::list_modify(
+      api = purrr::zap(),
+      cache = purrr::zap(),
+      versioned = TRUE
+    )
+  yaml::write_yaml(yaml_board, file)
+}
+
+#' @import R6
+NULL
+
 # DbCon - Create folder and db -------------------------------------------------
 #' @name DbCon
 #' @title R6 Object that Stores the Connection and Path to the Db
@@ -33,7 +49,7 @@ DbCon <- R6::R6Class(
     #' db_con$con
     #' db_con$board
     initialize = function(dbname, board, ...) {
-      stopifnot("board needs to be a `pins::board_<>` object" = all(class(board) %in% c("pins_board_folder", "pins_board")))
+      stopifnot("board needs to be a `pins::board_<>` object" = all("pins_board" %in% class(board)))
       stopifnot(is.character(dbname) & length(dbname) == 1)
       self$dbname <- dbname
       self$board <- board

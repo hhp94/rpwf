@@ -37,7 +37,7 @@ devtools::install_github("hhp94/rpwf", branch = "master")
 ```
 
 ## Python
-* First, setup a python environment with conda.
+* Setup a python environment with conda.  
 ```{bash, eval = FALSE}
 conda create -n py39 python=3.9.13 anaconda
 ```
@@ -52,11 +52,12 @@ above command.
   + scikit-learn  
   + xgboost  
   + pins
+  + pyyaml
   + any other machine learning library such as `lightgbm` and etc.  
 
 ```{bash, eval = FALSE}
 conda activate py39
-conda install pyarrow sqlalchemy xgboost
+conda install pyarrow sqlalchemy xgboost pyyaml
 pip install pandas-downcast
 python -m pip install pins
 ```

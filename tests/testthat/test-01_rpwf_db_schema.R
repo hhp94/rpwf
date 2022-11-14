@@ -1,3 +1,12 @@
+test_that("rpwf_write_board_yaml.pins_board_folder()",{
+  tmp_dir <- withr::local_tempdir()
+  board <- pins::board_temp()
+
+  expect_equal(length(list.files(tmp_dir)), 0L)
+  rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
+  expect_equal(length(list.files(tmp_dir)), 1L)
+})
+
 test_that("rpwf_connect_db()", {
   board <- pins::board_temp()
   tmp_dir <- withr::local_tempdir()
