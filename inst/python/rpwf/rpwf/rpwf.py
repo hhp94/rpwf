@@ -8,28 +8,26 @@ from typing import Any, Dict, Union
 import joblib
 import numpy
 import pdcast
-import pins
-import pyarrow.parquet
 import pandas
 import sqlalchemy
 
-from .database import Base
-
+from .database import Base, Board
 
 class _RpwfSQL:
     """This class accepts the Base singleton and contains 2 common methods,
-    `_exec_query()` to set and exec SQL query. `_import_parquet()` to read in
+    `_exec_query()` to set and exec SQL query. `_read_pq()` to read in
     parquets"""
 
-    def __init__(self, base: Base) -> None:
+    def __init__(self, base: Base, board: Board) -> None:
         """Not meant to be run by users"""
-        self.base = base  # Inject dependency of the Base class
+        self.base: Base = base  # Inject dependency of the Base class
         self.query: sqlalchemy.sql.selectable.Select = None
+        self.board: Board = board.board
         self.query_results: dict = None
         self.parquet = None
 
     def _exec_query(self) -> None:
-        """Execute the sql query, results stored as list of dict with column
+        """Execute the SQL query, results stored as list of dict with column
         names as keys and single values of the row as values. Atrribute is
         self.query_results"""
         try:
@@ -40,21 +38,19 @@ class _RpwfSQL:
         except Exception as exc:
             raise ValueError("Query matched no id") from exc
 
-    def _import_parquet(self, df_pin_name: str) -> None:
+    def _read_pq(self, df_pin_name: str) -> None:
         """Create attribute `self.parquet` file for importing"""
-        # If no grid is used, then `parquet_path` would be NA
-        if (parquet_path := self.query_results.get(df_pin_name, None)) is not None:
-            self.parquet = pyarrow.parquet.read_table(
-                self.base.db_path.joinpath(parquet_path)
-            )
+        # If no grid is used, then `pq_pin_name` would be NA
+        if (pq_pin_name := self.query_results.get(df_pin_name, None)) is not None:
+            self.parquet = self.board.pin_read(pq_pin_name)
 
 
 class Wflow(_RpwfSQL):
     """Main object that represents a workflow, should be a singleton"""
 
-    def __init__(self, base: Base, wflow_id: int) -> None:
+    def __init__(self, base: Base, board: Board, wflow_id: int) -> None:
         """In addition to super(), have self.wflow_id and self.random_state"""
-        super().__init__(base)
+        super().__init__(base, board)
         self.query = sqlalchemy.select(self.base.meta_dat.tables["wflow_tbl"]).where(
             self.base.meta_dat.tables["wflow_tbl"].c.wflow_id == wflow_id
         )  # Returns the parameters of the wflow
@@ -80,15 +76,15 @@ class Wflow(_RpwfSQL):
 class RGrid(_RpwfSQL):
     """Import the grid generated in R"""
 
-    def __init__(self, base: Base, wflow: Wflow) -> None:
+    def __init__(self, base: Base, board: Board, wflow: Wflow) -> None:
         """Get the grid associated with the wflow"""
-        super().__init__(base)
+        super().__init__(base, board)
         self.grid_id: int = wflow._get_par("grid_id")
         self.query = sqlalchemy.select(
             self.base.meta_dat.tables["r_grid_tbl"].c.grid_pin_name
         ).where(self.base.meta_dat.tables["r_grid_tbl"].c.grid_id == self.grid_id)
         self._exec_query()
-        self._import_parquet("grid_pin_name")
+        self._read_pq("grid_pin_name")
 
     def val_to_list(self, d: Dict):
         for v in d:
@@ -100,7 +96,7 @@ class RGrid(_RpwfSQL):
         if self.parquet is None:
             return None
         # convert the parquet file to list of rows
-        grid = self.parquet.to_pylist()
+        grid = self.parquet.to_numpy().tolist()
         # wrap the value of each row in a list
         l = len(grid)
         wrapped_grid = [None] * l
@@ -112,9 +108,9 @@ class RGrid(_RpwfSQL):
 class TrainDf(_RpwfSQL):
     """Import the train data frame in parquet"""
 
-    def __init__(self, base: Base, wflow: Wflow, downcast: bool = True) -> None:
+    def __init__(self, base: Base, board: Board, wflow: Wflow, downcast: bool = True) -> None:
         """Get the train data associated with the wflow"""
-        super().__init__(base)
+        super().__init__(base, board)
         self.df_id: int = wflow._get_par("df_id")
         self.query = sqlalchemy.select(self.base.meta_dat.tables["df_tbl"]).where(
             self.base.meta_dat.tables["df_tbl"].c.df_id == self.df_id
@@ -122,7 +118,7 @@ class TrainDf(_RpwfSQL):
         self._exec_query()
         self._index: Union[None, str] = self.query_results["idx_col"]
         self._target: Union[None, str] = self.query_results["target"]
-        self._import_parquet("df_pin_name")  # Import the parquet file
+        self._read_pq("df_pin_name")  # Import the parquet file
         self._get_df(downcast)  # Convert to pandas DataFrame, can perform downcast
 
     def _get_df(self, downcast) -> None:
@@ -162,9 +158,9 @@ class TrainDf(_RpwfSQL):
 # class Cost(_RpwfSQL):
 #     """Get the cost metrics (RMSE, neg_log_loss etc.)"""
 
-#     def __init__(self, base: Base, wflow: Wflow) -> None:
+#     def __init__(self, base: Base, board: Board, wflow: Wflow) -> None:
 #         """Get the cost metric associated with the wflow"""
-#         super().__init__(base)
+#         super().__init__(base, board)
 #         self.cost_id: int = wflow._get_par("cost_id")
 #         self.query = sqlalchemy.select(
 #             self.base.meta_dat.tables["cost_tbl"].c.cost_name
@@ -179,9 +175,9 @@ class TrainDf(_RpwfSQL):
 class Model(_RpwfSQL):
     """Query the database for the base_learner definitions"""
 
-    def __init__(self, base: Base, wflow: Wflow) -> None:
+    def __init__(self, base: Base, board: Board, wflow: Wflow) -> None:
         """Get the model parameters"""
-        super().__init__(base)
+        super().__init__(base, board)
         self.model_type_id: int = wflow._get_par("model_type_id")
         self.query = sqlalchemy.select(
             self.base.meta_dat.tables["model_type_tbl"]
@@ -229,21 +225,23 @@ class BaseLearner:
 class Export(_RpwfSQL):
     """Export the cv results, model files of the workflow into the db"""
 
-    def __init__(self, base: Base, wflow: Wflow) -> None:
+    def __init__(self, base: Base, board: Board, desc: str, wflow: Wflow) -> None:
         """Export pathing variables are handled upon calling export functions"""
-        super().__init__(base)
+        super().__init__(base, board)
         self.wflow_id: int = wflow.wflow_id  # Set the wflow_id
         self.wflow_hash: int = hash(wflow)
         self.res_tbl = self.base.meta_dat.tables["wflow_result_tbl"]
         self._wflow_results_query()
-        self.desc: str = None
-        self.csv_path: str = None
-        self.model_path: str = None
+        self.desc: str = desc
+        self.csv_pin_name: str = None
+        self.model_pin_name: str = None
         self.export_query = None
 
     def _wflow_results_query(self) -> None:
+        """Query the database to see if there's results associated with this data"""
         query = sqlalchemy.select(self.res_tbl).where(
-            self.res_tbl.c.wflow_id == self.wflow_id
+            (self.res_tbl.c.wflow_id == self.wflow_id) & 
+            (self.res_tbl.c.desc == self.desc)
             )
         with self.base.engine.connect() as conn:
             try:
@@ -254,33 +252,33 @@ class Export(_RpwfSQL):
             except IndexError:
                 print("No results for this wflow in the db")
 
-    def _gen_rel_path(self, path: pathlib.Path) -> str:
-        """Generate relative paths to store in the database"""
-        return str(pathlib.PurePosixPath(path.relative_to(self.base.db_path)))
-
-    def export_cv(self, results: pandas.DataFrame, desc: str) -> None:
+    def export_cv(self, results: pandas.DataFrame) -> None:
         """Export the cross validation results, expects pd.DataFrame results"""
-        self.desc = desc  # descriptions of the result (sampling schemes)
-        self.csv_path = self.base.result_path.joinpath(
-            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}_results.csv"
-        )
-        results.to_csv(self.csv_path, index=False)  # res_tblite the csv
-        self.csv_path = self._gen_rel_path(self.csv_path)  # To rel path after export
+        self.csv_pin_name = f"wf_{self.wflow_id}_{self.desc}_{self.wflow_hash}.csv"
+        self.board.pin_write(results, self.csv_pin_name, "csv")
+
+    def export_model(self, model: Any) -> None:
+        """Export the fitted model if needed, run before export_db()"""
+        self.model_pin_name = f"wf_{self.wflow_id}_{self.desc}_{self.wflow_hash}.joblib"
+        self.board.pin_write(model, self.model_pin_name, "joblib")
 
     def _set_export_query(self) -> None:
         """Set the proper export query for adding rows to result table"""
         entries = {
             "wflow_id": self.wflow_id,
             "description": self.desc,
-            "result_path": self.csv_path,
-            "model_path": self.model_path,
+            "result_path": self.csv_pin_name,
+            "model_pin_name": self.model_pin_name,
         }
         if self.query_results:
             # Change `insert` to `update` if the wflow_id matches
             print("Found in db, overwriting")
             self.export_query = (
                 sqlalchemy.update(self.res_tbl)
-                .where(self.res_tbl.c.wflow_id == self.wflow_id)
+                .where(
+                    (self.res_tbl.c.wflow_id == self.wflow_id) & 
+                    (self.res_tbl.c.desc == self.desc)
+                    )
                 .values(**entries)
             )
             return None
@@ -292,17 +290,15 @@ class Export(_RpwfSQL):
         """After exporting the cv results, we update the database"""
         # Assert that the exported files exists
         try:
-            assert self.base.db_path.joinpath(
-                self.csv_path
-            ).exists(), """Run export_cv() first"""
-            if self.model_path:
-                assert self.base.db_path.joinpath(self.model_path).exists()
+            assert self.board.pin_exists(self.csv_pin_name), "Run export_cv() first"
+            if self.model_pin_name:
+                assert self.board.pin_exists(self.model_pin_name), "Error exporting model"
         except TypeError as new_entry_error:
             raise TypeError("Run export_cv() first") from new_entry_error
         except AssertionError as file_not_exists:
             raise AssertionError(
-                """Entry in db found but file not found. Rerun export_cv().
-                Or also export_model()"""
+                """Entry in db found but file not found. Rerun export_cv()
+                or also export_model()"""
             ) from file_not_exists
 
         self._set_export_query()
@@ -312,14 +308,6 @@ class Export(_RpwfSQL):
             conn.commit()
             self._wflow_results_query()  # After write new row, update query res
             return result
-
-    def export_model(self, model: Any) -> None:
-        """Export the fitted model if needed, run before export_db()"""
-        self.model_path = self.base.result_path.joinpath(
-            f"wflow_{self.wflow_id}_{self.desc}_{self.wflow_hash}_model.joblib"
-        )
-        joblib.dump(model, self.model_path)
-        self.model_path = self._gen_rel_path(self.model_path)
 
     def __repr__(self) -> str:
         return str(self.query_results)

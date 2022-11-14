@@ -1,6 +1,5 @@
 """Paths and database connections"""
 from __future__ import annotations
-import os
 import pathlib
 from typing import List, Any
 
@@ -26,8 +25,8 @@ class Board:
         with open(pathlib.Path(yml_path), "r") as board_yml:
             try:
                 self.board_meta = yaml.safe_load(board_yml)
-            except yaml.YAMLError as yaml_error:
-                raise yaml_error
+            except yaml.YAMLError as exc:
+                raise print(exc)
         self.board_type = self.board_meta.pop('board')
         self.set_board()
     
@@ -47,29 +46,11 @@ class Base:
     """Initiate the meta_dat, the engine object, and paths, for database connection.
     This would be a singleton class."""
 
-    def __init__(self, db_path: str, db_name: str, **kwargs: Any) -> None:
-        """Base is a singleton. We assign the paths and database object to this class"""
+    def __init__(self, db_path: str, **kwargs: Any) -> None:
+        """Base is a singleton. We assign the database object to this class"""
         # Setting up the paths
-        self.db_path: pathlib.Path = pathlib.Path(db_path)
-        assert "rpwfDb" in os.listdir(
-            self.db_path
-        ), "rpwfDb folder not found in provided root path"
-
-        self.db_path: pathlib.PurePosixPath = pathlib.PurePosixPath(
-            self.db_path.joinpath("rpwfDb", db_name)
-        )
-        print(f"db is at {self.db_path}")
-
-        assert (
-            os.path.exists(str(self.db_path)) is True
-        ), f"rpwfDb folder found, but {db_name} db not found"
-
-        self.result_path: pathlib.Path = self.db_path.joinpath(
-            "rpwfDb", f"{db_name}_results"
-        )
-        if self.result_path.exists() is False:
-            print(f"Creating the {db_name}_results folder")
-            self.result_path.mkdir()  # create results folder
+        assert pathlib.Path(db_path).exists() is True, "db not found"
+        self.db_path: pathlib.PurePosixPath = pathlib.PurePosixPath(db_path)
 
         # Database objects future enables 2.0 style syntax
         print("Connecting to " + f"sqlite:///{str(self.db_path)}")
@@ -96,9 +77,10 @@ class Base:
         with self.engine.connect() as conn:
             for row in conn.execute(query):
                 results.append(row)
+        assert len(results) > 0, "No wflow found. Perhaps run `rpwf_export_db()` in R?"
 
         return pandas.DataFrame(results).loc[
-            :, ["wflow_id", "model_tag", "recipe_tag", "py_base_learner_args", "result_path"]
+            :, ["wflow_id", "model_tag", "recipe_tag", "result_path"]
         ]
 
     def __repr__(self) -> str:

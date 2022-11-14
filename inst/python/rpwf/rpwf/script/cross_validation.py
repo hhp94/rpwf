@@ -31,16 +31,16 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "project_root",
+        "db_path",
         type=str,
-        help="path to directory that holds the 'rpwfDb' folder"
+        help="path to the database"
     )
     parser.add_argument(
-        "-db",
-        "--db-name",
-        metavar="db-name",
+        "-b",
+        "--board",
+        metavar="board",
         type=str,
-        help="name of the database, (e.g. 'db.SQLite')"
+        help="path to the yaml file of the board"
     )
 
     id_group = parser.add_mutually_exclusive_group(required=True)
@@ -110,15 +110,15 @@ if __name__ == "__main__":
 
     # Check for valid db name
     if (
-        args.db_name is None
-        or Path(args.project_root).joinpath(f"rpwfDb/{args.db_name}").exists() is False
+        args.board is None
+        or Path(args.db_path).joinpath(f"rpwfDb/{args.board}").exists() is False
     ):
         print("Invalid db name, the following files are in the 'rpwfDb' folder")
-        print([str(x) for x in Path(args.project_root).joinpath("rpwfDb").iterdir()])
+        print([str(x) for x in Path(args.db_path).joinpath("rpwfDb").iterdir()])
         sys.exit()
 
     # Setup the base objects
-    db_obj = database.Base(args.project_root, args.db_name)
+    db_obj = database.Base(args.db_path, args.board)
     wflow_df = db_obj.all_wflow()
 
     # Show the wflows and exit
@@ -186,8 +186,8 @@ if __name__ == "__main__":
 
         # if args.export:
             # Export the results
-        exporter = rpwf.Export(db_obj, wflow_obj)
-        exporter.export_cv(pandas.DataFrame(cv_results), "cv")
+        exporter = rpwf.Export(db_obj, "cv", wflow_obj)
+        exporter.export_cv(pandas.DataFrame(cv_results))
         if args.joblib_model and param_tuner:
             exporter.export_model(param_tuner.best_estimator_)
         exporter.export_db()
