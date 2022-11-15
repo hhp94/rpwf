@@ -68,7 +68,7 @@ class Base:
         wr_tbl = self.meta_dat.tables["wflow_result_tbl"]
 
         query: sqlalchemy.sql.selectable.Select = (
-            sqlalchemy.select(w_tbl, wr_tbl.c.result_path)
+            sqlalchemy.select(w_tbl, wr_tbl.c.result_pin_name, wr_tbl.c.model_pin_name)
             .select_from(w_tbl)
             .join(wr_tbl, isouter=True)
         )  # Left join
@@ -80,7 +80,7 @@ class Base:
         assert len(results) > 0, "No wflow found. Perhaps run `rpwf_export_db()` in R?"
 
         return pandas.DataFrame(results).loc[
-            :, ["wflow_id", "model_tag", "recipe_tag", "result_path"]
+            :, ["wflow_id", "model_tag", "recipe_tag", "result_pin_name", "model_pin_name"]
         ]
 
     def __repr__(self) -> str:

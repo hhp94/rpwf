@@ -2,10 +2,9 @@
 from __future__ import annotations
 import importlib
 import json
-import pathlib
 from typing import Any, Dict, Union
 
-import joblib
+import pyarrow
 import numpy
 import pdcast
 import pandas
@@ -96,7 +95,7 @@ class RGrid(_RpwfSQL):
         if self.parquet is None:
             return None
         # convert the parquet file to list of rows
-        grid = self.parquet.to_numpy().tolist()
+        grid = pyarrow.Table.from_pandas(self.parquet).to_pylist()
         # wrap the value of each row in a list
         l = len(grid)
         wrapped_grid = [None] * l
@@ -111,9 +110,9 @@ class TrainDf(_RpwfSQL):
     def __init__(self, base: Base, board: Board, wflow: Wflow, downcast: bool = True) -> None:
         """Get the train data associated with the wflow"""
         super().__init__(base, board)
-        self.df_id: int = wflow._get_par("df_id")
+        self.parquet_id: int = wflow._get_par("df_id")
         self.query = sqlalchemy.select(self.base.meta_dat.tables["df_tbl"]).where(
-            self.base.meta_dat.tables["df_tbl"].c.df_id == self.df_id
+            self.base.meta_dat.tables["df_tbl"].c.df_id == self.parquet_id
         )
         self._exec_query()
         self._index: Union[None, str] = self.query_results["idx_col"]
@@ -125,22 +124,20 @@ class TrainDf(_RpwfSQL):
         """Convert to pandas DataFrame"""
         if downcast:
             # Downcast the numeric columns to save memory and generate index
-            min_schema = pdcast.infer_schema(self.parquet.to_pandas())
-            try: # Exclude the target from downcasting, a test df's target is None
-                del min_schema[self._target]
-            except KeyError: # if target column not provided then cannot try to delete
-                pass
-            self.df = pdcast.coerce_df(self.parquet.to_pandas(), min_schema)
-        else:
-            self.df = self.parquet.to_pandas()
+            min_schema = pdcast.infer_schema(self.parquet)
+            # try: # Exclude the target from downcasting, a test df's target is None
+            #     del min_schema[self._target]
+            # except KeyError: # if target column not provided then cannot try to delete
+            #     pass
+            self.parquet = pdcast.coerce_df(self.parquet, min_schema)
 
         if self._index:
-            self.df.set_index(self._index, drop=True, inplace=True)
-        assert self._index not in self.df.columns, f"{self._index} is still in the data"
+            self.parquet.set_index(self._index, drop=True, inplace=True)
+        assert self._index not in self.parquet.columns, f"{self._index} is still in the data"
 
     def get_df_X(self, to_ndarray = False) -> Union[numpy.ndarray, pandas.DataFrame]:
         """Return the predictor DataFrame"""
-        df_X = self.df.loc[:, json.loads(self.query_results["predictors"])]
+        df_X = self.parquet.loc[:, json.loads(self.query_results["predictors"])]
         if to_ndarray:
           return df_X.to_numpy()
         return df_X
@@ -150,10 +147,10 @@ class TrainDf(_RpwfSQL):
         if self._target is None:
             print("no target column provided")
             return None
-        df_y = self.df.loc[:, self.df.columns == self._target].to_numpy()
+        df_y = self.parquet.loc[:, self.parquet.columns == self._target]
         if to_ndarray:
           return df_y.to_numpy()
-        return df_y.to_numpy()
+        return df_y
 
 # class Cost(_RpwfSQL):
 #     """Get the cost metrics (RMSE, neg_log_loss etc.)"""
@@ -229,19 +226,19 @@ class Export(_RpwfSQL):
         """Export pathing variables are handled upon calling export functions"""
         super().__init__(base, board)
         self.wflow_id: int = wflow.wflow_id  # Set the wflow_id
+        self.desc: str = desc
         self.wflow_hash: int = hash(wflow)
         self.res_tbl = self.base.meta_dat.tables["wflow_result_tbl"]
-        self._wflow_results_query()
-        self.desc: str = desc
+        self.wflow_results_query()
         self.csv_pin_name: str = None
         self.model_pin_name: str = None
         self.export_query = None
 
-    def _wflow_results_query(self) -> None:
+    def wflow_results_query(self) -> None:
         """Query the database to see if there's results associated with this data"""
         query = sqlalchemy.select(self.res_tbl).where(
             (self.res_tbl.c.wflow_id == self.wflow_id) & 
-            (self.res_tbl.c.desc == self.desc)
+            (self.res_tbl.c.description == self.desc)
             )
         with self.base.engine.connect() as conn:
             try:
@@ -252,22 +249,12 @@ class Export(_RpwfSQL):
             except IndexError:
                 print("No results for this wflow in the db")
 
-    def export_cv(self, results: pandas.DataFrame) -> None:
-        """Export the cross validation results, expects pd.DataFrame results"""
-        self.csv_pin_name = f"wf_{self.wflow_id}_{self.desc}_{self.wflow_hash}.csv"
-        self.board.pin_write(results, self.csv_pin_name, "csv")
-
-    def export_model(self, model: Any) -> None:
-        """Export the fitted model if needed, run before export_db()"""
-        self.model_pin_name = f"wf_{self.wflow_id}_{self.desc}_{self.wflow_hash}.joblib"
-        self.board.pin_write(model, self.model_pin_name, "joblib")
-
-    def _set_export_query(self) -> None:
+    def set_export_query(self) -> None:
         """Set the proper export query for adding rows to result table"""
         entries = {
             "wflow_id": self.wflow_id,
             "description": self.desc,
-            "result_path": self.csv_pin_name,
+            "result_pin_name": self.csv_pin_name,
             "model_pin_name": self.model_pin_name,
         }
         if self.query_results:
@@ -277,7 +264,7 @@ class Export(_RpwfSQL):
                 sqlalchemy.update(self.res_tbl)
                 .where(
                     (self.res_tbl.c.wflow_id == self.wflow_id) & 
-                    (self.res_tbl.c.desc == self.desc)
+                    (self.res_tbl.c.description == self.desc)
                     )
                 .values(**entries)
             )
@@ -285,6 +272,16 @@ class Export(_RpwfSQL):
         print("Writing to db")
         self.export_query = sqlalchemy.insert(self.res_tbl).values(**entries)
         return None
+
+    def export_cv(self, results: pandas.DataFrame) -> None:
+        """Export the cross validation results, expects pd.DataFrame results"""
+        self.csv_pin_name = f"wf_{self.wflow_id}_{self.desc}_{self.wflow_hash}.csv"
+        self.board.pin_write(results, self.csv_pin_name, "csv")
+
+    def export_model(self, model: Any) -> None:
+        """Export the fitted model if needed, run before export_db()"""
+        self.model_pin_name = f"wf_{self.wflow_id}_{self.desc}_{self.wflow_hash}.joblib"
+        self.board.pin_write(model, self.model_pin_name, "joblib")
 
     def export_db(self) -> None:
         """After exporting the cv results, we update the database"""
@@ -301,12 +298,12 @@ class Export(_RpwfSQL):
                 or also export_model()"""
             ) from file_not_exists
 
-        self._set_export_query()
+        self.set_export_query()
         with self.base.engine.connect() as conn:
             print("Exporting to db")
             result = conn.execute(self.export_query)
             conn.commit()
-            self._wflow_results_query()  # After write new row, update query res
+            self.wflow_results_query()  # After write new row, update query res
             return result
 
     def __repr__(self) -> str:

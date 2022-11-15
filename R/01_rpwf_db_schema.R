@@ -202,15 +202,15 @@ rpwf_schema <- function() {
   tbl$wflow_result_tbl <-
     "CREATE TABLE IF NOT EXISTS wflow_result_tbl(
     result_id INTEGER PRIMARY KEY,
-    wflow_id INTEGER UNIQUE NOT NULL,
-    description VARCHAR,
-    result_path VARCHAR UNIQUE NOT NULL, /* Where results are stored (csv) */
-    model_path VARCHAR, /* Path where model file is stored in (joblib) */
+    wflow_id INTEGER NOT NULL,
+    description VARCHAR NOT NULL,
+    result_pin_name VARCHAR UNIQUE NOT NULL, /* Where results are stored (csv) */
+    model_pin_name VARCHAR, /* Path where model file is stored in (joblib) */
     CONSTRAINT wflow_id
       FOREIGN KEY (wflow_id)
       REFERENCES wflow_tbl (wflow_id)
       ON DELETE CASCADE,  /* Allows cascade deletion by removing exp id */
-    UNIQUE(wflow_id, description, result_path, description)
+    UNIQUE(wflow_id, description, result_pin_name, model_pin_name)
   );"
 
   return(tbl)
