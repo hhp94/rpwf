@@ -9,7 +9,8 @@
 #' [set_py_engine()] to a model, e.g. [parsnip::boost_tree()] and
 #' [parsnip::set_engine()].
 #' @param costs list or vector of sklearn cost optimization metrics such as
-#' "neg_log_loss" and "roc_auc".
+#' "neg_log_loss" and "roc_auc". Check the [docs](https://scikit-learn.org/stable/modules/model_evaluation.html)
+#' for available values.
 #'
 #' @return tibble that contains a combination of list of recipes, models,
 #' and costs.

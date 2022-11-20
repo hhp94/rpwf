@@ -395,7 +395,7 @@ hyper param tuning, 5 CV * 2 repeats on the outer loop for performance
 validation.  
 ```{bash, eval = FALSE}
 %run -m rpwf.script.nested_resampling $<path to the db> -b $<path to board yaml> \
-   -db "db.SQLite" -a -c 7 -icv 5 -icr 2 -ocv 5 -ocr 2
+  -a -c 7 -icv 5 -icr 2 -ocv 5 -ocr 2
 ```
 
 ## Visualize the results

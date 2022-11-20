@@ -184,6 +184,10 @@ class Model(_RpwfSQL):
         )
         self._exec_query()
 
+    def _get_model_mode(self) -> str:
+        """Regression or classification"""
+        return self.query_results["model_mode"]
+
     def _get_py_module(self) -> str:
         """Get the py module e.g. xgboost lightgbm"""
         return self.query_results["py_module"]
@@ -204,11 +208,10 @@ class BaseLearner:
         )
         print(f"Running {learner_module}")
         if wflow.args_json is None:
-            self._base_learner = learner_module(random_state=wflow.random_state)
+            self._base_learner = learner_module()
         else:
-            self._base_learner = learner_module(
-                random_state=wflow.random_state, **wflow._get_base_learner_args()
-            )  # Pass additional arguments to the base learners
+            # Pass additional arguments to the base learners
+            self._base_learner = learner_module( **wflow._get_base_learner_args())
 
     @property
     def base_learner(self):

@@ -8,6 +8,7 @@ import pandas
 from numpy import ravel
 from sklearn.model_selection import (
     RepeatedStratifiedKFold,
+    RepeatedKFold,
     GridSearchCV,
     cross_val_score
 )
@@ -163,12 +164,20 @@ if __name__ == "__main__":
         # inner_cv = StratifiedKFold(
         #     n_splits=args.inner_n_cv, shuffle=True, random_state=wflow_obj.random_state
         # )
-        inner_cv = RepeatedStratifiedKFold(
+        # Nested resampling
+        if (model_mode := model_type_obj._get_model_mode()) == 'regression':
+            vfold_cv = RepeatedKFold
+        elif model_mode == 'classification':
+            vfold_cv = RepeatedStratifiedKFold
+        else:
+            raise ValueError("Either `regression` or `classification` is expected")
+
+        inner_cv = vfold_cv(
             n_splits=args.inner_n_cv, 
             n_repeats=args.inner_n_repeats,
             random_state=wflow_obj.random_state
         )
-        outer_cv = RepeatedStratifiedKFold(
+        outer_cv = vfold_cv(
             n_splits=args.outer_n_cv,
             n_repeats=args.outer_n_repeats,
             random_state=wflow_obj.random_state,

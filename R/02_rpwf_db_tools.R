@@ -93,8 +93,8 @@ rpwf_results <- function(db_con, import_csv = TRUE) {
     db_con$con,
     "SELECT w.wflow_id AS wflow_id, w.model_tag AS model_tag,
             w.recipe_tag AS recipe_tag, w.costs AS costs,
-            r.description AS description, r.result_path AS result_path,
-            r.model_path AS model_path
+            r.description AS description, r.result_pin_name AS result_pin_name,
+            r.model_pin_name AS model_pin_name
     FROM wflow_tbl AS w
       INNER JOIN wflow_result_tbl AS r
         ON w.wflow_id = r.wflow_id;"
@@ -103,7 +103,7 @@ rpwf_results <- function(db_con, import_csv = TRUE) {
 
   if (import_csv) {
     df$fit_results <- lapply(
-      df$result_path,
+      df$result_pin_name,
       \(x) {
         pins::pin_read(db_con$board, name = x)
       }

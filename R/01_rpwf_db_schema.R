@@ -153,7 +153,6 @@ rpwf_schema <- function() {
     r_engine VARCHAR(50) NOT NULL, /* R engine types */
     hyper_par_rename VARCHAR, /* json to rename the columns of the grid */
     model_mode VARCHAR(14) NOT NULL CHECK(model_mode in ('regression', 'classification')),
-    UNIQUE(r_engine, model_mode),
     UNIQUE(r_engine, py_base_learner, py_module),
     UNIQUE(py_module, py_base_learner, r_engine, model_mode)
   );"
@@ -185,7 +184,7 @@ rpwf_schema <- function() {
     py_base_learner_args VARCHAR, /* args passed to base learner in python */
     grid_id INTEGER NOT NULL, /* id of the grid for grid search */
     df_id INTEGER NOT NULL, /* id of the train df */
-    random_state INTEGER,  /* Experiment seed */
+    random_state INTEGER,  /* Experiment seed, to control for CV */
     CONSTRAINT model_type_id_fk
       FOREIGN KEY (model_type_id)
       REFERENCES model_type_tbl (model_type_id),
