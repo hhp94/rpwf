@@ -16,8 +16,7 @@ rpwf_export_db(obj, db_con)
 \arguments{
 \item{obj}{an augmented \code{rpwf_workflow_set()} or \code{rpwf_data_set()} object.}
 
-\item{db_con}{(\code{DBI::dbConnect()})\cr
-An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
+\item{db_con}{an \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 }
 \value{
 number of rows exported.
@@ -28,7 +27,7 @@ Generic S3 Function for \code{\link[=rpwf_augment]{rpwf_augment()}} Object into 
 \examples{
 # Create the database
 board <- pins::board_temp()
-tmp_dir <- withr::local_tempdir()
+tmp_dir <- tempdir()
 db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 
 # Create a `workflow_set`

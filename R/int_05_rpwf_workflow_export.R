@@ -121,6 +121,11 @@ rpwf_add_desc_ <- function(obj) {
     }
   }, "character")
 
+  # Check if each unique recipe is associated with a unique tag
+  tag_df <- dplyr::distinct(obj[, which(names(obj) %in% c("preprocs", "recipe_tag"))])
+  r_tag <- tag_df$recipe_tag[which(!is.na(tag_df$recipe_tag))]
+  stopifnot("duplicated recipe tags error" = length(r_tag) ==
+    dplyr::n_distinct(r_tag))
   return(obj)
 }
 
@@ -319,9 +324,9 @@ rpwf_export_fns_ <- function(required_cols) {
 
     # Query the wflow that's already in the database
     db_wflow_hash <- rpwf_wflow_hash_(
-      dplyr::select(
-        DBI::dbGetQuery(db_con$con, glue::glue("SELECT * FROM wflow_tbl;")),
-        dplyr::all_of(required)
+      DBI::dbGetQuery(
+        db_con$con,
+        glue::glue('SELECT {paste(required, collapse = ", ")} FROM wflow_tbl;')
       )
     )
 
@@ -334,7 +339,9 @@ rpwf_export_fns_ <- function(required_cols) {
       print(obj[matched_wflow, which(names(obj) %in% required)])
     }
     # Only add the workflow that's not in the database
-    to_export <- as.data.frame(obj[!matched_wflow, which(names(obj) %in% required)])
+    to_export <- as.data.frame(
+      obj[!matched_wflow, which(names(obj) %in% c(required, "model_tag", "recipe_tag"))]
+    )
 
     if (nrow(to_export) == 0) {
       message("All workflows found in db, exiting...")
@@ -359,8 +366,6 @@ rpwf_export_wfs_ <- function(obj, db_con) {
       c(
         "df_id",
         "grid_id",
-        "model_tag",
-        "recipe_tag",
         "costs",
         "model_type_id",
         "random_state",

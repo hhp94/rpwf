@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_rpwf_db_schema.R
 \name{rpwf_connect_db}
 \alias{rpwf_connect_db}
-\title{Create a Database and Return an Object that Stores the Connection and Path}
+\title{Create a Database and Return an Object that Stores the Connection}
 \usage{
 rpwf_connect_db(dbname, board, ...)
 }
@@ -14,15 +14,14 @@ rpwf_connect_db(dbname, board, ...)
 \item{...}{arguments passed to \code{\link[DBI:dbConnect]{DBI::dbConnect()}}}
 }
 \value{
-A new \code{DbCon} object.
+A new \code{rpwf_connect_db()} object.
 }
 \description{
-Create the "rpwfDb" folder in the provided root path and create a db if
-needed. Access the connection with \code{object$con}
+Create or connect to a SQLite db. Access the connection with \code{object$con}.
 }
 \examples{
 board <- pins::board_temp()
-tmp_dir <- withr::local_tempdir()
+tmp_dir <- tempdir()
 db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 db_con$con
 db_con$board

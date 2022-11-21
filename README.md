@@ -17,8 +17,8 @@ coverage](https://codecov.io/gh/hhp94/rpwf/branch/master/graph/badge.svg)](https
   - hyper parameter grids generation using the
     [{dials}](https://dials.tidymodels.org/) functions such as
     [`grid_max_entropy`](https://dials.tidymodels.org/reference/grid_max_entropy.html).  
-  - vast libraries of cool data transformation methods such as splines
-    basis expansion, data reduction, and multiple imputation.  
+  - vast libraries of data transformation methods such as splines basis
+    expansion, data reduction, and multiple imputation.  
 - testing the generated data transformation pipeline in
   ![Python](https://img.shields.io/static/v1?label=%20&message=%20&color=yellow&logo=Python)
   with [scikit-learn](https://scikit-learn.org/stable/index.html).  
@@ -141,47 +141,47 @@ rpwf_avail_models(db_con)
 - Then define your model(s) and recipe(s)
 
 ``` r
-enet_model <- linear_reg(penalty = tune(),
-                         mixture = tune()) |>
+enet_model <- linear_reg(
+  penalty = tune(),
+  mixture = tune()
+) |>
   set_engine("glmnet") |>
   set_mode("regression") |>
-  # Set the py engine
-  set_py_engine("sklearn.linear_model",
-                "ElasticNet",
-                rpwf_model_tag = "enet") |>
-  # Set the engine specific grid
-  set_r_grid(dials::grid_regular, levels = 10)
+  set_py_engine("sklearn.linear_model", # Set the py engine
+    "ElasticNet",
+    rpwf_model_tag = "enet"
+  ) |>
+  set_r_grid(dials::grid_regular, levels = 10) # Set the engine specific grid
 
-svm_rbf_model <- svm_rbf(cost = tune(),
-                         margin = tune()) |>
+svm_rbf_model <- svm_rbf(
+  cost = tune(),
+  margin = tune()
+) |>
   set_engine("kernlab") |>
   set_mode("regression") |>
-  # Set the py engine
-  set_py_engine("sklearn.svm",
-                "SVR",
-                rpwf_model_tag = "svm_rbf",
-                kernel = "rbf",
-                # fix kernel parameter = "rbf"
-                cache_size = 500) |>
-  # Set the engine specific grid
-  set_r_grid(dials::grid_regular, levels = 10)
+  set_py_engine("sklearn.svm", # Set the py engine
+    "SVR",
+    rpwf_model_tag = "svm_rbf",
+    kernel = "rbf"
+  ) |> # fix kernel parameter = "rbf"
+  set_r_grid(dials::grid_regular, levels = 10) # Set the engine specific grid
 
-normalize_recipe <- recipe(mpg ~ ., data = mtcars) |> 
+normalize_recipe <- recipe(mpg ~ ., data = mtcars) |>
   step_normalize(all_predictors())
 ```
 
-- Create the workflowset and export the information
+- Create the workflow sets and export the information
 
 ``` r
 wf <- rpwf_workflow_set(
-  preprocs = list(normalize_recipe), 
-  models = list(enet_model, svm_rbf_model), 
+  preprocs = list(normalize_recipe),
+  models = list(enet_model, svm_rbf_model),
   costs = "neg_root_mean_squared_error"
-) |> 
+) |>
   rpwf_augment(db_con = db_con)
 
-rpwf_write_grid(wf) # Write the parquets for the train data
-rpwf_write_df(wf) # Write the parquets for the hyper param grids
+rpwf_write_grid(wf) # Write the parquets for the hyper param grids
+rpwf_write_df(wf) # Write the parquets for the train data
 rpwf_export_db(wf, db_con) # Write the information in the database
 # Write the board information in a YAML file
 rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
@@ -190,7 +190,7 @@ rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
 - Run the workflow in Python
 
 ``` bash
-python -m rpwf.script.nested_resampling $<path to the db> -b $<path to board yaml> \
+python -m rpwf.script.nested_resampling <path to the db> -b <path to board yaml> \
   -a -c 7 -icv 5 -icr 2 -ocv 5 -ocr 2
 ```
 
@@ -208,6 +208,5 @@ p <- wf_results |>
 p
 ```
 
-<!-- ![alt text](./README_plot.jpeg) -->
-
-<img src="./README_plot.jpeg" width=40% height=40%>
+![Plot showing model fit results for
+README.md](man/figures/README-plot_1.jpeg)

@@ -1,4 +1,4 @@
-#' Delete Exported Workflows and Associated Files
+#' Delete Exported Workflows
 #'
 #' This function specifically deletes the workflows from the `wflow_tbl`.
 #'
@@ -11,7 +11,7 @@
 #' @examples
 #' # Delete workflows with id from 1 to 99 of the database defined by `con`
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' rpwf_db_del_wflow(1:99, db_con)
 rpwf_db_del_wflow <- function(id, db_con) {
@@ -38,7 +38,7 @@ rpwf_db_del_wflow <- function(id, db_con) {
 #'
 #' @examples
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' # Before deleting
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
@@ -68,7 +68,7 @@ rpwf_db_del_entry <- function(tbls, id, db_con) {
 #'
 #' @examples
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' rpwf_avail_models(db_con)
 rpwf_avail_models <- function(db_con) {
@@ -86,7 +86,7 @@ rpwf_avail_models <- function(db_con) {
 #' @inheritParams rpwf_add_py_model
 #' @param import_csv whether to read in the results of the workflow.
 #'
-#' @return A tibble with the results stored in the fit_results column
+#' @return A tibble with the results stored in the `fit_results` column
 #' @export
 rpwf_results <- function(db_con, import_csv = TRUE) {
   df <- DBI::dbGetQuery(

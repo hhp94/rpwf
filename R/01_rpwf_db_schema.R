@@ -44,7 +44,7 @@ DbCon <- R6::R6Class(
     #' @return A new `DbCon` object.
     #' @examples
     #' board <- pins::board_temp()
-    #' tmp_dir <- withr::local_tempdir()
+    #' tmp_dir <- tempdir()
     #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
     #' db_con$con
     #' db_con$board
@@ -86,7 +86,7 @@ DbCreate <- R6::R6Class("DbCreate",
     #' @return A new `DbCreate` object.
     #' @examples
     #' board <- pins::board_temp()
-    #' tmp_dir <- withr::local_tempdir()
+    #' tmp_dir <- tempdir()
     #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
     #' db <- DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
     initialize = function(con, query) {
@@ -216,31 +216,29 @@ rpwf_schema <- function() {
 }
 
 # Add models to the db ---------------------------------------------------------
-#' Add scikit-learn Models to Database
+#' Add scikit-learn Model Definitions to Database
 #'
-#' Use this function to add or update the scikit-learn model using the module (i.e.,
-#' "xgboost"), the base learner in scikit-learn (i.e., "XGBClassifier"),
+#' This function adds or updates scikit-learn model to the database. Use the
+#' module (i.e., "xgboost"), the base learner in (i.e., "XGBClassifier"),
 #' the corresponding `{parsnip}` engine (i.e., "xgboost"), the equivalent hyper
 #' parameter names (i.e., "mtry" in `{parsnip}` is "colsample_bytree"), and
-#' model mode (i.e., "classification")
+#' model mode (i.e., "classification").
 #'
-#' @param db_con (`DBI::dbConnect()`)\cr
-#' An [rpwf_connect_db()] object.
-#' @param py_module the module in scikit-learn, i.e., "sklearn.ensemble".
+#' @param db_con an [rpwf_connect_db()] object.
+#' @param py_module the module in scikit-learn, i.e., `"sklearn.ensemble"`.
 #' @param py_base_learner the base learner in scikit-learn, i.e.,
-#' "RandomForestClassifier".
-#' @param r_engine the engine in parsnip, i.e., "ranger" or "rpart".
+#' `"RandomForestClassifier"`.
+#' @param r_engine the engine in parsnip, i.e., `"ranger"` or `"rpart"`.
 #' @param hyper_par_rename a named list of equivalent hyper parameters, i.e.,
 #' `list(cost_complexity = "ccp_alpha")`.
-#' @param model_mode "classification" or "regression".
+#' @param model_mode `"classification"` or `"regression"`.
 #'
-#' @return Use for side effect to update DB, not returning any values.
 #' @export
 #'
 #' @examples
 #' # Generate dummy database
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
@@ -314,22 +312,21 @@ rpwf_add_py_model <- function(db_con,
 }
 
 # Wrapper for the whole process and around the R6 object -----------------------
-#' Create a Database and Return an Object that Stores the Connection and Path
+#' Create a Database and Return an Object that Stores the Connection
 #'
 #' @description
-#' Create the "rpwfDb" folder in the provided root path and create a db if
-#' needed. Access the connection with `object$con`
+#' Create or connect to a SQLite db. Access the connection with `object$con`.
 #'
 #' @param dbname path to the database, passed to RSQLite::SQLite().
 #' @param board a `{pins}` board object.
 #' @param ... arguments passed to [DBI::dbConnect()]
-#' @return A new `DbCon` object.
+#' @return A new `rpwf_connect_db()` object.
 #'
 #' @export
 #'
 #' @examples
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' db_con$con
 #' db_con$board

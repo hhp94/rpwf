@@ -1,16 +1,17 @@
 # rpwf_db_schema ---------------------------------------------------------------
 
-#' Print the Board Information as a YAML File
+#' Write the Board Information as a YAML File
 #'
 #' The board information is needed as an input for the pre-made sklearn CLI.
 #'
-#' @param board `pins::board` object
+#' @param board `pins::board` object.
+#' @param file path to export the YAML file.
 #'
 #' @return named list for YAML
 #' @export
 #' @examples
-#' tmp_dir <- withr::local_tempdir()
 #' board <- pins::board_temp()
+#' tmp_dir <- tempdir()
 #' rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
 #' list.files(tmp_dir)
 rpwf_write_board_yaml <- function(board, file) {
@@ -43,7 +44,7 @@ new_rpwf_workflow_set <- function(obj = tibble::tibble()) {
 #' @examples
 #' # Create the database
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #'
 #' # Create a `workflow_set`
@@ -80,7 +81,7 @@ rpwf_augment.default <- function(obj, ...) {
 #' @examples
 #' # Create the database
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #'
 #' # Create a `workflow_set`

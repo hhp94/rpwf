@@ -2,7 +2,7 @@
 % Please edit documentation in R/07_py_related_r_codes.R
 \name{rpwf_cp_py_codes}
 \alias{rpwf_cp_py_codes}
-\title{Copy sklearn Codes into the Project Root Folder}
+\title{Copy sklearn Codes to Path}
 \usage{
 rpwf_cp_py_codes(board, overwrite = FALSE)
 }
@@ -21,7 +21,7 @@ codes with \code{rpwf_cp_py_codes()}, navigate to the "rpwf" folder and run
 Remove the python codes with \verb{pip uninstall local-rpwf}.
 }
 \examples{
-tmp_dir <- withr::local_tempdir()
+tmp_dir <- tempdir()
 rpwf_cp_py_codes(tmp_dir)
 list.files(paste0(tmp_dir, "/rpwf"), recursive = TRUE)
 }

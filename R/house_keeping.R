@@ -30,3 +30,5 @@
 # tmp_dir
 # board$path
 
+# # Run to build the website
+# pkgdown::build_site()

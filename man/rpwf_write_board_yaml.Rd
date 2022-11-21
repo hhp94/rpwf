@@ -4,14 +4,16 @@
 \name{rpwf_write_board_yaml}
 \alias{rpwf_write_board_yaml}
 \alias{rpwf_write_board_yaml.pins_board_folder}
-\title{Print the Board Information as a YAML File}
+\title{Write the Board Information as a YAML File}
 \usage{
 rpwf_write_board_yaml(board, file)
 
 \method{rpwf_write_board_yaml}{pins_board_folder}(board, file)
 }
 \arguments{
-\item{board}{\code{pins::board} object}
+\item{board}{\code{pins::board} object.}
+
+\item{file}{path to export the YAML file.}
 }
 \value{
 named list for YAML
@@ -20,8 +22,8 @@ named list for YAML
 The board information is needed as an input for the pre-made sklearn CLI.
 }
 \examples{
-tmp_dir <- withr::local_tempdir()
 board <- pins::board_temp()
+tmp_dir <- tempdir()
 rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
 list.files(tmp_dir)
 }

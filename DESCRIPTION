@@ -1,6 +1,6 @@
 Package: rpwf
 Title: Create Workflow with {tidymodels}. Fit Models with scikit-learn
-Version: 0.0.3
+Version: 0.1.1
 Authors@R: 
     person("Hung", "Pham", , "amser.hoanghung@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8271-9355"))
@@ -45,3 +45,4 @@ Suggests:
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr
+URL: https://hhp94.github.io/rpwf/

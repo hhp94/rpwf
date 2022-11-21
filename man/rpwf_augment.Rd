@@ -22,12 +22,11 @@ rpwf_augment(obj, ...)
 
 \item{...}{additional arguments for the \code{.grid_fun} functions.}
 
-\item{db_con}{(\code{DBI::dbConnect()})\cr
-An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
+\item{db_con}{an \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 
-\item{.grid_fun}{a \verb{dials::grid_<functions>}, e.g., \code{grid_random()},
-\code{grid_latin_hypercube()}. Default \code{NULL} assumes that no grid search is
-performed and default params in sklearn are used. See details for custom grids.}
+\item{.grid_fun}{a \verb{dials::grid_<functions>}, e.g., \code{\link[dials:grid_regular]{dials::grid_random()}},
+\code{\link[dials:grid_max_entropy]{dials::grid_latin_hypercube()}}. Default \code{NULL} assumes that no grid search is
+performed and sklearn defaults are used.}
 
 \item{range}{range of seed to sample from.}
 
@@ -42,7 +41,7 @@ Generic S3 Function for \code{rpwf_workflow_set} and \code{rpwf_data_set}
 \examples{
 # Create the database
 board <- pins::board_temp()
-tmp_dir <- withr::local_tempdir()
+tmp_dir <- tempdir()
 db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 
 # Create a `workflow_set`

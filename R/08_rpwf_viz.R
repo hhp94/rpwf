@@ -1,6 +1,6 @@
 #' Generate a `{dm}` Object of the Database
 #'
-#' Working with a `{dm}` object can make life easier than writing manual queries
+#' Working with a `{dm}` object can make life easier than writing manual queries.
 #' Also allows the visualization of the database with `dm::dm_draw()`.
 #'
 #' @inheritParams rpwf_add_py_model
@@ -10,7 +10,7 @@
 #'
 #' @examples
 #' board <- pins::board_temp()
-#' tmp_dir <- withr::local_tempdir()
+#' tmp_dir <- tempdir()
 #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' dm_obj <- rpwf_dm(db_con)
 #' # dm_obj |> dm::dm_draw()

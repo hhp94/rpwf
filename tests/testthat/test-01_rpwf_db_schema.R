@@ -1,4 +1,4 @@
-test_that("rpwf_write_board_yaml.pins_board_folder()",{
+test_that("rpwf_write_board_yaml.pins_board_folder()", {
   tmp_dir <- withr::local_tempdir()
   board <- pins::board_temp()
 

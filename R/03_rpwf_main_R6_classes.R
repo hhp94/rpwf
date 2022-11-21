@@ -258,6 +258,7 @@ TrainDf <- R6::R6Class(
       super$initialize(db_con) # Init from the super class
       self$seed <- seed
       set.seed(self$seed)
+      # Recipe tag shouldn't be added to the prepped object for hashing.
       self$prepped <- recipes::prep(recipe) # Init the prepped object
       self$term_info <- self$prepped$term_info # post-transform train metadata
       self$set_hash(rlang::hash(self$prepped)) # Set the hash of the prepped obj

@@ -12,8 +12,7 @@ rpwf_db_del_entry(tbls, id, db_con)
 
 \item{id}{vector of ids to be deleted from a particular table.}
 
-\item{db_con}{(\code{DBI::dbConnect()})\cr
-An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
+\item{db_con}{an \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 }
 \value{
 Called for the side effect.
@@ -24,7 +23,7 @@ avoid mistakes.
 }
 \examples{
 board <- pins::board_temp()
-tmp_dir <- withr::local_tempdir()
+tmp_dir <- tempdir()
 db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 # Before deleting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
