@@ -14,12 +14,11 @@ rpwf_dm(db_con)
 }
 \description{
 Working with a \code{{dm}} object can make life easier than writing manual queries.
-Also allows the visualization of the database with \code{dm::dm_draw()}.
+Also allows the visualization of the database with dm_draw().
 }
 \examples{
 board <- pins::board_temp()
 tmp_dir <- tempdir()
 db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 dm_obj <- rpwf_dm(db_con)
-# dm_obj |> dm::dm_draw()
 }

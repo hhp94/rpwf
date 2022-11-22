@@ -41,7 +41,9 @@ Suggests:
     dm,
     here,
     knitr,
-    rmarkdown
+    rmarkdown,
+    DiagrammeR,
+    DiagrammeRsvg
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr
