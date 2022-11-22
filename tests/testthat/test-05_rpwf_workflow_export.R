@@ -50,8 +50,10 @@ test_that("rpwf_tag_recipe()", {
 })
 
 test_that("rpwf_add_model_param_()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   t <- rpwf_workflow_set(
     list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
@@ -69,8 +71,10 @@ test_that("rpwf_add_model_param_()", {
 })
 
 test_that("rpwf_add_desc_()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   t <- rpwf_workflow_set(
     list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
@@ -89,8 +93,10 @@ test_that("rpwf_add_desc_()", {
 })
 
 test_that("rpwf_add_grid_()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   custom_grid <- function(x) {
     invisible(list(x))
@@ -132,8 +138,11 @@ test_that("rpwf_add_grid_()", {
 })
 
 test_that("rpwf_augment()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
+
   # Add a train df
   t <- rpwf_workflow_set(
     list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
@@ -150,8 +159,10 @@ test_that("rpwf_augment()", {
 })
 
 test_that("rpwf_Rgrid_R6_(), rpwf_TrainDf_R6_", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   t <- rpwf_workflow_set(
     list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
@@ -172,8 +183,10 @@ test_that("rpwf_Rgrid_R6_(), rpwf_TrainDf_R6_", {
 })
 
 test_that("rpwf_write_grid()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   t <- rpwf_workflow_set(
     list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
@@ -192,18 +205,18 @@ test_that("rpwf_write_grid()", {
 
   # Test if writing NA grid doesn't export anything
   rpwf_write_grid(rpwf_Rgrid_R6_(rpwf_add_grid_(t2, NULL, seed = 1234), db_con))
-  expect_true("db.SQLite_grid" %in% (list.files(paste(tmp_dir, "rpwfDb", sep = "/"))))
+  expect_equal(length(list.files(board$path)), 0L)
 
   # Write an actual grid
   rpwf_write_grid(t4)
-  expect_equal(length(list.files(
-    paste(tmp_dir, "rpwfDb", "db.SQLite_grid", sep = "/")
-  )), 1)
+  expect_equal(length(list.files(board$path)), 1L)
 })
 
 test_that("rpwf_write_df()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   tmp_func <- function(obj) {
     obj |>
@@ -233,14 +246,16 @@ test_that("rpwf_write_df()", {
     tmp_func() |>
     rpwf_TrainDf_R6_(db_con)
 
-  rpwf_write_df(t1, 1234)
-  expect_true("db.SQLite_df" %in% list.files(paste(tmp_dir, "rpwfDb", sep = "/")))
-  expect_equal(length(list.files(paste(tmp_dir, "rpwfDb", "db.SQLite_df", sep = "/"))), 1)
+  rpwf_write_df(t1)
+  expect_equal(length(list.files(board$path)), 1L)
 })
 
 test_that("rpwf_add_random_state_()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
+
   # Add a train df
   t <- rpwf_workflow_set(
     list(xgb = dummy_recipe_(rpwf_sim_(), type = "train")),
@@ -264,8 +279,10 @@ test_that("rpwf_add_random_state_()", {
 })
 
 test_that("rpwf_Rgrid_R6/TrainDf_R6_id_() part 1", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   query_wflow_tbl <- function() {
     DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
@@ -288,8 +305,10 @@ test_that("rpwf_Rgrid_R6/TrainDf_R6_id_() part 1", {
 })
 
 test_that("rpwf_Rgrid_R6/TrainDf_R6_id_() part 2", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   query_wflow_tbl <- function() {
     DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
@@ -319,8 +338,10 @@ test_that("rpwf_Rgrid_R6/TrainDf_R6_id_() part 2", {
 })
 
 test_that("rpwf_export_db()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   query_wflow_tbl <- function() {
     DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")

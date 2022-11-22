@@ -1,0 +1,7 @@
+url: https://hhp94.github.io/rpwf/
+template:
+  bootstrap: 5
+  bootswatch: flatly
+  bslib:
+    pkgdown-nav-height: 59px
+

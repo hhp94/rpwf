@@ -12,8 +12,7 @@ rpwf_db_del_entry(tbls, id, db_con)
 
 \item{id}{vector of ids to be deleted from a particular table.}
 
-\item{db_con}{(\code{DBI::dbConnect()})\cr
-An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
+\item{db_con}{an \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 }
 \value{
 Called for the side effect.
@@ -23,8 +22,9 @@ The deletion of workflows from \code{wflow_tbl} is specified separately to
 avoid mistakes.
 }
 \examples{
-tmp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+board <- pins::board_temp()
+tmp_dir <- tempdir()
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 # Before deleting
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl;")
 rpwf_db_del_entry("model_type_tbl", 1, db_con)

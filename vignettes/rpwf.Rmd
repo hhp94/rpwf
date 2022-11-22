@@ -16,44 +16,46 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup, message = FALSE}
-library(rpwf)
-library(dplyr)
-library(parsnip)
-library(recipes)
-library(modeldata)
-library(ggplot2)
-```
-
 ## Introduction
 * I wrote this package because I want to wrangle data in R, i.e., using 
-[`{data.table}`](http://rdatatable.gitlab.io/data.table/), [`{tidymodels}`](https://www.tidymodels.org/), [`{tidyverse}`](https://www.tidyverse.org/), spline basis functions generations with 
-[`{mgcv}`](https://cran.r-project.org/web/packages/mgcv/index.html)/[`{gratia}`](https://gavinsimpson.github.io/gratia/), and visualization with [`{ggplot2}`](https://ggplot2.tidyverse.org/) to name a few.  
-  + Importantly,[`{mice}`](https://github.com/amices/mice)
-  and [`{missForest}`](https://cran.r-project.org/web/packages/missForest/) in R 
-  are powerful multiple imputation methods.  
+[data.table](http://rdatatable.gitlab.io/data.table/), [tidymodels](https://www.tidymodels.org/), [tidyverse](https://www.tidyverse.org/), spline basis functions generations with 
+[mgcv](https://cran.r-project.org/web/packages/mgcv/index.html)/[gratia](https://gavinsimpson.github.io/gratia/), and visualization with [ggplot2](https://ggplot2.tidyverse.org/) to name a few.  
+  + Importantly,[mice](https://github.com/amices/mice)
+  and [missForest](https://cran.r-project.org/web/packages/missForest/) in R 
+  are powerful imputation methods.  
 * Meanwhile, the ML and DL ecosystems in python are usually more mature, 
 flexible, and many latest updates and ML research papers have python 
 implementations.  
   + I find that fitting model in python is usually faster and consume less 
   memory for the equivalent model in R, possibly due to `numpy` and bleeding
-  edge implementation of software.  
+  edge implementations.    
 * `{rpwf}` allows wrangling data in R while having access to the latest and 
 greatest ML packages in python.  
 * In Kaggle competitions, it is usually feature engineering that gives a 
 competitor an edge. `{rpwf}` helps by  
-  + Enabling the use of the [`{workflowset}`](https://workflowsets.tidymodels.org/)
+  + Enabling the use of the [workflowset](https://workflowsets.tidymodels.org/)
   framework. Workflow sets are pre-defined test experiments that test how
-  engineered features affect the predictive performance.  
+  engineered features affect predictive performance.  
   + Allowing seamless deployment on HPC clusters or cloud computers because 
-  the pathing and uploading of results is handled by (a) SQLite database(s).  
+  the pathing and uploading of results is handled by (a) SQLite database(s)
+  and the `{pins}` package.  
 
 ## Demonstration
-* Let's demonstrate using the `sim_classification()` function from [`{modeldata}`](https://modeldata.tidymodels.org/).  
+```{r setup, message = FALSE}
+library(rpwf)
+library(dplyr)
+library(parsnip)
+library(recipes)
+library(ggplot2)
+library(pins)
+```
+
+* Let's demonstrate using the `sim_classification()` function from [modeldata](https://modeldata.tidymodels.org/).  
+
 ```{r}
 set.seed(123)
-tmp_dir <- withr::local_tempdir(pattern = "vignette") # Temp folder
-df <- modeldata::sim_classification(num_samples = 1000, num_linear = 40)
+tmp_dir <- tempdir() # Temp folder
+df <- modeldata::sim_classification(num_samples = 500, num_linear = 40)
 df[1:6, 1:6]
 ```
 
@@ -69,30 +71,32 @@ sum(is.na(df))
 
 * Re-code classes, our response variable, as integers  
 ```{r}
-df$class <- as.integer(df$class) - 1
+df$class <- as.integer(df$class) - 1L
 ```
 
-* Add an id column
+* Add an optional id column
 ```{r}
 df$id <- seq_len(nrow(df))
 ```
 
 ## Initialize a database
-* Create a database called `"db.SQLite"` with `rpwf_connect_db()`.
+* Create a `pins::board_<your board type>` and pass it to `rpwf_connect_db()`.  
+* Create a database called `"db.SQLite"` with `rpwf_connect_db()`.  
 ```{r}
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+board <- board_temp()
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 ```
 
-* `db_con` is an object that holds a [`{DBI}`](https://dbi.r-dbi.org/) connection
-to the SQLite database that we just created. Access it with `db_con$con`.  
+* `db_con` is an object that holds a [DBI](https://dbi.r-dbi.org/) connection
+to the SQLite database that was just created. Access it with `db_con$con`.  
 ```{r, eval = FALSE}
 db_con$con
-#   Path: <path>\rpwfDb\db.SQLite
+#   Path: <path>/rpwfDb/db.SQLite
 #   Extensions: TRUE
 ```
 
-## Define models with [`{parsnip}`](https://parsnip.tidymodels.org/)
-* Identical to {parsnips}, first choose a model, i.e., [`boost_tree()`](https://parsnip.tidymodels.org/reference/boost_tree.html), then 
+## Define models with [parsnip](https://parsnip.tidymodels.org/)
+* Identical to `{parsnips}`, first choose a model, i.e., [`boost_tree()`](https://parsnip.tidymodels.org/reference/boost_tree.html), then 
 choose the R engine with [`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html) and classification or regression with [`set_mode()`](https://parsnip.tidymodels.org/reference/set_mode.html).  
 * Then, pipe the object into the `set_py_engine()` function.  
 * `set_py_engine()` has 3 important arguments  
@@ -140,13 +144,12 @@ xgb_model <- boost_tree(
   set_py_engine(
     "xgboost",
     "XGBClassifier",
-    args = list(
-      eval_metric = "logloss",
-      n_estimators = 50,
-      use_label_encoder = FALSE,
-      verbosity = 0,
-      silent = TRUE
-    )
+    rpwf_model_tag = "xgboost",
+    eval_metric = "logloss",
+    n_estimators = 50,
+    use_label_encoder = FALSE,
+    verbosity = 0,
+    silent = TRUE
   )
 ```
 
@@ -172,8 +175,7 @@ svm_rbf_model <- svm_rbf(
   set_py_engine(
     "sklearn.svm",
     "SVC",
-    "svm_rbf",
-    tag = "svm_rbf",
+    rpwf_model_tag = "svm_rbf",
     kernel = "rbf", # fix kernel parameter = "rbf"
     cache_size = 500
   )
@@ -192,18 +194,18 @@ enet_model <- logistic_reg(
   set_py_engine(
     "sklearn.linear_model",
     "LogisticRegression",
-    "glmnet",
+    rpwf_model_tag = "glmnet",
     solver = "saga",
     penalty = "elasticnet",
-    warm_start = TRUE
+    max_iter = 1000
   )
 ```
 
-
 ## Hyper parameter tuning
-* The `{dials}` package provides 1) sensible hyper parameters ranges, and 2) 
-functions that go beyond the random grid and regular grid such as 
-`dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
+* The `{dials}` package provides  
+  1. sensible hyper parameters ranges, and  
+  2. functions that go beyond the random grid and regular grid such as 
+  `dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
 * `dials::grid_latin_hypercube` will be helpful for models with a lot of 
 hyper parameters such as `xgboost`. But for `svm_rbf_model`, tuning just 2 
 hyper parameters on a 2-D grid with `dials::grid_regular` would provide sufficient
@@ -234,7 +236,8 @@ svm_rbf_model <- svm_rbf_model |>
 ### `glm`
 * Let's also use a 2D regular grid for the enet model. However, I changed the 
 range of the l1 penalty to allows for a greater regularization strength since
-scikit-learn inverse the penalty value.  
+scikit-learn inverse the penalty value for the logistic regression 
+implementation.  
 ```{r}
 enet_model <- enet_model |>
   set_r_grid(dials::grid_regular,
@@ -243,7 +246,7 @@ enet_model <- enet_model |>
   )
 ```
 
-## Define transformation pipelines with [`{recipes}`](https://recipes.tidymodels.org/)
+## Define transformation pipelines with [recipes](https://recipes.tidymodels.org/)
 * Recipes are defined as usual.  
   + Use the formula or the role interface to specify the response and predictors.  
   + The base recipe is used to gauge the baseline performance of each model.  
@@ -298,12 +301,14 @@ xgb_wfs <- rpwf_workflow_set(
   models = list(xgb_model),
   cost = "roc_auc"
 )
+
 ### svm and glm workflow_set
 svm_glm_wfs <- rpwf_workflow_set(
   preprocs = list(scaled_base_rec, scaled_pca_rec),
   models = list(svm_rbf_model, enet_model),
   cost = "roc_auc"
 )
+
 ### combined workflow_set
 all_wfs <- rbind(xgb_wfs, svm_glm_wfs)
 ```
@@ -337,31 +342,28 @@ sapply(unique(all_wfs$grids), nrow)
 
 ## Export data as parquets and add to database.
 * There are two types of parquets files 1) hyper param grids, and 2) train/test
-data frames.  
-* `rpwf_write_grid()` and `rpwf_write_df()` write the parquets and returns
-id columns that track where the parquets are to the workflow set.  
+data.  
+* `rpwf_write_grid()` and `rpwf_write_df()` write the parquets.  
 * Because this function only generate a data.frame if its not already written, 
 running each of these functions in parallel is not recommended.  
   + To get around this, one can either work with a manageable number of 
   workflows at a time, or split the work into multiple different databases and 
-  run the export functions for each database in parallel.    
+  run the export functions in parallel over the databases.    
 ```{r}
 rpwf_write_grid(all_wfs)
 rpwf_write_df(all_wfs)
 ```
 
+* Export the board information as a YAML file.  
 * Then finally, export the meta data into the database with `rpwf_export_db()`.  
 ```{r}
+rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
 rpwf_export_db(all_wfs, db_con)
 ```
 
 ## Run the workflow in python
-```{bash, eval = FALSE}
-tmp_dir_posix = <Path to the folder that contains the generated "rpwfDB" folder>
-```
-
 * The `rpwf` python codes contains scripts that performs model fitting. These are 
-also templates to experiment further using the data generated in R.   
+also templates to experiment further using the data generated in R.  
 * For example, to use the `nested_resampling.py` script, in the terminal, run 
 the following command to get the list of arguments  
 ```{bash, eval = FALSE}
@@ -375,11 +377,11 @@ python -m rpwf.script.nested_resampling -h
 
 * This following command display the workflows we exported.  
 ```{bash, eval = FALSE}
-%run -m rpwf.script.nested_resampling $tmp_dir_posix -db "db.SQLite" -s
+%run -m rpwf.script.nested_resampling $<path to the db> -b $<path to board yaml> -s
 ```
-  + The positional argument is the path to the folder that holds the generated
-  `"rpwfDb"` folder. In this case, my temp folder.  
-  + The `-db` flag is to specify the name of the database we are connecting to.  
+  + The positional argument is the path to the database.  
+  + The `-b` flag is the path to the exported board YAML file associated with 
+  this db.    
   + The `-s` flag shows the workflows present in the database.  
 * The other important flags are  
   + The `-a` flag runs all the workflow that hasn't been run.    
@@ -389,13 +391,15 @@ python -m rpwf.script.nested_resampling -h
   already been run.  
   + The `-c` flag indicates the number of CPU cores dedicated to the model fitting
   task.  
-
-* Let's run the nested CV with 5 CV * 2 repeats for the inner loop for 
-hyper param tuning, 5 CV * 2 repeats on the outer loop for performance 
-validation.  
+  + The `-icv` and `-icr` flags are number of vfold-cv and repats for the inner
+  loop used for hyper parameters tuning.  
+  + The `-ocv` and `-ocr` flags are number of vfold-cv and repats for the outer
+  loop used for testing the predictive performance.  
+* Let's run the nested CV with 5 CV * 2 repeats for the inner loop and 5 CV * 2
+repeats on the outer loop.  
 ```{bash, eval = FALSE}
-%run -m rpwf.script.nested_resampling $tmp_dir_posix \
-   -db "db.SQLite" -a -c 7 -icv 5 -icr 2 -ocv 5 -ocr 2
+%run -m rpwf.script.nested_resampling $<path to the db> -b $<path to board yaml> \
+  -a -c 7 -icv 5 -icr 2 -ocv 5 -ocr 2
 ```
 
 ## Visualize the results
@@ -406,7 +410,12 @@ fit_results <- rpwf_results(db_con)
 ```
 
 ```{r, echo = FALSE, message = FALSE}
-db_con <- rpwf_connect_db("db.SQLite", system.file("extdata", package = "rpwf"))
+db_path <- paste(system.file("extdata", package = "rpwf"), "db.SQLite", sep = "/")
+board_path <- paste(system.file("extdata", package = "rpwf"), "t", sep = "/")
+
+board <- pins::board_folder(board_path)
+db_con <- rpwf_connect_db(db_path, board)
+
 fit_results <- rpwf_results(db_con)
 ```
 

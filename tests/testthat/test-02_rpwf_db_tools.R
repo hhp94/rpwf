@@ -4,8 +4,10 @@ test_that("id_col_switch_()", {
 })
 
 test_that("rpwf_db_del_wflow()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   query_wflow_tbl <- function() {
     DBI::dbGetQuery(db_con$con, "SELECT * FROM wflow_tbl")
@@ -23,19 +25,20 @@ test_that("rpwf_db_del_wflow()", {
 
   rpwf_write_grid(t1)
   rpwf_write_df(t1)
-  expect_equal(length(list.files(paste(tmp_dir, "rpwfDb", sep = "/"), recursive = TRUE)), 3)
+  expect_equal(length(list.files(board$path)), 2)
   rpwf_export_db(t1, db_con)
   expect_equal(nrow(query_wflow_tbl()), 1)
 
-  # delete from wflow
-  rpwf_db_del_wflow(1, db_con, TRUE)
+  # # delete from wflow
+  rpwf_db_del_wflow(1, db_con)
   expect_equal(nrow(query_wflow_tbl()), 0)
-  expect_equal(length(list.files(paste(tmp_dir, "rpwfDb", sep = "/"), recursive = TRUE)), 1)
 })
 
 test_that("rpwf_db_del_entry()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   query_wflow_tbl <- function(tbl) {
     DBI::dbGetQuery(db_con$con, glue::glue("SELECT * FROM {tbl}"))
@@ -66,8 +69,10 @@ test_that("rpwf_db_del_entry()", {
 })
 
 test_that("rpwf_avail_models()", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   models <- rpwf_avail_models(db_con)
 
@@ -75,10 +80,16 @@ test_that("rpwf_avail_models()", {
 })
 
 test_that("rpwf_results()", {
-  expect_message(rpwf_connect_db("db.SQLite", test_path("fixtures")),
-    regexp = "found"
+  db_path <- paste(test_path("fixtures"), "db.SQLite", sep = "/")
+  board_path <- paste(test_path("fixtures"), "t", sep = "/")
+
+  expect_true(file.exists(db_path))
+  board <- pins::board_folder(board_path)
+  db_con <- rpwf_connect_db(
+    db_path,
+    board
   )
-  db_con <- rpwf_connect_db("db.SQLite", test_path("fixtures"))
+
   results_df <- rpwf_results(db_con)
   expect_true(nrow(results_df) > 0L)
 })

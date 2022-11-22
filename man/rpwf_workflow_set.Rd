@@ -14,7 +14,8 @@ rpwf_workflow_set(preprocs, models, costs)
 \code{\link[parsnip:set_engine]{parsnip::set_engine()}}.}
 
 \item{costs}{list or vector of sklearn cost optimization metrics such as
-"neg_log_loss" and "roc_auc".}
+"neg_log_loss" and "roc_auc". Check the \href{https://scikit-learn.org/stable/modules/model_evaluation.html}{docs}
+for available values.}
 }
 \value{
 tibble that contains a combination of list of recipes, models,

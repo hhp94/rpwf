@@ -8,6 +8,7 @@ import pandas
 from numpy import ravel
 from sklearn.model_selection import (
     RepeatedStratifiedKFold,
+    RepeatedKFold,
     GridSearchCV,
     cross_val_score
 )
@@ -18,7 +19,7 @@ from .. import database, rpwf
 def get_wflow_list(all_wflow: pandas.DataFrame):
     """If the workflow has results in the db or not"""
     if not args.force:  # Don't run wflows that have results in db
-        all_wflow = all_wflow.loc[all_wflow["result_path"].isnull(), :]
+        all_wflow = all_wflow.loc[all_wflow["result_pin_name"].isnull(), :]
     if args.all_id:
         return all_wflow.loc[:, "wflow_id"].to_list()
     return list(set(args.wflow_id).intersection(set(all_wflow.loc[:, "wflow_id"])))
@@ -31,16 +32,17 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "project_root",
+        "db_path",
         type=str,
-        help="path to directory that holds the 'rpwfDb' folder"
+        help="path to the database"
     )
     parser.add_argument(
-        "-db",
-        "--db-name",
-        metavar="db-name",
+        "-b",
+        "--board",
+        metavar="board",
+        required=True,
         type=str,
-        help="name of the database, (e.g. 'db.SQLite')"
+        help="path to the yaml file of the board"
     )
 
     id_group = parser.add_mutually_exclusive_group(required=True)
@@ -108,17 +110,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # Check for valid db name
-    if (
-        args.db_name is None
-        or Path(args.project_root).joinpath(f"rpwfDb/{args.db_name}").exists() is False
-    ):
-        print("Invalid db name, the following files are in the 'rpwfDb' folder")
-        print([str(x) for x in Path(args.project_root).joinpath("rpwfDb").iterdir()])
-        sys.exit()
-
     # Setup the base objects
-    db_obj = database.Base(args.project_root, args.db_name)
+    db_obj = database.Base(Path(args.db_path).as_posix())
+    board_obj = database.Board(Path(args.board).as_posix())
     wflow_df = db_obj.all_wflow()
 
     # Show the wflows and exit
@@ -128,10 +122,7 @@ if __name__ == "__main__":
 
     wflow_list = get_wflow_list(wflow_df)
     if not wflow_list:
-        print(
-            "Either invalid wflow or all requested wflow already have results",
-            "use -f to force the rerun of these wflows"
-            )
+        print("Either invalid wflow or all requested wflow already have results")
         sys.exit()
 
     print(f"running {wflow_list}")
@@ -140,13 +131,13 @@ if __name__ == "__main__":
     # Run the experiment
     for wflow_id in wflow_list:
         print(f"running wflow {wflow_id}")
-        wflow_obj = rpwf.Wflow(db_obj, wflow_id)
+        wflow_obj = rpwf.Wflow(db_obj, board_obj, wflow_id)
         n_cores = args.cores
 
         # Generate the parameters
-        p_grid = rpwf.RGrid(db_obj, wflow_obj).get_grid()
+        p_grid = rpwf.RGrid(db_obj, board_obj, wflow_obj).get_grid()
 
-        df_obj = rpwf.TrainDf(db_obj, wflow_obj)
+        df_obj = rpwf.TrainDf(db_obj, board_obj, wflow_obj)
         X, y = df_obj.get_df_X(True), df_obj.get_df_y(True)
 
         if y is None:
@@ -154,12 +145,19 @@ if __name__ == "__main__":
             sys.exit()
         
         y = ravel(y)
-
-        model_type_obj = rpwf.Model(db_obj, wflow_obj)
+        
+        model_type_obj = rpwf.Model(db_obj, board_obj, wflow_obj)
         base_learner = rpwf.BaseLearner(wflow_obj, model_type_obj).base_learner
         score = wflow_obj._get_par("costs")
 
-        cv = RepeatedStratifiedKFold(
+        if (model_mode := model_type_obj._get_model_mode()) == 'regression':
+            vfold_cv = RepeatedKFold
+        elif model_mode == 'classification':
+            vfold_cv = RepeatedStratifiedKFold
+        else:
+            raise ValueError("Either `regression` or `classification` is expected")
+
+        cv = vfold_cv(
             n_splits=args.n_splits,
             n_repeats=args.n_repeats,
             random_state=wflow_obj.random_state,
@@ -181,13 +179,12 @@ if __name__ == "__main__":
             )
             param_tuner.fit(X=X, y=y)
             tuning_results = pandas.DataFrame(param_tuner.cv_results_)
-            cv_results = tuning_results
-            # tuning_results.loc[tuning_results['rank_test_score'] == 1]
+            cv_results = tuning_results.loc[tuning_results['rank_test_score'] == 1]
 
         # if args.export:
-            # Export the results
-        exporter = rpwf.Export(db_obj, wflow_obj)
-        exporter.export_cv(pandas.DataFrame(cv_results), "cv")
+        # Export the results
+        exporter = rpwf.Export(db_obj, board_obj, "cv", wflow_obj)
+        exporter.export_cv(pandas.DataFrame(cv_results))
         if args.joblib_model and param_tuner:
             exporter.export_model(param_tuner.best_estimator_)
         exporter.export_db()

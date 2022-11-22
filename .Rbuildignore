@@ -6,3 +6,7 @@
 ^\./R/house_keeping\.R$
 ^data-raw$
 ^\./data-raw/test_py_rpwf_scripts\.ipynb$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^\.github$

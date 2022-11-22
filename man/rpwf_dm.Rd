@@ -7,20 +7,18 @@
 rpwf_dm(db_con)
 }
 \arguments{
-\item{db_con}{(\code{DBI::dbConnect()})\cr
-An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
+\item{db_con}{an \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 }
 \value{
 \code{{dm}} object of the created schema.
 }
 \description{
-Working with a \code{{dm}} object can make life easier than writing manual queries
-Also allows the visualization of the database with \code{dm::dm_draw()}.
+Working with a \code{{dm}} object can make life easier than writing manual queries.
+Also allows the visualization of the database with dm_draw().
 }
 \examples{
-tmp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+board <- pins::board_temp()
+tmp_dir <- tempdir()
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 dm_obj <- rpwf_dm(db_con)
-dm_obj
-# dm_obj |> dm::dm_draw()
 }

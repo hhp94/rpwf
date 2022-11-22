@@ -2,7 +2,7 @@
 % Please edit documentation in R/01_rpwf_db_schema.R
 \name{rpwf_add_py_model}
 \alias{rpwf_add_py_model}
-\title{Add scikit-learn Models to Database}
+\title{Add scikit-learn Model Definitions to Database}
 \usage{
 rpwf_add_py_model(
   db_con,
@@ -14,35 +14,32 @@ rpwf_add_py_model(
 )
 }
 \arguments{
-\item{db_con}{(\code{DBI::dbConnect()})\cr
-An \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
+\item{db_con}{an \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 
-\item{py_module}{the module in scikit-learn, i.e., "sklearn.ensemble".}
+\item{py_module}{the module in scikit-learn, i.e., \code{"sklearn.ensemble"}.}
 
 \item{py_base_learner}{the base learner in scikit-learn, i.e.,
-"RandomForestClassifier".}
+\code{"RandomForestClassifier"}.}
 
-\item{r_engine}{the engine in parsnip, i.e., "ranger" or "rpart".}
+\item{r_engine}{the engine in parsnip, i.e., \code{"ranger"} or \code{"rpart"}.}
 
 \item{hyper_par_rename}{a named list of equivalent hyper parameters, i.e.,
 \code{list(cost_complexity = "ccp_alpha")}.}
 
-\item{model_mode}{"classification" or "regression".}
-}
-\value{
-Use for side effect to update DB, not returning any values.
+\item{model_mode}{\code{"classification"} or \code{"regression"}.}
 }
 \description{
-Use this function to add or update the scikit-learn model using the module (i.e.,
-"xgboost"), the base learner in scikit-learn (i.e., "XGBClassifier"),
+This function adds or updates scikit-learn model to the database. Use the
+module (i.e., "xgboost"), the base learner in (i.e., "XGBClassifier"),
 the corresponding \code{{parsnip}} engine (i.e., "xgboost"), the equivalent hyper
 parameter names (i.e., "mtry" in \code{{parsnip}} is "colsample_bytree"), and
-model mode (i.e., "classification")
+model mode (i.e., "classification").
 }
 \examples{
 # Generate dummy database
-tmp_dir <- withr::local_tempdir()
-db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+board <- pins::board_temp()
+tmp_dir <- tempdir()
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 DBI::dbListTables(db_con$con)
 DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 rpwf_add_py_model(

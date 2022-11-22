@@ -1,6 +1,8 @@
 test_that("Testing if the dm object imported all the tables", {
-  tmp_dir <- withr::local_tempdir(pattern = "rpwfDb")
-  db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+  board <- pins::board_temp()
+  tmp_dir <- withr::local_tempdir()
+  db_name <- paste(tmp_dir, "db.SQLite", sep = "/")
+  db_con <- rpwf_connect_db(db_name, board)
 
   dm_obj <- rpwf_dm(db_con)
   # colnames of dm_obj should be the table names stored in rpwf_schema()

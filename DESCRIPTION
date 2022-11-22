@@ -1,6 +1,6 @@
 Package: rpwf
 Title: Create Workflow with {tidymodels}. Fit Models with scikit-learn
-Version: 0.0.3
+Version: 0.2.0
 Authors@R: 
     person("Hung", "Pham", , "amser.hoanghung@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8271-9355"))
@@ -8,7 +8,7 @@ Description: rpwf aims to streamline the process of data engineering in R, gener
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.2
 Imports: 
     DBI,
     dbplyr,
@@ -18,8 +18,6 @@ Imports:
     hardhat,
     jsonlite,
     parsnip,
-    modeldata,
-    utils,
     purrr,
     R6,
     recipes,
@@ -27,18 +25,26 @@ Imports:
     RSQLite,
     stats,
     tidyr,
-    withr,
-    testthat,
-    tibble
+    tibble,
+    pins,
+    yaml
 Suggests:
     kernlab,
+    withr,
+    utils,
+    fs,
+    testthat,
+    modeldata,
     ggplot2,
     arrow,
     covr,
     dm,
     here,
     knitr,
-    rmarkdown
+    rmarkdown,
+    DiagrammeR,
+    DiagrammeRsvg
 Depends: 
     R (>= 2.10)
 VignetteBuilder: knitr
+URL: https://hhp94.github.io/rpwf/

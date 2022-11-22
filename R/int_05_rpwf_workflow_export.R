@@ -121,6 +121,11 @@ rpwf_add_desc_ <- function(obj) {
     }
   }, "character")
 
+  # Check if each unique recipe is associated with a unique tag
+  tag_df <- dplyr::distinct(obj[, which(names(obj) %in% c("preprocs", "recipe_tag"))])
+  r_tag <- tag_df$recipe_tag[which(!is.na(tag_df$recipe_tag))]
+  stopifnot("duplicated recipe tags error" = length(r_tag) ==
+    dplyr::n_distinct(r_tag))
   return(obj)
 }
 
@@ -226,16 +231,16 @@ rpwf_Rgrid_R6_ <- function(obj, db_con) {
 #' is not recommended.
 #'
 #' @inheritParams rpwf_export_db
+#' @param seed random seed. To control for recipes such as down sampling.
 #'
 #' @return A tibble with Rgrid objects added.
 #' @noRd
-rpwf_TrainDf_R6_ <- function(obj, db_con) {
+rpwf_TrainDf_R6_ <- function(obj, db_con, seed = 1234) {
   obj$TrainDf <- lapply(obj$preprocs, \(x) {
-    TrainDf$new(x, db_con)
+    TrainDf$new(x, db_con, seed = seed)
   })
   return(obj)
 }
-
 
 #' Recheck if file exists
 #'
@@ -245,9 +250,9 @@ rpwf_TrainDf_R6_ <- function(obj, db_con) {
 #' @return Vector of TRUE/FALSE for files exists or not.
 #'
 #' @noRd
-path_chk_ <- function(R6_obj, db_con) {
+pin_exists_recheck_ <- function(R6_obj, db_con) {
   sapply(R6_obj, \(x) {
-    file.exists(paste(db_con$proj_root_path, x$path, sep = "/"))
+    pins::pin_exists(x$board, x$pin_name)
   })
 }
 
@@ -258,18 +263,18 @@ path_chk_ <- function(R6_obj, db_con) {
 #' @return A tibble with grid_id added.
 #' @noRd
 rpwf_Rgrid_R6_id_ <- function(obj, db_con) {
-  grid_query <- rpwf_query_(
+  grid_obj_id <- rpwf_query_(
     query = "SELECT grid_id FROM r_grid_tbl WHERE grid_hash = ?",
     con = db_con$con,
     val1 = sapply(obj$Rgrid, \(x) {
       x$hash
     })
   )
-  stopifnot("grid id not found, `rpwf_write_grid()` first?" = !anyNA(grid_query))
+  stopifnot("grid id not found, `rpwf_write_grid()` first?" = !anyNA(grid_obj_id))
   stopifnot("grid parquet not found, `rpwf_write_grid()` first?" = all(
-    path_chk_(obj$Rgrid[which(grid_query != 1)], db_con) # Don't check grid if id = 1
+    pin_exists_recheck_(obj$Rgrid[which(grid_obj_id != 1)], db_con) # Don't check grid if id = 1
   ))
-  obj$grid_id <- grid_query
+  obj$grid_id <- grid_obj_id
   return(obj)
 }
 
@@ -280,16 +285,16 @@ rpwf_Rgrid_R6_id_ <- function(obj, db_con) {
 #' @return A tibble with df_id added.
 #' @noRd
 rpwf_TrainDf_R6_id_ <- function(obj, db_con) {
-  df_query <- rpwf_query_(
+  df_obj_id <- rpwf_query_(
     con = db_con$con,
     query = "SELECT df_id FROM df_tbl WHERE df_hash = ?",
     val1 = sapply(obj$TrainDf, \(x) {
       x$hash
     })
   )
-  stopifnot("df id not found, `rpwf_write_df()` first?" = !anyNA(df_query))
-  stopifnot("df parquet not found, `rpwf_write_df()` first?" = all(path_chk_(obj$TrainDf, db_con)))
-  obj$df_id <- df_query
+  stopifnot("df id not found, `rpwf_write_df()` first?" = !anyNA(df_obj_id))
+  stopifnot("df parquet not found, `rpwf_write_df()` first?" = all(pin_exists_recheck_(obj$TrainDf, db_con)))
+  obj$df_id <- df_obj_id
   return(obj)
 }
 
@@ -319,9 +324,9 @@ rpwf_export_fns_ <- function(required_cols) {
 
     # Query the wflow that's already in the database
     db_wflow_hash <- rpwf_wflow_hash_(
-      dplyr::select(
-        DBI::dbGetQuery(db_con$con, glue::glue("SELECT * FROM wflow_tbl;")),
-        dplyr::all_of(required)
+      DBI::dbGetQuery(
+        db_con$con,
+        glue::glue('SELECT {paste(required, collapse = ", ")} FROM wflow_tbl;')
       )
     )
 
@@ -334,7 +339,9 @@ rpwf_export_fns_ <- function(required_cols) {
       print(obj[matched_wflow, which(names(obj) %in% required)])
     }
     # Only add the workflow that's not in the database
-    to_export <- as.data.frame(obj[!matched_wflow, which(names(obj) %in% required)])
+    to_export <- as.data.frame(
+      obj[!matched_wflow, which(names(obj) %in% c(required, "model_tag", "recipe_tag"))]
+    )
 
     if (nrow(to_export) == 0) {
       message("All workflows found in db, exiting...")
@@ -359,8 +366,6 @@ rpwf_export_wfs_ <- function(obj, db_con) {
       c(
         "df_id",
         "grid_id",
-        "model_tag",
-        "recipe_tag",
         "costs",
         "model_type_id",
         "random_state",

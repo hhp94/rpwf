@@ -1,3 +1,19 @@
+# Board S3 methods -------------------------------------------------------------
+#' @rdname rpwf_write_board_yaml
+#' @export
+rpwf_write_board_yaml.pins_board_folder <- function(board, file) {
+  yaml_board <- yaml::yaml.load(yaml::as.yaml(board)) |>
+    purrr::list_modify(
+      api = purrr::zap(),
+      cache = purrr::zap(),
+      versioned = TRUE
+    )
+  yaml::write_yaml(yaml_board, file)
+}
+
+#' @import R6
+NULL
+
 # DbCon - Create folder and db -------------------------------------------------
 #' @name DbCon
 #' @title R6 Object that Stores the Connection and Path to the Db
@@ -10,49 +26,36 @@
 DbCon <- R6::R6Class(
   "DbCon",
   public = list(
-    #' @field db_name name of the database.
-    db_name = NULL,
-    #' @field proj_root_path root path of the project.
-    proj_root_path = NULL,
+    #' @field dbname name of the database.
+    dbname = NULL,
+    #' @field board a `{pins}` board object.
+    board = NULL,
     #' @field db_path path to the database.
     db_path = NULL,
     #' @field con a [DBI::dbConnect()] object to the database.
     con = NULL,
     #' @description
     #' Create an `DbCon` object. Should be a singleton. `self$con` returns a
-    #' [DBI::dbConnect()] object and `self$proj_root_path` returns
-    #' `proj_root_path`.
-    #' @param db_name name of the database.
-    #' @param proj_root_path root path of the project.
+    #' [DBI::dbConnect()] object and `self$board` returns
+    #' `board`.
+    #'
+    #' @inheritParams rpwf_connect_db
+    #'
     #' @return A new `DbCon` object.
     #' @examples
-    #' db_con = DbCon$new("db.SQLite", tempdir())
+    #' board <- pins::board_temp()
+    #' tmp_dir <- tempdir()
+    #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
     #' db_con$con
-    #' db_con$proj_root_path
-    initialize = function(db_name, proj_root_path) {
-      self$db_name <- db_name
-      self$proj_root_path <- proj_root_path
-      if (grepl("\\\\", self$proj_root_path)) {
-        message("Converting to posix path")
-        self$proj_root_path <- gsub("\\\\", "/", self$proj_root_path)
-      }
-      if (grepl("/$", self$proj_root_path)) {
-        message("Removing / at the end of the path")
-        self$proj_root_path <- gsub("/$", "", self$proj_root_path)
-      }
-      self$db_path <- paste("rpwfDb", self$db_name, sep = "/")
+    #' db_con$board
+    initialize = function(dbname, board, ...) {
+      stopifnot("board needs to be a `pins::board_<>` object" = all("pins_board" %in% class(board)))
+      stopifnot(is.character(dbname) & length(dbname) == 1)
+      self$dbname <- dbname
+      self$board <- board
       # Create the root path if needed
-      withr::with_dir(self$proj_root_path, {
-        if (!dir.exists("rpwfDb")) {
-          dir.create("rpwfDb")
-        }
-        if (file.exists(self$db_path)) {
-          message("db found")
-        } else {
-          message("creating new db")
-        }
-        self$con <- DBI::dbConnect(RSQLite::SQLite(), dbname = self$db_path)
-      })
+      self$con <- DBI::dbConnect(RSQLite::SQLite(), dbname = self$dbname, ...)
+      stopifnot("Created connection is not valid" = DBI::dbIsValid(self$con))
     }
   ),
   private = list(
@@ -82,8 +85,10 @@ DbCreate <- R6::R6Class("DbCreate",
     #' @param query a SQL query string.
     #' @return A new `DbCreate` object.
     #' @examples
-    #' db_con = DbCon$new("db.SQLite", tempdir())
-    #' db = DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
+    #' board <- pins::board_temp()
+    #' tmp_dir <- tempdir()
+    #' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
+    #' db <- DbCreate$new(db_con$con, "SELECT * FROM wflow_tbl")
     initialize = function(con, query) {
       self$con <- con
       self$query <- query
@@ -148,7 +153,6 @@ rpwf_schema <- function() {
     r_engine VARCHAR(50) NOT NULL, /* R engine types */
     hyper_par_rename VARCHAR, /* json to rename the columns of the grid */
     model_mode VARCHAR(14) NOT NULL CHECK(model_mode in ('regression', 'classification')),
-    UNIQUE(r_engine, model_mode),
     UNIQUE(r_engine, py_base_learner, py_module),
     UNIQUE(py_module, py_base_learner, r_engine, model_mode)
   );"
@@ -156,7 +160,7 @@ rpwf_schema <- function() {
   tbl$r_grid_tbl <-
     "CREATE TABLE IF NOT EXISTS r_grid_tbl(
     grid_id INTEGER PRIMARY KEY,
-    grid_path VARCHAR UNIQUE, /* Path to grid parquet, one NULL is accepted*/
+    grid_pin_name VARCHAR UNIQUE, /* Path to grid parquet, one NULL is accepted*/
     grid_hash VARCHAR UNIQUE NOT NULL /* Hash of the grid for caching */
   );"
   # df_tbl-----------------------------------------------
@@ -166,7 +170,7 @@ rpwf_schema <- function() {
     idx_col VARCHAR, /* id column for pandas index */
     target VARCHAR, /* target column, NULL if test data.frame */
     predictors VARCHAR NOT NULL, /* predictors columns */
-    df_path VARCHAR UNIQUE NOT NULL, /* Path to the parquet file of the experiment */
+    df_pin_name VARCHAR UNIQUE NOT NULL, /* Path to the parquet file of the experiment */
     df_hash VARCHAR UNIQUE NOT NULL /* Hash of the *recipe* to juice the file */
   );"
   # wflow_tbl-----------------------------------------------
@@ -180,7 +184,7 @@ rpwf_schema <- function() {
     py_base_learner_args VARCHAR, /* args passed to base learner in python */
     grid_id INTEGER NOT NULL, /* id of the grid for grid search */
     df_id INTEGER NOT NULL, /* id of the train df */
-    random_state INTEGER,  /* Experiment seed */
+    random_state INTEGER,  /* Experiment seed, to control for CV */
     CONSTRAINT model_type_id_fk
       FOREIGN KEY (model_type_id)
       REFERENCES model_type_tbl (model_type_id),
@@ -197,46 +201,45 @@ rpwf_schema <- function() {
   tbl$wflow_result_tbl <-
     "CREATE TABLE IF NOT EXISTS wflow_result_tbl(
     result_id INTEGER PRIMARY KEY,
-    wflow_id INTEGER UNIQUE NOT NULL,
-    description VARCHAR,
-    result_path VARCHAR UNIQUE NOT NULL, /* Where results are stored (csv) */
-    model_path VARCHAR, /* Path where model file is stored in (joblib) */
+    wflow_id INTEGER NOT NULL,
+    description VARCHAR NOT NULL,
+    result_pin_name VARCHAR UNIQUE NOT NULL, /* Where results are stored (csv) */
+    model_pin_name VARCHAR, /* Path where model file is stored in (joblib) */
     CONSTRAINT wflow_id
       FOREIGN KEY (wflow_id)
       REFERENCES wflow_tbl (wflow_id)
       ON DELETE CASCADE,  /* Allows cascade deletion by removing exp id */
-    UNIQUE(wflow_id, description, result_path, description)
+    UNIQUE(wflow_id, description, result_pin_name, model_pin_name)
   );"
 
   return(tbl)
 }
 
 # Add models to the db ---------------------------------------------------------
-#' Add scikit-learn Models to Database
+#' Add scikit-learn Model Definitions to Database
 #'
-#' Use this function to add or update the scikit-learn model using the module (i.e.,
-#' "xgboost"), the base learner in scikit-learn (i.e., "XGBClassifier"),
+#' This function adds or updates scikit-learn model to the database. Use the
+#' module (i.e., "xgboost"), the base learner in (i.e., "XGBClassifier"),
 #' the corresponding `{parsnip}` engine (i.e., "xgboost"), the equivalent hyper
 #' parameter names (i.e., "mtry" in `{parsnip}` is "colsample_bytree"), and
-#' model mode (i.e., "classification")
+#' model mode (i.e., "classification").
 #'
-#' @param db_con (`DBI::dbConnect()`)\cr
-#' An [rpwf_connect_db()] object.
-#' @param py_module the module in scikit-learn, i.e., "sklearn.ensemble".
+#' @param db_con an [rpwf_connect_db()] object.
+#' @param py_module the module in scikit-learn, i.e., `"sklearn.ensemble"`.
 #' @param py_base_learner the base learner in scikit-learn, i.e.,
-#' "RandomForestClassifier".
-#' @param r_engine the engine in parsnip, i.e., "ranger" or "rpart".
+#' `"RandomForestClassifier"`.
+#' @param r_engine the engine in parsnip, i.e., `"ranger"` or `"rpart"`.
 #' @param hyper_par_rename a named list of equivalent hyper parameters, i.e.,
 #' `list(cost_complexity = "ccp_alpha")`.
-#' @param model_mode "classification" or "regression".
+#' @param model_mode `"classification"` or `"regression"`.
 #'
-#' @return Use for side effect to update DB, not returning any values.
 #' @export
 #'
 #' @examples
 #' # Generate dummy database
-#' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' board <- pins::board_temp()
+#' tmp_dir <- tempdir()
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' DBI::dbListTables(db_con$con)
 #' DBI::dbGetQuery(db_con$con, "SELECT * FROM model_type_tbl") # before adding
 #' rpwf_add_py_model(
@@ -309,25 +312,26 @@ rpwf_add_py_model <- function(db_con,
 }
 
 # Wrapper for the whole process and around the R6 object -----------------------
-#' Create a Database and Return an Object that Stores the Connection and Path
+#' Create a Database and Return an Object that Stores the Connection
 #'
 #' @description
-#' Create the "rpwfDb" folder in the provided root path and create a db if
-#' needed. Access the connection with `object$con`
+#' Create or connect to a SQLite db. Access the connection with `object$con`.
 #'
-#' @param db_name name of the database.
-#' @param proj_root_path root path of the project.
-#' @return A new `DbCon` object.
+#' @param dbname path to the database, passed to RSQLite::SQLite().
+#' @param board a `{pins}` board object.
+#' @param ... arguments passed to [DBI::dbConnect()]
+#' @return A new `rpwf_connect_db()` object.
 #'
 #' @export
 #'
 #' @examples
-#' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' board <- pins::board_temp()
+#' tmp_dir <- tempdir()
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' db_con$con
-#' db_con$proj_root_path
-rpwf_connect_db <- function(db_name, proj_root_path) {
-  db_con <- DbCon$new(db_name = db_name, proj_root_path = proj_root_path)
+#' db_con$board
+rpwf_connect_db <- function(dbname, board, ...) {
+  db_con <- DbCon$new(dbname = dbname, board = board, ...)
   rpwf_db_init_(db_con, rpwf_schema())
   return(db_con)
 }

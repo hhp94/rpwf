@@ -21,8 +21,8 @@ predictors.
 the hash of the prepped recipe in the database.
 \item if the hash is found in the database:
 \itemize{
-\item assign the path associated with the hash of the data.frame to \code{self$path}.
-\item check if the file exists with the \code{self$path}.
+\item assign the pin_name associated with the hash of the data.frame to \code{self$pin_name}.
+\item check if the file exists with the \code{self$pin_name}.
 \item if not exists, transform the prepped object with \code{\link[recipes:juice]{recipes::juice()}} and
 assign to \code{self$df}.
 \item if the file exists, then assign \code{NULL} to \code{self$df} attribute to stop
@@ -32,8 +32,8 @@ assign to \code{self$df}.
 \itemize{
 \item transform the prepped object with \code{\link[recipes:juice]{recipes::juice()}} and assign to
 \code{self$df}.
-\item generate a new path to write the transformed data.
-\item generate a SQL query to update the database with the new hash and new path
+\item generate a new pin_name to write the transformed data.
+\item generate a SQL query to update the database with the new hash and new pin_name
 }
 \item update the database with the generated SQL query with \code{self$export_db()}
 \item write the parquet with \code{self$export_parquet()}
@@ -81,18 +81,16 @@ python into a python list.}
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="create_folder"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-create_folder'><code>rpwf::BaseEx$create_folder()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="exec_query"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-exec_query'><code>rpwf::BaseEx$exec_query()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export'><code>rpwf::BaseEx$export()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_db'><code>rpwf::BaseEx$export_db()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_parquet"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_parquet'><code>rpwf::BaseEx$export_parquet()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="export_prep"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-export_prep'><code>rpwf::BaseEx$export_prep()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="find_path_in_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-find_path_in_db'><code>rpwf::BaseEx$find_path_in_db()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_db_folder"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_db_folder'><code>rpwf::BaseEx$set_db_folder()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="find_pin_name_in_db"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-find_pin_name_in_db'><code>rpwf::BaseEx$find_pin_name_in_db()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_df"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_df'><code>rpwf::BaseEx$set_df()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_export_query"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_export_query'><code>rpwf::BaseEx$set_export_query()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_hash"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_hash'><code>rpwf::BaseEx$set_hash()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_path"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_path'><code>rpwf::BaseEx$set_path()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="rpwf" data-topic="BaseEx" data-id="set_pin_name"><a href='../../rpwf/html/BaseEx.html#method-BaseEx-set_pin_name'><code>rpwf::BaseEx$set_pin_name()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -103,10 +101,10 @@ python into a python list.}
 Create a new instance of the TrainDf class. Accept a
 special role \code{"pd.index"} from the \code{\link[recipes:roles]{recipes::update_role()}} as an index for
 a pandas DataFrame. If no outcome is provided, then the \code{data.frame} is
-considered a "test" \code{data.frame.}. See \code{?rprw::BaseEx} for
+considered a "test" \code{data.frame}. See \code{?rprw::BaseEx} for
 details about the attributes and methods.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{TrainDf$new(recipe, db_con)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{TrainDf$new(recipe, db_con, seed = sample(1:1e+05, size = 1))}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -117,6 +115,9 @@ provided recipe that defines how the data is transformed.}
 
 \item{\code{db_con}}{(\code{DbCon})\cr
 a \code{DbCon} object, generated by \code{\link[=rpwf_connect_db]{rpwf_connect_db()}}.}
+
+\item{\code{seed}}{(\code{numeric()})\cr
+Random seed to control recipe at the prep level}
 }
 \if{html}{\out{</div>}}
 }

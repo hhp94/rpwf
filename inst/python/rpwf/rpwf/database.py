@@ -1,12 +1,12 @@
 """Paths and database connections"""
 from __future__ import annotations
-import os
 import pathlib
-from typing import List
+from typing import List, Any
 
-import sqlalchemy
+import importlib
 import pandas
-
+import sqlalchemy
+import yaml
 
 def singleton(class_):
     """Create a Borg singleton implementation"""
@@ -20,38 +20,42 @@ def singleton(class_):
 
 
 @singleton
+class Board:
+    def __init__(self, yml_path: str):
+        with open(pathlib.Path(yml_path), "r") as board_yml:
+            try:
+                self.board_meta = yaml.safe_load(board_yml)
+            except yaml.YAMLError as exc:
+                raise print(exc)
+        self.board_type = self.board_meta.pop('board')
+        self.set_board()
+    
+    def set_board(self) -> None:
+        if(self.board_type == "pins_board_folder"):
+            self.board_constructor = getattr(importlib.import_module("pins"),"board_folder")
+            self.board = self.board_constructor(**self.board_meta)
+            return None
+        raise NameError(f"{self.board_type} is currently not implemented")
+
+    def __repr__(self) -> str:
+        return str(self.board)
+
+
+@singleton
 class Base:
     """Initiate the meta_dat, the engine object, and paths, for database connection.
     This would be a singleton class."""
 
-    def __init__(self, proj_root_path: str, db_name: str) -> None:
-        """Base is a singleton. We assign the paths and database object to this class"""
+    def __init__(self, db_path: str, **kwargs: Any) -> None:
+        """Base is a singleton. We assign the database object to this class"""
         # Setting up the paths
-        self.proj_root_path: pathlib.Path = pathlib.Path(proj_root_path)
-        assert "rpwfDb" in os.listdir(
-            self.proj_root_path
-        ), "rpwfDb folder not found in provided root path"
-
-        self.db_path: pathlib.PurePosixPath = pathlib.PurePosixPath(
-            self.proj_root_path.joinpath("rpwfDb", db_name)
-        )
-        print(f"db is at {self.db_path}")
-
-        assert (
-            os.path.exists(str(self.db_path)) is True
-        ), f"rpwfDb folder found, but {db_name} db not found"
-
-        self.result_path: pathlib.Path = self.proj_root_path.joinpath(
-            "rpwfDb", f"{db_name}_results"
-        )
-        if self.result_path.exists() is False:
-            print(f"Creating the {db_name}_results folder")
-            self.result_path.mkdir()  # create results folder
+        assert pathlib.Path(db_path).exists() is True, "db not found"
+        self.db_path: pathlib.PurePosixPath = pathlib.PurePosixPath(db_path)
 
         # Database objects future enables 2.0 style syntax
         print("Connecting to " + f"sqlite:///{str(self.db_path)}")
         self.engine: sqlalchemy.future.engine.Engine = sqlalchemy.create_engine(
-            f"sqlite:///{str(self.db_path)}", future=True
+            f"sqlite:///{str(self.db_path)}", future=True, **kwargs
         )
 
         # Binding allows for dict like syntax
@@ -64,7 +68,7 @@ class Base:
         wr_tbl = self.meta_dat.tables["wflow_result_tbl"]
 
         query: sqlalchemy.sql.selectable.Select = (
-            sqlalchemy.select(w_tbl, wr_tbl.c.result_path)
+            sqlalchemy.select(w_tbl, wr_tbl.c.result_pin_name, wr_tbl.c.model_pin_name)
             .select_from(w_tbl)
             .join(wr_tbl, isouter=True)
         )  # Left join
@@ -73,9 +77,10 @@ class Base:
         with self.engine.connect() as conn:
             for row in conn.execute(query):
                 results.append(row)
+        assert len(results) > 0, "No wflow found. Perhaps run `rpwf_export_db()` in R?"
 
         return pandas.DataFrame(results).loc[
-            :, ["wflow_id", "model_tag", "recipe_tag", "py_base_learner_args", "result_path"]
+            :, ["wflow_id", "model_tag", "recipe_tag", "result_pin_name", "model_pin_name"]
         ]
 
     def __repr__(self) -> str:

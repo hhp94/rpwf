@@ -11,8 +11,9 @@
 #' @noRd
 #'
 #' @examples
+#' board <- pins::board_temp()
 #' tmp_dir <- withr::local_tempdir()
-#' db_con <- rpwf_connect_db("db.SQLite", tmp_dir)
+#' db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 #' rpwf_chk_model_avail_(db_con, "xgboost", "XGBClassifier", "xgboost")
 rpwf_chk_model_avail_ <- function(db_con, py_module, py_base_learner, r_engine) {
   stopifnot("only accept vector of length 1 as arguments" = all(

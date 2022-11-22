@@ -1,0 +1,8 @@
+file: 1.csv
+file_size: 190
+pin_hash: de0ee77eb2cfa438
+type: csv
+title: '1.csv: a pinned 10 x 1 data frame'
+description: ~
+created: 20221113T061656Z
+api_version: 1.0

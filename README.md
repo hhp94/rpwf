@@ -13,17 +13,17 @@ coverage](https://codecov.io/gh/hhp94/rpwf/branch/master/graph/badge.svg)](https
 
 - data engineering in
   ![R](https://img.shields.io/static/v1?label=%20&message=%20&color=blue&logo=R)
-  with [{tidymodels}](https://www.tidymodels.org/).
+  with [tidymodels](https://www.tidymodels.org/).
   - hyper parameter grids generation using the
-    [{dials}](https://dials.tidymodels.org/) functions such as
-    [`grid_max_entropy`](https://dials.tidymodels.org/reference/grid_max_entropy.html).  
-  - vast libraries of cool data transformation methods such as splines
-    basis expansion, data reduction, and multiple imputation.  
+    [dials](https://dials.tidymodels.org/) functions such as
+    [`grid_max_entropy()`](https://dials.tidymodels.org/reference/grid_max_entropy.html).  
+  - vast libraries of data transformation methods such as splines basis
+    expansion, data reduction, and multiple imputation.  
 - testing the generated data transformation pipeline in
   ![Python](https://img.shields.io/static/v1?label=%20&message=%20&color=yellow&logo=Python)
   with [scikit-learn](https://scikit-learn.org/stable/index.html).  
-- streamlining the use of HPC and cloud computing to massively speed up
-  feature engineering experimentation.
+- streamlining the use of HPC and cloud computing to speed up feature
+  engineering experimentation.
 
 # Installation
 
@@ -38,7 +38,7 @@ devtools::install_github("hhp94/rpwf", branch = "master")
 
 ## Python
 
-- First, setup a python environment with conda.
+- Setup a python environment with conda
 
 ``` bash
 conda create -n py39 python=3.9.13 anaconda
@@ -53,12 +53,15 @@ conda create -n py39 python=3.9.13 anaconda
   - pyarrow  
   - scikit-learn  
   - xgboost  
+  - pins
+  - pyyaml
   - any other machine learning library such as `lightgbm` and etc.
 
 ``` bash
 conda activate py39
-conda install pyarrow sqlalchemy xgboost
-pip install pandas-downcast
+conda install pyarrow sqlalchemy xgboost pyyaml
+python -m pip install pandas-downcast
+python -m pip install pins
 ```
 
 - Next, copy the python codes into any folder with `rpwf_cp_py_codes()`.
@@ -96,7 +99,7 @@ pip uninstall local-rpwf
 
 ## Linux installation
 
-The R [`{arrow}`](https://arrow.apache.org/) installation on linux might
+The R [arrow](https://arrow.apache.org/) installation on linux might
 fail. In which case, use this
 [instruction](https://cran.r-project.org/web/packages/arrow/vignettes/install.html).
 The following codes worked for me
@@ -112,3 +115,96 @@ Or update your current build of arrow with
 source("https://raw.githubusercontent.com/apache/arrow/master/r/R/install-arrow.R")
 install_arrow(verbose = TRUE)
 ```
+
+# Useage
+
+- First, create a [pins](https://pins.rstudio.com/) board and a database
+
+``` r
+library(rpwf)
+library(pins)
+library(tidymodels)
+library(ggplot2)
+
+board <- board_temp() # Create a temp board from the pins package
+tmp_dir <- withr::local_tempdir() # Temp folder
+db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board) # Temp database
+```
+
+- Get the list of available models with
+
+``` r
+rpwf_avail_models(db_con)
+```
+
+- Then define your model(s) and recipe(s)
+
+``` r
+enet_model <- linear_reg(
+  penalty = tune(),
+  mixture = tune()
+) |>
+  set_engine("glmnet") |>
+  set_mode("regression") |>
+  set_py_engine("sklearn.linear_model", # Set the py engine
+    "ElasticNet",
+    rpwf_model_tag = "enet"
+  ) |>
+  set_r_grid(dials::grid_regular, levels = 10) # Set the engine specific grid
+
+svm_rbf_model <- svm_rbf(
+  cost = tune(),
+  margin = tune()
+) |>
+  set_engine("kernlab") |>
+  set_mode("regression") |>
+  set_py_engine("sklearn.svm", # Set the py engine
+    "SVR",
+    rpwf_model_tag = "svm_rbf",
+    kernel = "rbf"
+  ) |> # fix kernel parameter = "rbf"
+  set_r_grid(dials::grid_regular, levels = 10) # Set the engine specific grid
+
+normalize_recipe <- recipe(mpg ~ ., data = mtcars) |>
+  step_normalize(all_predictors())
+```
+
+- Create the workflow sets and export the information
+
+``` r
+wf <- rpwf_workflow_set(
+  preprocs = list(normalize_recipe),
+  models = list(enet_model, svm_rbf_model),
+  costs = "neg_root_mean_squared_error"
+) |>
+  rpwf_augment(db_con = db_con)
+
+rpwf_write_grid(wf) # Write the parquets for the hyper param grids
+rpwf_write_df(wf) # Write the parquets for the train data
+rpwf_export_db(wf, db_con) # Write the information in the database
+# Write the board information in a YAML file
+rpwf_write_board_yaml(board, paste(tmp_dir, "board.yml", sep = "/"))
+```
+
+- Run the workflow in Python
+
+``` bash
+python -m rpwf.script.nested_resampling <path to the db> -b <path to board yaml> \
+  -a -c 7 -icv 5 -icr 2 -ocv 5 -ocr 2
+```
+
+- Plot the results
+
+``` r
+wf_results <- rpwf_results(db_con)
+p <- wf_results |>
+  tidyr::unnest(fit_results) |>
+  ggplot(aes(y = neg_root_mean_squared_error, x = model_tag, color = model_tag)) +
+  geom_boxplot() +
+  geom_jitter() +
+  theme_bw()
+
+p
+```
+
+![“”](man/figures/README-plot_1.jpeg)
