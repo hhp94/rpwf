@@ -19,8 +19,8 @@ After generating the data in R and exporting the necessary information, the
 following codes can be used to get the data in python.  
 
 ## Generate data in R
-If you want to just transform your data in R and export it to python, the [`{pins}`](https://pins.rstudio.com/)
-or [`{reticulate}`](https://rstudio.github.io/reticulate/index.html) package 
+If you want to just transform your data in R and export it to python, the `{pins}`
+or [reticulate](https://rstudio.github.io/reticulate/index.html) package 
 works just fine. But here is how you can do it with `{rpwf}`, which wraps around
 `{pins}`.   
 

@@ -18,10 +18,10 @@ knitr::opts_chunk$set(
 
 ## Introduction
 * I wrote this package because I want to wrangle data in R, i.e., using 
-[`{data.table}`](http://rdatatable.gitlab.io/data.table/), [`{tidymodels}`](https://www.tidymodels.org/), [`{tidyverse}`](https://www.tidyverse.org/), spline basis functions generations with 
-[`{mgcv}`](https://cran.r-project.org/web/packages/mgcv/index.html)/[`{gratia}`](https://gavinsimpson.github.io/gratia/), and visualization with [`{ggplot2}`](https://ggplot2.tidyverse.org/) to name a few.  
-  + Importantly,[`{mice}`](https://github.com/amices/mice)
-  and [`{missForest}`](https://cran.r-project.org/web/packages/missForest/) in R 
+[data.table](http://rdatatable.gitlab.io/data.table/), [tidymodels](https://www.tidymodels.org/), [tidyverse](https://www.tidyverse.org/), spline basis functions generations with 
+[mgcv](https://cran.r-project.org/web/packages/mgcv/index.html)/[gratia](https://gavinsimpson.github.io/gratia/), and visualization with [ggplot2](https://ggplot2.tidyverse.org/) to name a few.  
+  + Importantly,[mice](https://github.com/amices/mice)
+  and [missForest](https://cran.r-project.org/web/packages/missForest/) in R 
   are powerful imputation methods.  
 * Meanwhile, the ML and DL ecosystems in python are usually more mature, 
 flexible, and many latest updates and ML research papers have python 
@@ -33,12 +33,12 @@ implementations.
 greatest ML packages in python.  
 * In Kaggle competitions, it is usually feature engineering that gives a 
 competitor an edge. `{rpwf}` helps by  
-  + Enabling the use of the [`{workflowset}`](https://workflowsets.tidymodels.org/)
+  + Enabling the use of the [workflowset](https://workflowsets.tidymodels.org/)
   framework. Workflow sets are pre-defined test experiments that test how
   engineered features affect predictive performance.  
   + Allowing seamless deployment on HPC clusters or cloud computers because 
   the pathing and uploading of results is handled by (a) SQLite database(s)
-  and the [`{pins}`](https://pins.rstudio.com/) package.  
+  and the `{pins}` package.  
 
 ## Demonstration
 ```{r setup, message = FALSE}
@@ -50,7 +50,7 @@ library(ggplot2)
 library(pins)
 ```
 
-* Let's demonstrate using the `sim_classification()` function from [`{modeldata}`](https://modeldata.tidymodels.org/).  
+* Let's demonstrate using the `sim_classification()` function from [modeldata](https://modeldata.tidymodels.org/).  
 
 ```{r}
 set.seed(123)
@@ -87,7 +87,7 @@ board <- board_temp()
 db_con <- rpwf_connect_db(paste(tmp_dir, "db.SQLite", sep = "/"), board)
 ```
 
-* `db_con` is an object that holds a [`{DBI}`](https://dbi.r-dbi.org/) connection
+* `db_con` is an object that holds a [DBI](https://dbi.r-dbi.org/) connection
 to the SQLite database that was just created. Access it with `db_con$con`.  
 ```{r, eval = FALSE}
 db_con$con
@@ -95,7 +95,7 @@ db_con$con
 #   Extensions: TRUE
 ```
 
-## Define models with [`{parsnip}`](https://parsnip.tidymodels.org/)
+## Define models with [parsnip](https://parsnip.tidymodels.org/)
 * Identical to `{parsnips}`, first choose a model, i.e., [`boost_tree()`](https://parsnip.tidymodels.org/reference/boost_tree.html), then 
 choose the R engine with [`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html) and classification or regression with [`set_mode()`](https://parsnip.tidymodels.org/reference/set_mode.html).  
 * Then, pipe the object into the `set_py_engine()` function.  
@@ -246,7 +246,7 @@ enet_model <- enet_model |>
   )
 ```
 
-## Define transformation pipelines with [`{recipes}`](https://recipes.tidymodels.org/)
+## Define transformation pipelines with [recipes](https://recipes.tidymodels.org/)
 * Recipes are defined as usual.  
   + Use the formula or the role interface to specify the response and predictors.  
   + The base recipe is used to gauge the baseline performance of each model.  

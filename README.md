@@ -13,10 +13,10 @@ coverage](https://codecov.io/gh/hhp94/rpwf/branch/master/graph/badge.svg)](https
 
 - data engineering in
   ![R](https://img.shields.io/static/v1?label=%20&message=%20&color=blue&logo=R)
-  with [{tidymodels}](https://www.tidymodels.org/).
+  with [tidymodels](https://www.tidymodels.org/).
   - hyper parameter grids generation using the
-    [{dials}](https://dials.tidymodels.org/) functions such as
-    [`grid_max_entropy`](https://dials.tidymodels.org/reference/grid_max_entropy.html).  
+    [dials](https://dials.tidymodels.org/) functions such as
+    [`grid_max_entropy()`](https://dials.tidymodels.org/reference/grid_max_entropy.html).  
   - vast libraries of data transformation methods such as splines basis
     expansion, data reduction, and multiple imputation.  
 - testing the generated data transformation pipeline in
@@ -99,7 +99,7 @@ pip uninstall local-rpwf
 
 ## Linux installation
 
-The R [`{arrow}`](https://arrow.apache.org/) installation on linux might
+The R [arrow](https://arrow.apache.org/) installation on linux might
 fail. In which case, use this
 [instruction](https://cran.r-project.org/web/packages/arrow/vignettes/install.html).
 The following codes worked for me
@@ -118,8 +118,7 @@ install_arrow(verbose = TRUE)
 
 # Useage
 
-- First, create a [`{pins}`](https://pins.rstudio.com/) board and a
-  database
+- First, create a [pins](https://pins.rstudio.com/) board and a database
 
 ``` r
 library(rpwf)
@@ -208,5 +207,4 @@ p <- wf_results |>
 p
 ```
 
-![Plot showing model fit results for
-README.md](man/figures/README-plot_1.jpeg)
+![“”](man/figures/README-plot_1.jpeg)
