@@ -98,15 +98,15 @@ db_con$con
 * Identical to `{parsnips}`, first choose a model, i.e., [`boost_tree()`](https://parsnip.tidymodels.org/reference/boost_tree.html), then 
 choose the R engine with [`set_engine()`](https://parsnip.tidymodels.org/reference/set_engine.html) and classification or regression with [`set_mode()`](https://parsnip.tidymodels.org/reference/set_mode.html).  
 * Then, pipe the object into the `set_py_engine()` function.  
-* `set_py_engine()` has 3 important arguments  
+* `set_py_engine()` has 3 important parameters  
   + `py_module` and `py_base_learner` defines how to import a base learner in 
   a python script.  
-  + `tag` is an optional argument that's helpful for keeping track of models.  
-* Arguments that can be passed to the base learner in python can be passed to
-`...`  
+  + `tag` is an optional parameter that's helpful for keeping track of models.  
+  + Arguments passed to the base learner in python can be passed to `...` of
+  `set_py_engine()`  
 
 * Check the available models with `rpwf_avail_models()` and add another model
-with `rpwf_add_py_model()`.
+with `rpwf_add_py_model()`.  
 ```{r}
 rpwf_avail_models(db_con) |> head()
 ```
@@ -114,7 +114,7 @@ rpwf_avail_models(db_con) |> head()
 ### `xgboost`
 * I fix the `n_estimators` at 50 and tune the learning rate. Other arguments
 can be found at the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn).  
-* To do this, I pass the parameter `n_estimators = 50` to `set_py_engine()`.  
+* To do this, I pass the argument `n_estimators = 50` to `set_py_engine()`.  
 * I am going to tune 6 hyper parameters by passing them the `tune()` functions 
 just like in `{parsnips}`.  
 
@@ -153,13 +153,13 @@ xgb_model <- boost_tree(
 ```
 
 ### `svm`
-* From the [sklearn.svm.SCV docs](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC), the argument `cache_size` can help speed up model fitting if memory is
+* From the [sklearn.svm.SCV docs](https://scikit-learn.org/stable/modules/generated/sklearn.svm.SVC.html#sklearn.svm.SVC), the parameter `cache_size` can help speed up model fitting if memory is
 available. I will increase this from the default value. This is an example
 of how fitting models in python can have some very useful settings.  
   + In this example, `cache_size` wouldn't reduce fit time because the data is 
   small.  
 * Let's set up a *radial basis kernel* svm model.  
-  + I have to fix the `kernel` argument in `args` to `rbf`. 
+  + I have to fix the `kernel` parameter as `rbf`. 
   + This is because `{tidymodels}` defines `svm_poly()` and `svm_rbf()` 
   separately for polynomial basis svm and radial basis svm while `sklearn.svm.SVC` 
   defines them both with the `kernel` parameter.  
@@ -204,18 +204,18 @@ enet_model <- logistic_reg(
 * The `{dials}` package provides  
   1. sensible hyper parameters ranges  
   2. functions that go beyond the random grid and regular grid such as 
-  `dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
-* `dials::grid_latin_hypercube` will be helpful for models with a lot of hyper 
+  `dials::grid_max_entropy()`, and `dials::grid_latin_hypercube()`.  
+* `dials::grid_latin_hypercube()` will be helpful for models with a lot of hyper 
 parameters such as `xgboost`. But for `svm_rbf_model`, tuning just 2 hyper 
-parameters on a 2-D grid with `dials::grid_regular` would provide sufficient
+parameters on a 2-D grid with `dials::grid_regular()` would provide sufficient
 coverage of the hyper parameter space at an acceptable speed.  
 * Updating the range of the hyper parameter space is similar to [how it works](https://dials.tidymodels.org/articles/dials.html) in `{dials}`. Just 
-provide the tuning functions (or create new ones) to the `hyper_par_fun` argument.  
+provide the tuning functions (or create new ones) to the `hyper_par_fun` parameter.  
 * **Models specific tuning grids** can be added at this step with `set_r_grid()`.  
 
 ### `xgboost`
-* For the `xgboost_model`, let's use a `dials::grid_latin_hypercube`.  
-* Let's limit `max_depth`. To do this, I add a named list to the `hyper_par_fun` argument.  
+* For the `xgboost_model`, let's use a `dials::grid_latin_hypercube()`.  
+* Let's limit `max_depth`. To do this, I add a named list to the `hyper_par_fun` parameter.  
 ```{r}
 xgb_model <- xgb_model |>
   set_r_grid(
@@ -250,7 +250,7 @@ enet_model <- enet_model |>
   + Use the formula or the role interface to specify the response and predictors.  
   + The base recipe is used to gauge the baseline performance of each model.  
   + The pca recipe is used to de-correlate the variables. [`step_pca()`](https://recipes.tidymodels.org/reference/step_pca.html) conveniently
-  provides an argument to keep an arbitrary threshold of the variance explained. 
+  provides a parameter to keep an arbitrary threshold of the variance explained. 
   I choose 95%.  
 * **`rpwf` reserves one optional special role** that can be used with the `update_role()` function:
   + `pd.index` is a special role. It will mark a column for conversion into a
@@ -286,10 +286,10 @@ scaled_pca_rec <- scaled_base_rec |>
 * The function `rpwf_workflow_set()` mimics [`workflowsets::workflow_set()`](https://workflowsets.tidymodels.org/). It 
 creates a combination of all the provided recipes and models. Then, one can 
 work with the resulting data.frame just like any data.frame (e.g., filtering
-out redundant workflows and etc.). 
+out redundant workflows and etc.).  
 * One `workflow_set` for `xgboost` and one for `svm` and `glm` are created and
 `rbind()` into one final `workflow_set`.  
-* The `cost` argument is to specify which measure of predictive performance is
+* The `cost` parameter is to specify which measure of predictive performance is
 optimized for. Look up the values in the [scikit-learn docs](https://scikit-learn.org/stable/modules/model_evaluation.html). 
 Custom cost functions are possible but would require coding on the python side.    
 
