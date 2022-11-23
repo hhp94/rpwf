@@ -12,7 +12,7 @@ once later on with rpwf_augment()"><!-- mathjax --><script src="https://cdnjs.cl
     
     <a class="navbar-brand me-2" href="../index.html">rpwf</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,7 +57,7 @@ once later on with <code><a href="rpwf_augment.html">rpwf_augment()</a></code></
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">set_r_grid</span><span class="op">(</span><span class="va">obj</span>, <span class="va">.model_grid_fun</span>, .model_update_params <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">set_r_grid</span><span class="op">(</span><span class="va">obj</span>, <span class="va">grid_fun</span>, hyper_par_fun <span class="op">=</span> <span class="cn">NULL</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -67,18 +67,18 @@ once later on with <code><a href="rpwf_augment.html">rpwf_augment()</a></code></
 <code><a href="https://parsnip.tidymodels.org/reference/set_args.html" class="external-link">parsnip::set_mode()</a></code>.</p></dd>
 
 
-<dt>.model_grid_fun</dt>
+<dt>grid_fun</dt>
 <dd><p>a <code>dials::grid_&lt;functions&gt;</code>, e.g., <code>grid_random()</code>,
 <code>grid_latin_hypercube()</code>.</p></dd>
 
 
-<dt>.model_update_params</dt>
+<dt>hyper_par_fun</dt>
 <dd><p>update dials functions such as <code><a href="https://dials.tidymodels.org/reference/penalty.html" class="external-link">dials::penalty()</a></code>
 and <code><a href="https://dials.tidymodels.org/reference/cost.html" class="external-link">dials::cost()</a></code> with a named list. See examples.</p></dd>
 
 
 <dt>...</dt>
-<dd><p>arguments to pass to <code>.model_grid_fun</code>.</p></dd>
+<dd><p>arguments to pass to <code>grid_fun</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -94,7 +94,7 @@ and <code><a href="https://dials.tidymodels.org/reference/cost.html" class="exte
 <span class="r-in"><span>  <span class="fu">parsnip</span><span class="fu">::</span><span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_engine.html" class="external-link">set_engine</a></span><span class="op">(</span><span class="st">"xgboost"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">parsnip</span><span class="fu">::</span><span class="fu"><a href="https://parsnip.tidymodels.org/reference/set_args.html" class="external-link">set_mode</a></span><span class="op">(</span><span class="st">"classification"</span><span class="op">)</span> <span class="op">|&gt;</span></span></span>
 <span class="r-in"><span>  <span class="fu">set_r_grid</span><span class="op">(</span><span class="fu">dials</span><span class="fu">::</span><span class="va"><a href="https://dials.tidymodels.org/reference/grid_regular.html" class="external-link">grid_random</a></span>, <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>trees <span class="op">=</span> <span class="fu">dials</span><span class="fu">::</span><span class="fu"><a href="https://dials.tidymodels.org/reference/trees.html" class="external-link">trees</a></span><span class="op">(</span>range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, size <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">m</span><span class="op">$</span><span class="va">.model_grid_fun</span></span></span>
+<span class="r-in"><span><span class="va">m</span><span class="op">$</span><span class="va">grid_fun</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> function (x, ..., size = 5, original = TRUE, filter = NULL) </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> {</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     dots &lt;- list(...)</span>
@@ -103,9 +103,9 @@ and <code><a href="https://dials.tidymodels.org/reference/cost.html" class="exte
 <span class="r-out co"><span class="r-pr">#&gt;</span>     }</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>     UseMethod("grid_random")</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> }</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;bytecode: 0x56352422d710&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;bytecode: 0x557002c8a058&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;environment: namespace:dials&gt;</span>
-<span class="r-in"><span><span class="va">m</span><span class="op">$</span><span class="va">.model_grid_fun_args</span></span></span>
+<span class="r-in"><span><span class="va">m</span><span class="op">$</span><span class="va">grid_fun_args</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $size</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 5</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>

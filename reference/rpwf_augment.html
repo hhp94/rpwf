@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">rpwf</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.1</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -60,7 +60,7 @@
 <span><span class="fu">rpwf_augment</span><span class="op">(</span></span>
 <span>  <span class="va">obj</span>,</span>
 <span>  <span class="va">db_con</span>,</span>
-<span>  .grid_fun <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  grid_fun <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span>,</span>
 <span>  range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1L</span>, <span class="fl">5000L</span><span class="op">)</span>,</span>
 <span>  seed <span class="op">=</span> <span class="fl">1234L</span></span>
@@ -74,14 +74,14 @@
 
 
 <dt>...</dt>
-<dd><p>additional arguments for the <code>.grid_fun</code> functions.</p></dd>
+<dd><p>additional arguments for the <code>grid_fun</code> functions.</p></dd>
 
 
 <dt>db_con</dt>
 <dd><p>an <code><a href="rpwf_connect_db.html">rpwf_connect_db()</a></code> object.</p></dd>
 
 
-<dt>.grid_fun</dt>
+<dt>grid_fun</dt>
 <dd><p>a <code>dials::grid_&lt;functions&gt;</code>, e.g., <code><a href="https://dials.tidymodels.org/reference/grid_regular.html" class="external-link">dials::grid_random()</a></code>,
 <code><a href="https://dials.tidymodels.org/reference/grid_max_entropy.html" class="external-link">dials::grid_latin_hypercube()</a></code>. Default <code>NULL</code> assumes that no grid search is
 performed and sklearn defaults are used.</p></dd>
