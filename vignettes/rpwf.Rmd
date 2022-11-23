@@ -20,22 +20,21 @@ knitr::opts_chunk$set(
 * I wrote this package because I want to wrangle data in R, i.e., using 
 [data.table](http://rdatatable.gitlab.io/data.table/), [tidymodels](https://www.tidymodels.org/), [tidyverse](https://www.tidyverse.org/), spline basis functions generations with 
 [mgcv](https://cran.r-project.org/web/packages/mgcv/index.html)/[gratia](https://gavinsimpson.github.io/gratia/), and visualization with [ggplot2](https://ggplot2.tidyverse.org/) to name a few.  
-  + Importantly,[mice](https://github.com/amices/mice)
+  + Importantly, [mice](https://github.com/amices/mice)
   and [missForest](https://cran.r-project.org/web/packages/missForest/) in R 
   are powerful imputation methods.  
-* Meanwhile, the ML and DL ecosystems in python are usually more mature, 
-flexible, and many latest updates and ML research papers have python 
-implementations.  
-  + I find that fitting model in python is usually faster and consume less 
+* Meanwhile, the ML and DL ecosystem in python can be more mature and many 
+latest updates and research papers only have python implementations.  
+  + I find that fitting a model in python can be faster and consume less 
   memory for the equivalent model in R, possibly due to `numpy` and bleeding
-  edge implementations.    
+  edge implementations.  
 * `{rpwf}` allows wrangling data in R while having access to the latest and 
 greatest ML packages in python.  
 * In Kaggle competitions, it is usually feature engineering that gives a 
 competitor an edge. `{rpwf}` helps by  
   + Enabling the use of the [workflowset](https://workflowsets.tidymodels.org/)
-  framework. Workflow sets are pre-defined test experiments that test how
-  engineered features affect predictive performance.  
+  framework. Workflow sets can be used as pre-defined test experiments that test how
+  engineered features affect a model's predictive performance.  
   + Allowing seamless deployment on HPC clusters or cloud computers because 
   the pathing and uploading of results is handled by (a) SQLite database(s)
   and the `{pins}` package.  
@@ -69,7 +68,7 @@ table(df$class)
 sum(is.na(df))
 ```
 
-* Re-code classes, our response variable, as integers  
+* Re-code `class`, our response variable, as integers   
 ```{r}
 df$class <- as.integer(df$class) - 1L
 ```
@@ -80,7 +79,7 @@ df$id <- seq_len(nrow(df))
 ```
 
 ## Initialize a database
-* Create a `pins::board_<your board type>` and pass it to `rpwf_connect_db()`.  
+* Create a `pins::board_<board type>` and pass it to `rpwf_connect_db()`.  
 * Create a database called `"db.SQLite"` with `rpwf_connect_db()`.  
 ```{r}
 board <- board_temp()
@@ -102,20 +101,20 @@ choose the R engine with [`set_engine()`](https://parsnip.tidymodels.org/referen
 * `set_py_engine()` has 3 important arguments  
   + `py_module` and `py_base_learner` defines how to import a base learner in 
   a python script.  
-  + `args` defines the arguments that can be passed to the base learner in python.  
   + `tag` is an optional argument that's helpful for keeping track of models.  
+* Arguments that can be passed to the base learner in python can be passed to
+`...`  
 
 * Check the available models with `rpwf_avail_models()` and add another model
 with `rpwf_add_py_model()`.
 ```{r}
-rpwf_avail_models(db_con)
+rpwf_avail_models(db_con) |> head()
 ```
 
 ### `xgboost`
 * I fix the `n_estimators` at 50 and tune the learning rate. Other arguments
-can be found at the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn), 
-* To do this, I pass the parameter `n_estimators = 50` to the `args` argument
-of `set_py_engine()`.  
+can be found at the [xgboost docs](https://xgboost.readthedocs.io/en/stable/python/python_api.html?highlight=n_trees#module-xgboost.sklearn).  
+* To do this, I pass the parameter `n_estimators = 50` to `set_py_engine()`.  
 * I am going to tune 6 hyper parameters by passing them the `tune()` functions 
 just like in `{parsnips}`.  
 
@@ -162,8 +161,8 @@ of how fitting models in python can have some very useful settings.
 * Let's set up a *radial basis kernel* svm model.  
   + I have to fix the `kernel` argument in `args` to `rbf`. 
   + This is because `{tidymodels}` defines `svm_poly()` and `svm_rbf()` 
-  separately for polynomial basis svm and radial basis svm while sci-kit learn 
-  defines them both with `sklearn.svm.SVC`.  
+  separately for polynomial basis svm and radial basis svm while `sklearn.svm.SVC` 
+  defines them both with the `kernel` parameter.  
 
 ```{r}
 svm_rbf_model <- svm_rbf(
@@ -203,25 +202,25 @@ enet_model <- logistic_reg(
 
 ## Hyper parameter tuning
 * The `{dials}` package provides  
-  1. sensible hyper parameters ranges, and  
+  1. sensible hyper parameters ranges  
   2. functions that go beyond the random grid and regular grid such as 
   `dials::grid_max_entropy`, and `dials::grid_latin_hypercube`.  
-* `dials::grid_latin_hypercube` will be helpful for models with a lot of 
-hyper parameters such as `xgboost`. But for `svm_rbf_model`, tuning just 2 
-hyper parameters on a 2-D grid with `dials::grid_regular` would provide sufficient
+* `dials::grid_latin_hypercube` will be helpful for models with a lot of hyper 
+parameters such as `xgboost`. But for `svm_rbf_model`, tuning just 2 hyper 
+parameters on a 2-D grid with `dials::grid_regular` would provide sufficient
 coverage of the hyper parameter space at an acceptable speed.  
 * Updating the range of the hyper parameter space is similar to [how it works](https://dials.tidymodels.org/articles/dials.html) in `{dials}`. Just 
-provide the tuning functions (or create new ones) to the `.model_update_params` argument.  
+provide the tuning functions (or create new ones) to the `hyper_par_fun` argument.  
 * **Models specific tuning grids** can be added at this step with `set_r_grid()`.  
 
 ### `xgboost`
 * For the `xgboost_model`, let's use a `dials::grid_latin_hypercube`.  
-* Let's limit `max_depth`. To do this, I add a named list to the `.model_update_params` argument.  
+* Let's limit `max_depth`. To do this, I add a named list to the `hyper_par_fun` argument.  
 ```{r}
 xgb_model <- xgb_model |>
   set_r_grid(
-    .model_grid_fun = dials::grid_latin_hypercube,
-    .model_update_params = list(tree_depth = dials::tree_depth(range(2, 5))),
+    grid_fun = dials::grid_latin_hypercube,
+    hyper_par_fun = list(tree_depth = dials::tree_depth(range(2, 5))),
     size = 100
   )
 ```
@@ -319,9 +318,9 @@ it generates the hyper parameter grids in R and transform these grids to make th
 compatible with sklearn's API. For example the following conversions were done:
   + The `mtry` positive integer in R is converted into sklearn's `colsample_bytree`
   positive proportions.  
-  + The `penalty` in R is reciprocated in sklearn. This is why in
-  order to have the l1 penalty > 1 (which is too large most of the time), the 
-  range upper bound is changed to be positive and smaller than 1.  
+  + The `penalty` in R is reciprocated in sklearn logistic regression. This is 
+  why in order to have the l1 penalty > 1 (which is too large most of the time), 
+  the range upper bound is changed to be positive and smaller than 1.  
 ```{r}
 all_wfs <- rpwf_augment(all_wfs, db_con)
 all_wfs |>
@@ -341,7 +340,7 @@ sapply(unique(all_wfs$grids), nrow)
 ```
 
 ## Export data as parquets and add to database.
-* There are two types of parquets files 1) hyper param grids, and 2) train/test
+* There are two types of parquets files: 1) hyper param grids, and 2) train/test
 data.  
 * `rpwf_write_grid()` and `rpwf_write_df()` write the parquets.  
 * Because this function only generate a data.frame if its not already written, 
@@ -370,7 +369,7 @@ the following command to get the list of arguments
 python -m rpwf.script.nested_resampling -h
 ```
 
-* Or the following in a Jupyter notebook cell
+* Or the following in a Jupyter notebook cell  
 ```{bash, eval = FALSE}
 %run -m rpwf.script.nested_resampling -h
 ```
@@ -391,9 +390,9 @@ python -m rpwf.script.nested_resampling -h
   already been run.  
   + The `-c` flag indicates the number of CPU cores dedicated to the model fitting
   task.  
-  + The `-icv` and `-icr` flags are number of vfold-cv and repats for the inner
+  + The `-icv` and `-icr` flags are number of vfold-cv and repeats for the inner
   loop used for hyper parameters tuning.  
-  + The `-ocv` and `-ocr` flags are number of vfold-cv and repats for the outer
+  + The `-ocv` and `-ocr` flags are number of vfold-cv and repeats for the outer
   loop used for testing the predictive performance.  
 * Let's run the nested CV with 5 CV * 2 repeats for the inner loop and 5 CV * 2
 repeats on the outer loop.  

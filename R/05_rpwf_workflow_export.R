@@ -73,19 +73,19 @@ rpwf_tag_recipe <- function(obj, tag) {
 
 #' @rdname rpwf_augment
 #' @export
-rpwf_augment.rpwf_workflow_set <- function(obj, db_con, .grid_fun = NULL,
+rpwf_augment.rpwf_workflow_set <- function(obj, db_con, grid_fun = NULL,
                                            ..., range = c(1L, 5000L), seed = 1234L) {
-  py_module <- py_base_learner <- engine <- rename_fns <- model_mode <- NULL
+  py_module <- py_base_learner <- engine <- rename_fun <- model_mode <- NULL
   set.seed(seed)
   obj |>
     rpwf_add_model_param_(db_con) |>
     rpwf_add_desc_() |>
     rpwf_add_py_model_(db_con) |>
     rpwf_add_random_state_(range, seed = seed) |>
-    rpwf_add_grid_(.grid_fun, seed = seed, ...) |>
+    rpwf_add_grid_(grid_fun, seed = seed, ...) |>
     rpwf_Rgrid_R6_(db_con) |>
     rpwf_TrainDf_R6_(db_con, seed = seed) |>
-    dplyr::select(-c(py_module, py_base_learner, engine, rename_fns, model_mode))
+    dplyr::select(-c(py_module, py_base_learner, engine, rename_fun, model_mode))
 }
 
 # rpwf_write_<obj>() ----------------------------------------------------------

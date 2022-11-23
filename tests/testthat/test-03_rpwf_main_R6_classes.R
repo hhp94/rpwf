@@ -154,15 +154,15 @@ test_that("renaming function", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
+  rename_fun <- rpwf_grid_rename_(hyper_par_rename)
 
-  expect_equal(rename_fns("mtry"), "colsample_bytree")
-  expect_equal(rename_fns("trees"), "n_estimators")
+  expect_equal(rename_fun("mtry"), "colsample_bytree")
+  expect_equal(rename_fun("trees"), "n_estimators")
   # Check if invalid values are returned as is
-  expect_equal(rename_fns("dummy"), "dummy")
+  expect_equal(rename_fun("dummy"), "dummy")
   # Check if a vector value are accepted
   expect_equal(
-    rename_fns(c("tree_depth", "dummy")),
+    rename_fun(c("tree_depth", "dummy")),
     c("max_depth", "dummy")
   )
 })
@@ -215,25 +215,25 @@ test_that("rpwf_grid_gen_() with tune()", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
+  rename_fun <- rpwf_grid_rename_(hyper_par_rename)
 
   grid_size <- 10
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
-    rename_fns,
+    rename_fun,
     size = grid_size
   )
 
-  c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
-  c_grid_rand <- partial_fns(.grid_fun = dials::grid_random)
+  c_grid_lhcube <- partial_fns(grid_fun = dials::grid_latin_hypercube)
+  c_grid_rand <- partial_fns(grid_fun = dials::grid_random)
 
   expect_equal(c(nrow(c_grid_lhcube), ncol(c_grid_lhcube)), c(grid_size, 6))
   expect_equal(c(nrow(c_grid_rand), ncol(c_grid_rand)), c(grid_size, 6))
-  expect_error(partial_fns(.grid_fun = NA)) # NA is not a function
-  expect_message(partial_fns(.grid_fun = NULL),
+  expect_error(partial_fns(grid_fun = NA)) # NA is not a function
+  expect_message(partial_fns(grid_fun = NULL),
     regex = "No hyper param tuning"
   )
-  expect_true(is.na(partial_fns(.grid_fun = NULL)))
+  expect_true(is.na(partial_fns(grid_fun = NULL)))
 })
 
 test_that("rpwf_grid_gen_() with fun from set_r_grid", {
@@ -247,11 +247,11 @@ test_that("rpwf_grid_gen_() with fun from set_r_grid", {
   hyper_par_rename <-
     jsonlite::toJSON(list("mtry" = "colsample_bytree"), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
+  rename_fun <- rpwf_grid_rename_(hyper_par_rename)
 
   # generation of the grids
   c_grid_lhcube <- rpwf_grid_gen_(
-    dummy_mod_spec, dummy_test_rec, rename_fns
+    dummy_mod_spec, dummy_test_rec, rename_fun
   )
 
   expect_equal(nrow(c_grid_lhcube), 10L)
@@ -270,8 +270,8 @@ test_that("rpwf_grid_gen_() no tuning param", {
     size = grid_size
   )
 
-  c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
-  c_grid_rand <- partial_fns(.grid_fun = dials::grid_random)
+  c_grid_lhcube <- partial_fns(grid_fun = dials::grid_latin_hypercube)
+  c_grid_rand <- partial_fns(grid_fun = dials::grid_random)
 
   expect_true(is.na(c_grid_lhcube))
   expect_true(is.na(c_grid_rand))
@@ -358,15 +358,15 @@ test_that("set_r_grid()", {
   m <- parsnip::boost_tree() |>
     parsnip::set_engine("xgboost") |>
     parsnip::set_mode("classification")
-  expect_true(is.null(m$.model_grid_fun))
+  expect_true(is.null(m$grid_fun))
 
   expect_error(set_r_grid(m, mtcars), regexp = "to be function")
   m <- m |>
     set_r_grid(dials::grid_random, size = 5, original = TRUE)
 
-  expect_false(is.null(m$.model_grid_fun))
-  expect_equal(m$.model_grid_fun, dials::grid_random)
-  expect_equal(m$.model_grid_fun_args, list(size = 5, original = TRUE))
+  expect_false(is.null(m$grid_fun))
+  expect_equal(m$grid_fun, dials::grid_random)
+  expect_equal(m$grid_fun_args, list(size = 5, original = TRUE))
 })
 
 test_that("initialization of the RGrid class", {
@@ -394,15 +394,15 @@ test_that("initialization of the RGrid class", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
+  rename_fun <- rpwf_grid_rename_(hyper_par_rename)
 
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
-    rename_fns,
+    rename_fun,
     size = grid_size
   )
 
-  c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
+  c_grid_lhcube <- partial_fns(grid_fun = dials::grid_latin_hypercube)
   # Generate an object
   r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
   # This recipe is newly added, so the SQL query would return a 0 row data.frame
@@ -463,15 +463,15 @@ test_that("export() method of the RGrid class", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
+  rename_fun <- rpwf_grid_rename_(hyper_par_rename)
 
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
-    rename_fns,
+    rename_fun,
     size = grid_size
   )
 
-  c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
+  c_grid_lhcube <- partial_fns(grid_fun = dials::grid_latin_hypercube)
 
   # Generate an object
   r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()
@@ -521,14 +521,14 @@ test_that("export() method won't add repeated rows class", {
       "sample_size" = "subsample"
     ), auto_unbox = TRUE)
 
-  rename_fns <- rpwf_grid_rename_(hyper_par_rename)
+  rename_fun <- rpwf_grid_rename_(hyper_par_rename)
 
   # generation of the grids
   partial_fns <- purrr::partial(rpwf_grid_gen_, dummy_mod_spec, dummy_test_rec,
-    rename_fns,
+    rename_fun,
     size = grid_size
   )
-  c_grid_lhcube <- partial_fns(.grid_fun = dials::grid_latin_hypercube)
+  c_grid_lhcube <- partial_fns(grid_fun = dials::grid_latin_hypercube)
 
   # Generate an object
   r_grid_obj <- RGrid$new(c_grid_lhcube, db_con)$set_attrs()

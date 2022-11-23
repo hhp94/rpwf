@@ -152,7 +152,7 @@ test_that("rpwf_augment()", {
     )),
     list("neg_log_loss")
   )
-  expect_error(rpwf_augment(t, db_con, .grid_fun = "INVALID"))
+  expect_error(rpwf_augment(t, db_con, grid_fun = "INVALID"))
   t1 <- rpwf_augment(t, db_con, dials::grid_latin_hypercube)
   # print(t1)
   expect_equal(nrow(t1), 1)

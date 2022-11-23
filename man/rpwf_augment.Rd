@@ -11,7 +11,7 @@ rpwf_augment(obj, ...)
 \method{rpwf_augment}{rpwf_workflow_set}(
   obj,
   db_con,
-  .grid_fun = NULL,
+  grid_fun = NULL,
   ...,
   range = c(1L, 5000L),
   seed = 1234L
@@ -20,11 +20,11 @@ rpwf_augment(obj, ...)
 \arguments{
 \item{obj}{a \code{rpwf_workflow_set} or \code{rpwf_data_set} object.}
 
-\item{...}{additional arguments for the \code{.grid_fun} functions.}
+\item{...}{additional arguments for the \code{grid_fun} functions.}
 
 \item{db_con}{an \code{\link[=rpwf_connect_db]{rpwf_connect_db()}} object.}
 
-\item{.grid_fun}{a \verb{dials::grid_<functions>}, e.g., \code{\link[dials:grid_regular]{dials::grid_random()}},
+\item{grid_fun}{a \verb{dials::grid_<functions>}, e.g., \code{\link[dials:grid_regular]{dials::grid_random()}},
 \code{\link[dials:grid_max_entropy]{dials::grid_latin_hypercube()}}. Default \code{NULL} assumes that no grid search is
 performed and sklearn defaults are used.}
 

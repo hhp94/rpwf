@@ -79,7 +79,7 @@ rpwf_add_model_param_ <- function(obj, db_con) {
     val3 = rpwf$engine
   )
   # Add the rename fns by passing the dictionary to rpwf_grid_rename_()
-  rpwf$rename_fns <- lapply(hyper_par_rename, rpwf_grid_rename_)
+  rpwf$rename_fun <- lapply(hyper_par_rename, rpwf_grid_rename_)
   # Add the base learner related args if presented
   rpwf$py_base_learner_args <- vapply(rpwf$models, \(x) {
     if (!is.null(x$py_base_learner_args)) {
@@ -182,21 +182,21 @@ rpwf_add_random_state_ <- function(obj, range, seed) {
 #'
 #' @return tibble with the additional column `"grids"`.
 #' @noRd
-rpwf_add_grid_ <- function(obj, .grid_fun = NULL, seed, ...) {
+rpwf_add_grid_ <- function(obj, grid_fun = NULL, seed, ...) {
   # These are columns from rpwf_workflow_set()
   stopifnot(
     "Run rpwf_workflow_set() first!" =
       all(c("preprocs", "models", "costs") %in% names(obj))
   )
   obj$grids <- purrr::pmap(
-    .l = list(obj$models, obj$preprocs, obj$rename_fns),
+    .l = list(obj$models, obj$preprocs, obj$rename_fun),
     .f = \(x, y, z) {
       set.seed(seed)
       rpwf_grid_gen_(
         model = x,
         preproc = y,
-        rename_fns = z,
-        .grid_fun = .grid_fun,
+        rename_fun = z,
+        grid_fun = grid_fun,
         ...
       )
     }

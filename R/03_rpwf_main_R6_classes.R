@@ -415,11 +415,11 @@ RGrid <- R6::R6Class(
 #' once later on with [rpwf_augment()]
 #'
 #' @inheritParams set_py_engine
-#' @param .model_grid_fun a `dials::grid_<functions>`, e.g., `grid_random()`,
+#' @param grid_fun a `dials::grid_<functions>`, e.g., `grid_random()`,
 #' `grid_latin_hypercube()`.
-#' @param .model_update_params update {dials} functions such as [dials::penalty()]
+#' @param hyper_par_fun update {dials} functions such as [dials::penalty()]
 #' and [dials::cost()] with a named list. See examples.
-#' @param ... arguments to pass to `.model_grid_fun`.
+#' @param ... arguments to pass to `grid_fun`.
 #'
 #' @return Add the `{dials}` function and associated arguments to the model spec
 #' @export
@@ -429,12 +429,12 @@ RGrid <- R6::R6Class(
 #'   parsnip::set_engine("xgboost") |>
 #'   parsnip::set_mode("classification") |>
 #'   set_r_grid(dials::grid_random, list(trees = dials::trees(range = c(2, 3))), size = 5)
-#' m$.model_grid_fun
-#' m$.model_grid_fun_args
-set_r_grid <- function(obj, .model_grid_fun, .model_update_params = NULL, ...) {
-  stopifnot(".model_grid_fun needs to be function" = is.function(.model_grid_fun))
-  obj$.model_grid_fun <- .model_grid_fun
-  obj$.model_update_params <- .model_update_params
-  obj$.model_grid_fun_args <- rlang::exprs(...)
+#' m$grid_fun
+#' m$grid_fun_args
+set_r_grid <- function(obj, grid_fun, hyper_par_fun = NULL, ...) {
+  stopifnot("grid_fun needs to be function" = is.function(grid_fun))
+  obj$grid_fun <- grid_fun
+  obj$hyper_par_fun <- hyper_par_fun
+  obj$grid_fun_args <- rlang::exprs(...)
   return(obj)
 }
