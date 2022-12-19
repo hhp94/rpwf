@@ -33,7 +33,7 @@ knitr::opts_chunk$set(
 * Install the package from github   
 ```{r, eval = FALSE}
 # install.packages("devtools")
-devtools::install_github("hhp94/rpwf", branch = "master")
+devtools::install_github("hhp94/rpwf")
 ```
 
 ## Python
@@ -195,4 +195,4 @@ p <- wf_results |>
 p
 ```
 
-![""](man/figures/README-plot_1.jpeg)
+![](man/figures/README-plot_1.jpeg)

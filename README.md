@@ -33,7 +33,7 @@ coverage](https://codecov.io/gh/hhp94/rpwf/branch/master/graph/badge.svg)](https
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("hhp94/rpwf", branch = "master")
+devtools::install_github("hhp94/rpwf")
 ```
 
 ## Python
@@ -207,4 +207,4 @@ p <- wf_results |>
 p
 ```
 
-![“”](man/figures/README-plot_1.jpeg)
+![](man/figures/README-plot_1.jpeg)

@@ -104,3 +104,9 @@ test_that("set_py_engine() tag works", {
     )
   expect_equal(py_mod_spec$model_tag, "my_xgboost_model")
 })
+
+test_that("update_role_pd_index() works", {
+  r <- recipes::recipe(mpg ~ ., data = mtcars) |>
+    update_role_pd_index(cyl)
+  expect_equal(dplyr::pull(dplyr::filter(r$var_info, variable == "cyl"), role), "pd.index")
+})
